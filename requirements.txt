@@ -1,0 +1,8 @@
+fastnumbers>=3.2
+fastybird-devices-module>=0.26
+fastybird-metadata>=0.37
+inflection>=0.5
+kink>=0.6
+minimalmodbus>=2.0
+setuptools>=57.4
+whistle>=1.0

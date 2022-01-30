@@ -1,0 +1,626 @@
+#!/usr/bin/python3
+
+#     Copyright 2021. FastyBird s.r.o.
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+
+"""
+Modbus connector registry module records
+"""
+
+# Python base dependencies
+import time
+import uuid
+from abc import ABC
+from datetime import datetime
+from typing import List, Optional, Tuple, Union
+
+# Library dependencies
+from fastybird_metadata.devices_module import ConnectionState
+from fastybird_metadata.types import ButtonPayload, DataType, SwitchPayload
+
+# Library libs
+from fastybird_modbus_connector.types import DeviceAttribute, RegisterType
+
+
+class DeviceRecord:  # pylint: disable=too-many-instance-attributes
+    """
+    Modbus device record
+
+    @package        FastyBird:ModbusConnector!
+    @module         registry/records
+
+    @author         Adam Kadlec <adam.kadlec@fastybird.com>
+    """
+
+    __id: uuid.UUID
+
+    __enabled: bool = False
+
+    __last_packet_sent_timestamp: float = 0.0  # Timestamp when request was sent to the device
+
+    __attempts: int = 0
+
+    __sampling_time: float = 10.0
+
+    __reading_registers_timestamp: float = 0.0
+    __reading_register_address: Optional[int] = None
+    __reading_register_type: Optional[RegisterType] = None
+
+    __lost_timestamp: float = 0.0
+
+    __state: ConnectionState = ConnectionState.UNKNOWN
+
+    # -----------------------------------------------------------------------------
+
+    def __init__(
+        self,
+        device_id: uuid.UUID,
+        device_enabled: bool = False,
+    ) -> None:
+        self.__id = device_id
+        self.__enabled = device_enabled
+
+        self.__state = ConnectionState.UNKNOWN
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def id(self) -> uuid.UUID:  # pylint: disable=invalid-name
+        """Device unique identifier"""
+        return self.__id
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def enabled(self) -> bool:
+        """Is device enabled?"""
+        return self.__enabled
+
+    # -----------------------------------------------------------------------------
+
+    @enabled.setter
+    def enabled(self, enabled: bool) -> None:
+        """Set device enable state"""
+        self.__enabled = enabled
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def last_packet_timestamp(self) -> float:
+        """Last packet sent time stamp"""
+        return self.__last_packet_sent_timestamp
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def transmit_attempts(self) -> int:
+        """Transmit packet attempts count"""
+        return self.__attempts
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def lost_timestamp(self) -> float:
+        """Time stamp when communication with device was lost"""
+        return self.__lost_timestamp
+
+    # -----------------------------------------------------------------------------
+
+    @lost_timestamp.setter
+    def lost_timestamp(self, timestamp: float) -> None:
+        """Set lost communication time stamp"""
+        self.__lost_timestamp = timestamp
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def sampling_time(self) -> float:
+        """Device registers reading sampling time"""
+        return self.__sampling_time
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def state(self) -> ConnectionState:
+        """What is device state?"""
+        return self.__state
+
+    # -----------------------------------------------------------------------------
+
+    @state.setter
+    def state(self, state: ConnectionState) -> None:
+        """Set device state"""
+        if state == ConnectionState.CONNECTED:
+            self.reset_reading_register(True)
+            # Reset lost timestamp
+            self.lost_timestamp = 0
+
+        if state == ConnectionState.UNKNOWN:
+            if state == ConnectionState.UNKNOWN and self.__state != ConnectionState.UNKNOWN:
+                # Set lost timestamp
+                self.lost_timestamp = time.time()
+
+            # Reset device communication state
+            self.reset_communication()
+
+        self.__state = state
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def is_connected(self) -> bool:
+        """Is device in connected state?"""
+        return self.__state == ConnectionState.CONNECTED
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def is_lost(self) -> bool:
+        """Is device in lost state?"""
+        return self.__lost_timestamp != 0
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def is_unknown(self) -> bool:
+        """Is device in unknown state?"""
+        return self.__state == ConnectionState.UNKNOWN
+
+    # -----------------------------------------------------------------------------
+
+    def set_lost(self) -> None:
+        """Set device into lost state"""
+        self.state = ConnectionState.UNKNOWN
+
+    # -----------------------------------------------------------------------------
+
+    def set_connected(self) -> None:
+        """Set device into connected state"""
+        self.state = ConnectionState.CONNECTED
+
+    # -----------------------------------------------------------------------------
+
+    def reset_communication(self) -> None:
+        """Reset device communication pointer"""
+        self.__attempts = 0
+
+    # -----------------------------------------------------------------------------
+
+    def set_reading_register(self, register_address: int, register_type: RegisterType) -> None:
+        """Set reading register pointer"""
+        self.__reading_register_address = register_address
+        self.__reading_register_type = register_type
+
+    # -----------------------------------------------------------------------------
+
+    def reset_reading_register(self, reset_timestamp: bool = False) -> None:
+        """Reset reading register pointer"""
+        if reset_timestamp:
+            self.__reading_registers_timestamp = 0.0
+
+        else:
+            self.__reading_registers_timestamp = time.time()
+
+        self.__reading_register_address = None
+        self.__reading_register_type = None
+
+    # -----------------------------------------------------------------------------
+
+    def get_reading_register(self) -> Tuple[Optional[int], Optional[RegisterType]]:
+        """Get reading register pointer"""
+        return self.__reading_register_address, self.__reading_register_type
+
+    # -----------------------------------------------------------------------------
+
+    def get_last_register_reading_timestamp(self) -> float:
+        """Get reading register time stamp"""
+        return self.__reading_registers_timestamp
+
+    # -----------------------------------------------------------------------------
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, DeviceRecord):
+            return False
+
+        return self.id == other.id
+
+    # -----------------------------------------------------------------------------
+
+    def __hash__(self) -> int:
+        return self.__id.__hash__()
+
+
+class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
+    """
+    Device register record
+
+    @package        FastyBird:ModbusConnector!
+    @module         registry/records
+
+    @author         Adam Kadlec <adam.kadlec@fastybird.com>
+    """
+
+    __device_id: uuid.UUID
+
+    __id: uuid.UUID
+    __address: int
+    __data_type: DataType
+
+    __queryable: bool = False
+    __settable: bool = False
+
+    __actual_value: Union[int, float, bool, None] = None
+    __expected_value: Union[int, float, bool, None] = None
+    __expected_pending: Optional[float] = None
+
+    # -----------------------------------------------------------------------------
+
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        device_id: uuid.UUID,
+        register_id: uuid.UUID,
+        register_address: int,
+        register_data_type: DataType,
+        register_queryable: bool = False,
+        register_settable: bool = False,
+    ) -> None:
+        self.__device_id = device_id
+
+        self.__id = register_id
+        self.__address = register_address
+        self.__data_type = register_data_type
+
+        self.__queryable = register_queryable
+        self.__settable = register_settable
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def device_id(self) -> uuid.UUID:
+        """Register device unique identifier"""
+        return self.__device_id
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def id(self) -> uuid.UUID:  # pylint: disable=invalid-name
+        """Register unique identifier"""
+        return self.__id
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def address(self) -> int:
+        """Register address"""
+        return self.__address
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def data_type(self) -> DataType:
+        """Register value data type"""
+        return self.__data_type
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def queryable(self) -> bool:
+        """Is register queryable?"""
+        return self.__queryable
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def settable(self) -> bool:
+        """Is register settable?"""
+        return self.__settable
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def actual_value(self) -> Union[int, float, bool, None]:
+        """Register actual value"""
+        return self.__actual_value
+
+    # -----------------------------------------------------------------------------
+
+    @actual_value.setter
+    def actual_value(self, value: Union[int, float, bool, None]) -> None:
+        """Set register actual value"""
+        self.__actual_value = value
+
+        if value == self.expected_value:
+            self.expected_value = None
+            self.expected_pending = None
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def expected_value(self) -> Union[int, float, bool, None]:
+        """Register expected value"""
+        return self.__expected_value
+
+    # -----------------------------------------------------------------------------
+
+    @expected_value.setter
+    def expected_value(self, value: Union[int, float, bool, None]) -> None:
+        """Set register expected value"""
+        self.__expected_value = value
+
+        if value is not None:
+            self.expected_pending = None
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def expected_pending(self) -> Optional[float]:
+        """Register expected value pending status"""
+        return self.__expected_pending
+
+    # -----------------------------------------------------------------------------
+
+    @expected_pending.setter
+    def expected_pending(self, timestamp: Optional[float]) -> None:
+        """Set register expected value transmit timestamp"""
+        self.__expected_pending = timestamp
+
+    # -----------------------------------------------------------------------------
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, RegisterRecord):
+            return False
+
+        return (
+            self.device_id == other.device_id
+            and self.id == other.id
+            and self.data_type == other.data_type
+            and self.settable == other.settable
+            and self.queryable == other.queryable
+        )
+
+    # -----------------------------------------------------------------------------
+
+    def __hash__(self) -> int:
+        return self.__id.__hash__()
+
+
+class DiscreteRegister(RegisterRecord):
+    """
+    Device discrete input register record
+
+    @package        FastyBird:ModbusConnector!
+    @module         registry/records
+
+    @author         Adam Kadlec <adam.kadlec@fastybird.com>
+    """
+
+    # -----------------------------------------------------------------------------
+
+    def __init__(
+        self,
+        device_id: uuid.UUID,
+        register_id: uuid.UUID,
+        register_address: int,
+    ) -> None:
+        super().__init__(
+            device_id=device_id,
+            register_id=register_id,
+            register_address=register_address,
+            register_data_type=DataType.BOOLEAN,
+            register_settable=False,
+            register_queryable=True,
+        )
+
+
+class CoilRegister(RegisterRecord):
+    """
+    Device coil register record
+
+    @package        FastyBird:ModbusConnector!
+    @module         registry/records
+
+    @author         Adam Kadlec <adam.kadlec@fastybird.com>
+    """
+
+    # -----------------------------------------------------------------------------
+
+    def __init__(
+        self,
+        device_id: uuid.UUID,
+        register_id: uuid.UUID,
+        register_address: int,
+    ) -> None:
+        super().__init__(
+            device_id=device_id,
+            register_id=register_id,
+            register_address=register_address,
+            register_data_type=DataType.BOOLEAN,
+            register_settable=True,
+            register_queryable=True,
+        )
+
+
+class InputRegister(RegisterRecord):
+    """
+    Device input register record
+
+    @package        FastyBird:ModbusConnector!
+    @module         registry/records
+
+    @author         Adam Kadlec <adam.kadlec@fastybird.com>
+    """
+
+    # -----------------------------------------------------------------------------
+
+    def __init__(
+        self,
+        device_id: uuid.UUID,
+        register_id: uuid.UUID,
+        register_address: int,
+        register_data_type: DataType,
+    ) -> None:
+        super().__init__(
+            device_id=device_id,
+            register_id=register_id,
+            register_address=register_address,
+            register_data_type=register_data_type,
+            register_settable=False,
+            register_queryable=True,
+        )
+
+
+class HoldingRegister(RegisterRecord):
+    """
+    Device holding register record
+
+    @package        FastyBird:ModbusConnector!
+    @module         registry/records
+
+    @author         Adam Kadlec <adam.kadlec@fastybird.com>
+    """
+
+    # -----------------------------------------------------------------------------
+
+    def __init__(
+        self,
+        device_id: uuid.UUID,
+        register_id: uuid.UUID,
+        register_address: int,
+        register_data_type: DataType,
+    ) -> None:
+        super().__init__(
+            device_id=device_id,
+            register_id=register_id,
+            register_address=register_address,
+            register_data_type=register_data_type,
+            register_settable=True,
+            register_queryable=True,
+        )
+
+
+class AttributeRecord:  # pylint: disable=too-many-public-methods,too-many-instance-attributes
+    """
+    Device attribute record
+
+    @package        FastyBird:ModbusConnector!
+    @module         registry/records
+
+    @author         Adam Kadlec <adam.kadlec@fastybird.com>
+    """
+
+    __device_id: uuid.UUID
+
+    __id: uuid.UUID
+    __type: DeviceAttribute
+    __value: Union[int, float, str, bool, datetime, ButtonPayload, SwitchPayload, None] = None
+
+    # -----------------------------------------------------------------------------
+
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        device_id: uuid.UUID,
+        attribute_id: uuid.UUID,
+        attribute_type: DeviceAttribute,
+        attribute_value: Union[int, float, str, bool, datetime, ButtonPayload, SwitchPayload, None] = None,
+    ) -> None:
+        self.__device_id = device_id
+
+        self.__id = attribute_id
+        self.__type = attribute_type
+        self.__value = attribute_value
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def device_id(self) -> uuid.UUID:
+        """Device unique identifier"""
+        return self.__device_id
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def id(self) -> uuid.UUID:  # pylint: disable=invalid-name
+        """Attribute unique identifier"""
+        return self.__id
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def type(self) -> DeviceAttribute:
+        """Attribute type"""
+        return self.__type
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def value(self) -> Union[int, float, str, bool, datetime, ButtonPayload, SwitchPayload, None]:
+        """Attribute value"""
+        return self.__value
+
+    # -----------------------------------------------------------------------------
+
+    @value.setter
+    def value(self, value: Union[int, float, str, bool, datetime, ButtonPayload, SwitchPayload, None]) -> None:
+        """Set attribute value"""
+        self.__value = value
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def data_type(self) -> Optional[DataType]:
+        """Attribute data type"""
+        if self.type == DeviceAttribute.STATE:
+            return DataType.ENUM
+
+        if self.type == DeviceAttribute.ADDRESS:
+            return DataType.BOOLEAN
+
+        return DataType.STRING
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def format(
+        self,
+    ) -> Union[List[str], Tuple[Optional[int], Optional[int]], Tuple[Optional[float], Optional[float]], None]:
+        """Attribute format"""
+        if self.type == DeviceAttribute.STATE:
+            return [
+                ConnectionState.CONNECTED.value,
+                ConnectionState.DISCONNECTED.value,
+                ConnectionState.LOST.value,
+                ConnectionState.UNKNOWN.value,
+            ]
+
+        return None
+
+    # -----------------------------------------------------------------------------
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, AttributeRecord):
+            return False
+
+        return (
+            self.device_id == other.device_id
+            and self.id == other.id
+            and self.type == other.type
+            and self.data_type == other.data_type
+            and self.format == other.format
+            and self.value == other.value
+        )
+
+    # -----------------------------------------------------------------------------
+
+    def __hash__(self) -> int:
+        return self.__id.__hash__()
