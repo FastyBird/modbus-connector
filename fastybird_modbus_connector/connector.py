@@ -42,11 +42,11 @@ from fastybird_devices_module.entities.device import (
 from fastybird_devices_module.repositories.device import DevicesRepository
 from fastybird_metadata.devices_module import ConnectionState
 from fastybird_metadata.helpers import normalize_value
-from fastybird_metadata.types import DataType
+from fastybird_metadata.types import DataType, ControlAction
 from kink import inject
 
 # App libs
-from fastybird_modbus_connector.clients.client import Client
+from fastybird_modbus_connector.clients.client import IClient
 from fastybird_modbus_connector.entities import ModbusDeviceEntity
 from fastybird_modbus_connector.events.listeners import EventsListener
 from fastybird_modbus_connector.logger import Logger
@@ -79,7 +79,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
     __attributes_registry: AttributesRegistry
     __registers_registry: RegistersRegistry
 
-    __client: Client
+    __client: IClient
 
     __events_listener: EventsListener
 
@@ -94,7 +94,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
         attributes_registry: AttributesRegistry,
         devices_registry: DevicesRegistry,
         registers_registry: RegistersRegistry,
-        client: Client,
+        client: IClient,
         events_listener: EventsListener,
         logger: Union[Logger, logging.Logger] = logging.getLogger("dummy"),
     ) -> None:
@@ -116,19 +116,6 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
     def initialize(self, settings: Optional[Dict] = None) -> None:
         """Set connector to initial state"""
-        connector_settings = settings if settings is not None else {}
-        connector_settings = {
-            **connector_settings,
-            **{
-                "baud_rate": 9600,
-                "interface": "/dev/ttyAMA0",
-            },
-        }
-
-        self.__client.initialize(
-            baud_rate=int(str(connector_settings.get("baud_rate"))),
-            interface=str(connector_settings.get("interface")),
-        )
         self.__devices_registry.reset()
 
         for device in self.__devices_repository.get_all_by_connector(connector_id=self.__connector_id):
@@ -392,5 +379,6 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
         self,
         control_item: Union[ConnectorControlEntity, DeviceControlEntity, ChannelControlEntity],
         data: Optional[Dict],
+        action: ControlAction,
     ) -> None:
         """Write connector control action"""

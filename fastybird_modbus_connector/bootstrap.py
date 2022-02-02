@@ -28,7 +28,7 @@ from kink import di
 from whistle import EventDispatcher
 
 # Library libs
-from fastybird_modbus_connector.clients.client import Client
+from fastybird_modbus_connector.clients.serial import SerialClient
 from fastybird_modbus_connector.connector import ModbusConnector
 from fastybird_modbus_connector.entities import ModbusConnectorEntity
 from fastybird_modbus_connector.events.listeners import EventsListener
@@ -54,6 +54,14 @@ def create_connector(
     else:
         connector_logger = logger
 
+    connector_settings = {
+        **connector.params,
+        **{
+            "baud_rate": 9600,
+            "interface": "/dev/ttyAMA0",
+        },
+    }
+
     di[EventDispatcher] = EventDispatcher()
     di["modbus-connector_events-dispatcher"] = di[EventDispatcher]
 
@@ -69,11 +77,13 @@ def create_connector(
     di["modbus-connector_devices-registry"] = di[DevicesRegistry]
 
     # Connector clients
-    di[Client] = Client(
+    di[SerialClient] = SerialClient(
+        baud_rate=int(str(connector_settings.get("baud_rate"))),
+        interface=str(connector_settings.get("interface")),
         devices_registry=di[DevicesRegistry],
         registers_registry=di[RegistersRegistry],
     )
-    di["modbus-connector_clients-proxy"] = di[Client]
+    di["modbus-connector_client"] = di[SerialClient]
 
     # Inner events system
     di[EventsListener] = EventsListener(  # type: ignore[call-arg]
@@ -88,7 +98,7 @@ def create_connector(
         devices_registry=di[DevicesRegistry],
         attributes_registry=di[AttributesRegistry],
         registers_registry=di[RegistersRegistry],
-        client=di[Client],
+        client=di[SerialClient],
         events_listener=di[EventsListener],
         logger=connector_logger,
     )

@@ -28,25 +28,3 @@ class InvalidStateException(Exception):
 
     @author         Adam Kadlec <adam.kadlec@fastybird.com>
     """
-
-
-class InvalidArgumentException(Exception):
-    """
-    Service argument is not valid
-
-    @package        FastyBird:ModbusConnector!
-    @module         exceptions
-
-    @author         Adam Kadlec <adam.kadlec@fastybird.com>
-    """
-
-
-class LogicException(Exception):
-    """
-    Exception thrown when logic error occur
-
-    @package        FastyBird:ModbusConnector!
-    @module         exceptions
-
-    @author         Adam Kadlec <adam.kadlec@fastybird.com>
-    """

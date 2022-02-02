@@ -15,73 +15,25 @@
 #     limitations under the License.
 
 """
-Modbus connector client
+Modbus connector clients module base client
 """
 
 # Python base dependencies
-import logging
-from typing import Set, Union
-
-# Library libs
-from fastybird_modbus_connector.clients.base import IClient
-from fastybird_modbus_connector.clients.serial import SerialClient
-from fastybird_modbus_connector.logger import Logger
-from fastybird_modbus_connector.registry.model import DevicesRegistry, RegistersRegistry
+from abc import ABC, abstractmethod
 
 
-class Client:
+class IClient(ABC):  # pylint: disable=too-few-public-methods
     """
-    Clients proxy
+    Client interface
 
     @package        FastyBird:ModbusConnector!
-    @module         clients/client
+    @module         clients/base
 
     @author         Adam Kadlec <adam.kadlec@fastybird.com>
     """
 
-    __clients: Set[IClient]
-
-    __devices_registry: DevicesRegistry
-    __registers_registry: RegistersRegistry
-
-    __logger: Union[Logger, logging.Logger]
-
     # -----------------------------------------------------------------------------
 
-    def __init__(
-        self,
-        devices_registry: DevicesRegistry,
-        registers_registry: RegistersRegistry,
-        logger: Union[Logger, logging.Logger] = logging.getLogger("dummy"),
-    ) -> None:
-        self.__clients = set()
-
-        self.__devices_registry = devices_registry
-        self.__registers_registry = registers_registry
-
-        self.__logger = logger
-
-    # -----------------------------------------------------------------------------
-
-    def initialize(
-        self,
-        baud_rate: int,
-        interface: str,
-    ) -> None:
-        """Register new client to proxy"""
-        self.__clients.add(
-            SerialClient(
-                client_baud_rate=baud_rate,
-                client_interface=interface,
-                devices_registry=self.__devices_registry,
-                registers_registry=self.__registers_registry,
-                logger=self.__logger,
-            )
-        )
-
-    # -----------------------------------------------------------------------------
-
+    @abstractmethod
     def handle(self) -> None:
-        """Handle communication from client"""
-        for client in self.__clients:
-            client.handle()
+        """Process client requests"""

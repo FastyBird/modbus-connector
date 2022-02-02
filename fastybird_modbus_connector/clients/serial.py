@@ -28,9 +28,10 @@ import minimalmodbus
 import serial
 from fastybird_metadata.devices_module import ConnectionState
 from fastybird_metadata.types import DataType
+from kink import inject
 
 # Library libs
-from fastybird_modbus_connector.clients.base import IClient
+from fastybird_modbus_connector.clients.client import IClient
 from fastybird_modbus_connector.exceptions import InvalidStateException
 from fastybird_modbus_connector.logger import Logger
 from fastybird_modbus_connector.registry.model import DevicesRegistry, RegistersRegistry
@@ -43,6 +44,7 @@ from fastybird_modbus_connector.registry.records import (
 from fastybird_modbus_connector.types import ModbusCommand, RegisterType
 
 
+@inject(alias=IClient)
 class SerialClient(IClient):  # pylint: disable=too-few-public-methods
     """
     Serial client
@@ -76,8 +78,8 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
-        client_baud_rate: Optional[int],
-        client_interface: Optional[str],
+        baud_rate: Optional[int],
+        interface: Optional[str],
         devices_registry: DevicesRegistry,
         registers_registry: RegistersRegistry,
         logger: Union[Logger, logging.Logger] = logging.getLogger("dummy"),
@@ -88,15 +90,13 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
         self.__logger = logger
 
         self.__instrument = minimalmodbus.Instrument(
-            port=client_interface if client_interface is not None else self.__SERIAL_INTERFACE,
+            port=interface if interface is not None else self.__SERIAL_INTERFACE,
             slaveaddress=0,
             mode=minimalmodbus.MODE_RTU,
             debug=True,
         )
 
-        self.__instrument.serial.baudrate = (
-            client_baud_rate if client_baud_rate is not None else self.__SERIAL_BAUD_RATE
-        )
+        self.__instrument.serial.baudrate = baud_rate if baud_rate is not None else self.__SERIAL_BAUD_RATE
         self.__instrument.serial.bytesize = 8
         self.__instrument.serial.parity = serial.PARITY_NONE
         self.__instrument.serial.stopbits = 1
