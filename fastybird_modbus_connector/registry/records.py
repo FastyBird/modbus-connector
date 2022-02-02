@@ -192,6 +192,7 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
         List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
         None,
     ] = None
+    __number_of_decimals: Optional[int] = None
     __queryable: bool = False
     __settable: bool = False
 
@@ -215,6 +216,7 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
         ] = None,
         register_queryable: bool = False,
         register_settable: bool = False,
+        register_number_of_decimals: Optional[int] = None,
     ) -> None:
         self.__device_id = device_id
 
@@ -222,6 +224,7 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
         self.__address = register_address
         self.__data_type = register_data_type
         self.__format = register_format
+        self.__number_of_decimals = register_number_of_decimals
 
         self.__queryable = register_queryable
         self.__settable = register_settable
@@ -267,6 +270,13 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
     ]:
         """Register value format"""
         return self.__format
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def number_of_decimals(self) -> Optional[int]:
+        """Number of decimals for transforming int to float"""
+        return self.__number_of_decimals
 
     # -----------------------------------------------------------------------------
 
@@ -445,6 +455,7 @@ class InputRegister(RegisterRecord):
             List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
             None,
         ] = None,
+        register_number_of_decimals: Optional[int] = None,
     ) -> None:
         super().__init__(
             device_id=device_id,
@@ -454,6 +465,7 @@ class InputRegister(RegisterRecord):
             register_format=register_format,
             register_settable=False,
             register_queryable=True,
+            register_number_of_decimals=register_number_of_decimals,
         )
 
 
@@ -481,6 +493,7 @@ class HoldingRegister(RegisterRecord):
             List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
             None,
         ] = None,
+        register_number_of_decimals: Optional[int] = None,
     ) -> None:
         super().__init__(
             device_id=device_id,
@@ -490,6 +503,7 @@ class HoldingRegister(RegisterRecord):
             register_format=register_format,
             register_settable=True,
             register_queryable=True,
+            register_number_of_decimals=register_number_of_decimals,
         )
 
 

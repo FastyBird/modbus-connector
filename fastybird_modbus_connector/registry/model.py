@@ -434,6 +434,7 @@ class RegistersRegistry:
             List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
             None,
         ] = None,
+        register_number_of_decimals: Optional[int] = None,
     ) -> InputRegister:
         """Append register record into registry"""
         register_record: InputRegister = InputRegister(
@@ -442,6 +443,7 @@ class RegistersRegistry:
             register_address=register_address,
             register_data_type=register_data_type,
             register_format=register_format,
+            register_number_of_decimals=register_number_of_decimals,
         )
 
         self.__items[register_record.id.__str__()] = register_record
@@ -462,6 +464,7 @@ class RegistersRegistry:
             List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
             None,
         ] = None,
+        register_number_of_decimals: Optional[int] = None,
     ) -> HoldingRegister:
         """Append register record into registry"""
         register_record: HoldingRegister = HoldingRegister(
@@ -470,6 +473,7 @@ class RegistersRegistry:
             register_address=register_address,
             register_data_type=register_data_type,
             register_format=register_format,
+            register_number_of_decimals=register_number_of_decimals,
         )
 
         self.__items[register_record.id.__str__()] = register_record

@@ -135,7 +135,7 @@ class DataTransformHelpers:
 
                 if isinstance(filtered, list) and len(filtered) == 1:
                     if isinstance(filtered[0], tuple):
-                        return str(filtered[0][0])
+                        return str(filtered[0][0]) if str(filtered[0][1]) == str(value) else None
 
                     return str(filtered[0])
 
@@ -166,11 +166,7 @@ class DataTransformHelpers:
 
         if data_type == DataType.FLOAT:
             try:
-                return (
-                    value
-                    if isinstance(value, float)
-                    else float(str(fast_float(str(value), raise_on_invalid=True)))
-                )
+                return value if isinstance(value, float) else float(str(fast_float(str(value), raise_on_invalid=True)))
 
             except ValueError:
                 return None
@@ -184,11 +180,7 @@ class DataTransformHelpers:
             DataType.UINT,
         ):
             try:
-                return (
-                    value
-                    if isinstance(value, int)
-                    else int(str(fast_int(str(value), raise_on_invalid=True)))
-                )
+                return value if isinstance(value, int) else int(str(fast_int(str(value), raise_on_invalid=True)))
 
             except ValueError:
                 return None
@@ -197,7 +189,12 @@ class DataTransformHelpers:
             if value_format is not None and isinstance(value_format, list):
                 filtered = [item for item in value_format if filter_enum_format(item=item, value=value)]
 
-                if isinstance(filtered, list) and len(filtered) == 1 and isinstance(filtered[0], tuple):
+                if (
+                    isinstance(filtered, list)
+                    and len(filtered) == 1
+                    and isinstance(filtered[0], tuple)
+                    and str(filtered[0][0]) == str(value)
+                ):
                     enum_value = filtered[0][2]
 
                 elif len(filtered) == 1 and not isinstance(filtered[0], tuple):

@@ -28,7 +28,7 @@ from typing import Dict, List, Set, Union
 import minimalmodbus
 import serial
 from fastybird_metadata.devices_module import ConnectionState
-from fastybird_metadata.types import DataType, ButtonPayload, SwitchPayload
+from fastybird_metadata.types import ButtonPayload, DataType, SwitchPayload
 from kink import inject
 
 # Library libs

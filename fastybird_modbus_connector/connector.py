@@ -197,6 +197,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
             List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
             None,
         ] = None
+        register_number_of_decimals: Optional[int] = None
 
         for channel_property in channel.properties:
             if (
@@ -213,6 +214,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
                 register_data_type = channel_property.data_type
                 register_settable = channel_property.settable
                 register_format = channel_property.format
+                register_number_of_decimals = channel_property.number_of_decimals
 
         if register_id is None or register_address is None or register_data_type is None:
             self.__logger.warning(
@@ -245,6 +247,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
                     register_address=register_address,
                     register_data_type=register_data_type,
                     register_format=register_format,
+                    register_number_of_decimals=register_number_of_decimals,
                 )
 
         else:
@@ -263,6 +266,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
                     register_address=register_address,
                     register_data_type=register_data_type,
                     register_format=register_format,
+                    register_number_of_decimals=register_number_of_decimals,
                 )
 
     # -----------------------------------------------------------------------------
