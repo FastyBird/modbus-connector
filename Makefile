@@ -1,4 +1,4 @@
-.PHONY: php_qa php_lint php_cs php_csf phpstan php_tests php_coverage python_qa python_tests python_coverage
+.PHONY: php_qa php_lint php_cs php_csf phpstan php_tests php_coverage py_qa py_tests py_coverage
 
 all:
 	@$(MAKE) -pRrq -f $(lastword $(MAKEFILE_LIST)) : 2>/dev/null | awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | sort | egrep -v -e '^[^[:alnum:]]' -e '^$@$$' | xargs
@@ -38,22 +38,22 @@ black:
 isort:
 	python -m pip install isort
 
-python_qa: python_cs python_types python_isort python_black
+py_qa: py_cs py_types py_isort py_black
 
-python_cs: pylint
+py_cs: pylint
 	pylint **/*.py
 
-python_types: mypy
+py_types: mypy
 	mypy **/*.py
 
-python_isort: isort
+py_isort: isort
 	isort **/*.py --check
 
-python_black: black
+py_black: black
 	black **/*.py --check
 
-python_tests:
+py_tests:
 	python -m unittest
 
-python_coverage:
+py_coverage:
 	coverage run --source=fastybird_modbus_connector -m unittest

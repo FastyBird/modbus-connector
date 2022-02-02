@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-#     Copyright 2021. FastyBird s.r.o.
+#     Copyright 2022. FastyBird s.r.o.
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ Modbus connector registry module records
 """
 
 # Python base dependencies
-import time
 import uuid
 from abc import ABC
 from datetime import datetime
@@ -27,10 +26,11 @@ from typing import List, Optional, Tuple, Union
 
 # Library dependencies
 from fastybird_metadata.devices_module import ConnectionState
+from fastybird_metadata.helpers import normalize_value
 from fastybird_metadata.types import ButtonPayload, DataType, SwitchPayload
 
 # Library libs
-from fastybird_modbus_connector.types import DeviceAttribute, RegisterType
+from fastybird_modbus_connector.types import DeviceAttribute
 
 
 class DeviceRecord:  # pylint: disable=too-many-instance-attributes
@@ -47,19 +47,14 @@ class DeviceRecord:  # pylint: disable=too-many-instance-attributes
 
     __enabled: bool = False
 
-    __last_packet_sent_timestamp: float = 0.0  # Timestamp when request was sent to the device
+    __last_writing_packet_timestamp: float = 0.0  # Timestamp when request was sent to the device
+    __last_reading_packet_timestamp: float = 0.0  # Timestamp when request was sent to the device
 
     __attempts: int = 0
 
     __sampling_time: float = 10.0
 
-    __reading_registers_timestamp: float = 0.0
-    __reading_register_address: Optional[int] = None
-    __reading_register_type: Optional[RegisterType] = None
-
     __lost_timestamp: float = 0.0
-
-    __state: ConnectionState = ConnectionState.UNKNOWN
 
     # -----------------------------------------------------------------------------
 
@@ -70,8 +65,6 @@ class DeviceRecord:  # pylint: disable=too-many-instance-attributes
     ) -> None:
         self.__id = device_id
         self.__enabled = device_enabled
-
-        self.__state = ConnectionState.UNKNOWN
 
     # -----------------------------------------------------------------------------
 
@@ -97,9 +90,30 @@ class DeviceRecord:  # pylint: disable=too-many-instance-attributes
     # -----------------------------------------------------------------------------
 
     @property
-    def last_packet_timestamp(self) -> float:
-        """Last packet sent time stamp"""
-        return self.__last_packet_sent_timestamp
+    def last_reading_packet_timestamp(self) -> float:
+        """Last reading packet sent time stamp"""
+        return self.__last_reading_packet_timestamp
+
+    # -----------------------------------------------------------------------------
+
+    @last_reading_packet_timestamp.setter
+    def last_reading_packet_timestamp(self, timestamp: float) -> None:
+        """Last reading packet sent time stamp setter"""
+        self.__last_reading_packet_timestamp = timestamp
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def last_writing_packet_timestamp(self) -> float:
+        """Last writing packet sent time stamp"""
+        return self.__last_writing_packet_timestamp
+
+    # -----------------------------------------------------------------------------
+
+    @last_writing_packet_timestamp.setter
+    def last_writing_packet_timestamp(self, timestamp: float) -> None:
+        """Last writing packet sent time stamp setter"""
+        self.__last_writing_packet_timestamp = timestamp
 
     # -----------------------------------------------------------------------------
 
@@ -107,6 +121,13 @@ class DeviceRecord:  # pylint: disable=too-many-instance-attributes
     def transmit_attempts(self) -> int:
         """Transmit packet attempts count"""
         return self.__attempts
+
+    # -----------------------------------------------------------------------------
+
+    @transmit_attempts.setter
+    def transmit_attempts(self, attempts: int) -> None:
+        """Transmit packet attempts count"""
+        self.__attempts = attempts
 
     # -----------------------------------------------------------------------------
 
@@ -119,7 +140,7 @@ class DeviceRecord:  # pylint: disable=too-many-instance-attributes
 
     @lost_timestamp.setter
     def lost_timestamp(self, timestamp: float) -> None:
-        """Set lost communication time stamp"""
+        """Time stamp when communication with device was lost setter"""
         self.__lost_timestamp = timestamp
 
     # -----------------------------------------------------------------------------
@@ -132,100 +153,9 @@ class DeviceRecord:  # pylint: disable=too-many-instance-attributes
     # -----------------------------------------------------------------------------
 
     @property
-    def state(self) -> ConnectionState:
-        """What is device state?"""
-        return self.__state
-
-    # -----------------------------------------------------------------------------
-
-    @state.setter
-    def state(self, state: ConnectionState) -> None:
-        """Set device state"""
-        if state == ConnectionState.CONNECTED:
-            self.reset_reading_register(True)
-            # Reset lost timestamp
-            self.lost_timestamp = 0
-
-        if state == ConnectionState.UNKNOWN:
-            if state == ConnectionState.UNKNOWN and self.__state != ConnectionState.UNKNOWN:
-                # Set lost timestamp
-                self.lost_timestamp = time.time()
-
-            # Reset device communication state
-            self.reset_communication()
-
-        self.__state = state
-
-    # -----------------------------------------------------------------------------
-
-    @property
-    def is_connected(self) -> bool:
-        """Is device in connected state?"""
-        return self.__state == ConnectionState.CONNECTED
-
-    # -----------------------------------------------------------------------------
-
-    @property
     def is_lost(self) -> bool:
         """Is device in lost state?"""
         return self.__lost_timestamp != 0
-
-    # -----------------------------------------------------------------------------
-
-    @property
-    def is_unknown(self) -> bool:
-        """Is device in unknown state?"""
-        return self.__state == ConnectionState.UNKNOWN
-
-    # -----------------------------------------------------------------------------
-
-    def set_lost(self) -> None:
-        """Set device into lost state"""
-        self.state = ConnectionState.UNKNOWN
-
-    # -----------------------------------------------------------------------------
-
-    def set_connected(self) -> None:
-        """Set device into connected state"""
-        self.state = ConnectionState.CONNECTED
-
-    # -----------------------------------------------------------------------------
-
-    def reset_communication(self) -> None:
-        """Reset device communication pointer"""
-        self.__attempts = 0
-
-    # -----------------------------------------------------------------------------
-
-    def set_reading_register(self, register_address: int, register_type: RegisterType) -> None:
-        """Set reading register pointer"""
-        self.__reading_register_address = register_address
-        self.__reading_register_type = register_type
-
-    # -----------------------------------------------------------------------------
-
-    def reset_reading_register(self, reset_timestamp: bool = False) -> None:
-        """Reset reading register pointer"""
-        if reset_timestamp:
-            self.__reading_registers_timestamp = 0.0
-
-        else:
-            self.__reading_registers_timestamp = time.time()
-
-        self.__reading_register_address = None
-        self.__reading_register_type = None
-
-    # -----------------------------------------------------------------------------
-
-    def get_reading_register(self) -> Tuple[Optional[int], Optional[RegisterType]]:
-        """Get reading register pointer"""
-        return self.__reading_register_address, self.__reading_register_type
-
-    # -----------------------------------------------------------------------------
-
-    def get_last_register_reading_timestamp(self) -> float:
-        """Get reading register time stamp"""
-        return self.__reading_registers_timestamp
 
     # -----------------------------------------------------------------------------
 
@@ -256,12 +186,17 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
     __id: uuid.UUID
     __address: int
     __data_type: DataType
-
+    __format: Union[
+        Tuple[Optional[int], Optional[int]],
+        Tuple[Optional[float], Optional[float]],
+        List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
+        None,
+    ] = None
     __queryable: bool = False
     __settable: bool = False
 
-    __actual_value: Union[int, float, bool, None] = None
-    __expected_value: Union[int, float, bool, None] = None
+    __actual_value: Union[str, int, float, bool, None] = None
+    __expected_value: Union[str, int, float, bool, None] = None
     __expected_pending: Optional[float] = None
 
     # -----------------------------------------------------------------------------
@@ -272,6 +207,12 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
         register_id: uuid.UUID,
         register_address: int,
         register_data_type: DataType,
+        register_format: Union[
+            Tuple[Optional[int], Optional[int]],
+            Tuple[Optional[float], Optional[float]],
+            List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
+            None,
+        ] = None,
         register_queryable: bool = False,
         register_settable: bool = False,
     ) -> None:
@@ -280,6 +221,7 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
         self.__id = register_id
         self.__address = register_address
         self.__data_type = register_data_type
+        self.__format = register_format
 
         self.__queryable = register_queryable
         self.__settable = register_settable
@@ -315,6 +257,20 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
     # -----------------------------------------------------------------------------
 
     @property
+    def format(
+        self,
+    ) -> Union[
+        Tuple[Optional[int], Optional[int]],
+        Tuple[Optional[float], Optional[float]],
+        List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
+        None,
+    ]:
+        """Register value format"""
+        return self.__format
+
+    # -----------------------------------------------------------------------------
+
+    @property
     def queryable(self) -> bool:
         """Is register queryable?"""
         return self.__queryable
@@ -329,14 +285,14 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
     # -----------------------------------------------------------------------------
 
     @property
-    def actual_value(self) -> Union[int, float, bool, None]:
+    def actual_value(self) -> Union[int, float, str, bool, datetime, ButtonPayload, SwitchPayload, None]:
         """Register actual value"""
-        return self.__actual_value
+        return normalize_value(data_type=self.data_type, value=self.__actual_value, value_format=self.format)
 
     # -----------------------------------------------------------------------------
 
     @actual_value.setter
-    def actual_value(self, value: Union[int, float, bool, None]) -> None:
+    def actual_value(self, value: Union[str, int, float, bool, None]) -> None:
         """Set register actual value"""
         self.__actual_value = value
 
@@ -347,14 +303,14 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
     # -----------------------------------------------------------------------------
 
     @property
-    def expected_value(self) -> Union[int, float, bool, None]:
+    def expected_value(self) -> Union[int, float, str, bool, datetime, ButtonPayload, SwitchPayload, None]:
         """Register expected value"""
-        return self.__expected_value
+        return normalize_value(data_type=self.data_type, value=self.__expected_value, value_format=self.format)
 
     # -----------------------------------------------------------------------------
 
     @expected_value.setter
-    def expected_value(self, value: Union[int, float, bool, None]) -> None:
+    def expected_value(self, value: Union[str, int, float, bool, None]) -> None:
         """Set register expected value"""
         self.__expected_value = value
 
@@ -412,12 +368,19 @@ class DiscreteRegister(RegisterRecord):
         device_id: uuid.UUID,
         register_id: uuid.UUID,
         register_address: int,
+        register_format: Union[
+            Tuple[Optional[int], Optional[int]],
+            Tuple[Optional[float], Optional[float]],
+            List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
+            None,
+        ] = None,
     ) -> None:
         super().__init__(
             device_id=device_id,
             register_id=register_id,
             register_address=register_address,
             register_data_type=DataType.BOOLEAN,
+            register_format=register_format,
             register_settable=False,
             register_queryable=True,
         )
@@ -440,12 +403,19 @@ class CoilRegister(RegisterRecord):
         device_id: uuid.UUID,
         register_id: uuid.UUID,
         register_address: int,
+        register_format: Union[
+            Tuple[Optional[int], Optional[int]],
+            Tuple[Optional[float], Optional[float]],
+            List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
+            None,
+        ] = None,
     ) -> None:
         super().__init__(
             device_id=device_id,
             register_id=register_id,
             register_address=register_address,
             register_data_type=DataType.BOOLEAN,
+            register_format=register_format,
             register_settable=True,
             register_queryable=True,
         )
@@ -463,18 +433,25 @@ class InputRegister(RegisterRecord):
 
     # -----------------------------------------------------------------------------
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         device_id: uuid.UUID,
         register_id: uuid.UUID,
         register_address: int,
         register_data_type: DataType,
+        register_format: Union[
+            Tuple[Optional[int], Optional[int]],
+            Tuple[Optional[float], Optional[float]],
+            List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
+            None,
+        ] = None,
     ) -> None:
         super().__init__(
             device_id=device_id,
             register_id=register_id,
             register_address=register_address,
             register_data_type=register_data_type,
+            register_format=register_format,
             register_settable=False,
             register_queryable=True,
         )
@@ -492,18 +469,25 @@ class HoldingRegister(RegisterRecord):
 
     # -----------------------------------------------------------------------------
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         device_id: uuid.UUID,
         register_id: uuid.UUID,
         register_address: int,
         register_data_type: DataType,
+        register_format: Union[
+            Tuple[Optional[int], Optional[int]],
+            Tuple[Optional[float], Optional[float]],
+            List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
+            None,
+        ] = None,
     ) -> None:
         super().__init__(
             device_id=device_id,
             register_id=register_id,
             register_address=register_address,
             register_data_type=register_data_type,
+            register_format=register_format,
             register_settable=True,
             register_queryable=True,
         )

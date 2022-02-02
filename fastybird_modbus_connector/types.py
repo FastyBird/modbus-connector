@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-#     Copyright 2021. FastyBird s.r.o.
+#     Copyright 2022. FastyBird s.r.o.
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -120,6 +120,26 @@ class DeviceAttribute(ExtendedEnum, Enum):
     BYTE_SIZE: str = "byte_size"
     PARITY: str = "parity"
     STOP_BITS: str = "stop_bits"
+
+    # -----------------------------------------------------------------------------
+
+    def __hash__(self) -> int:
+        return hash(self._name_)  # pylint: disable=no-member
+
+
+@unique
+class RegisterAttribute(ExtendedEnum, Enum):
+    """
+    Known register attribute name
+
+    @package        FastyBird:ModbusConnector!
+    @module         types
+
+    @author         Adam Kadlec <adam.kadlec@fastybird.com>
+    """
+
+    VALUE: str = "value"
+    ADDRESS: str = "addr"
 
     # -----------------------------------------------------------------------------
 

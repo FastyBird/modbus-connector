@@ -15,5 +15,5 @@
 #     limitations under the License.
 
 """
-Modbus connector module clients
+Modbus connector utilities module
 """

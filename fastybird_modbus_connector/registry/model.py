@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-#     Copyright 2021. FastyBird s.r.o.
+#     Copyright 2022. FastyBird s.r.o.
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -19,9 +19,10 @@ Modbus connector registry module models
 """
 
 # Python base dependencies
+import time
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 # Library dependencies
 from fastybird_metadata.devices_module import ConnectionState
@@ -99,12 +100,6 @@ class DevicesRegistry:
             device_enabled=device_enabled,
         )
 
-        existing_record = self.get_by_id(device_id=device_id)
-
-        if existing_record is not None:
-            device_record.state = existing_record.state
-            device_record.lost_timestamp = existing_record.lost_timestamp
-
         self.__items[device_record.id.__str__()] = device_record
 
         return device_record
@@ -144,11 +139,6 @@ class DevicesRegistry:
 
     def enable(self, device: DeviceRecord) -> DeviceRecord:
         """Enable device for communication"""
-        existing_record = self.get_by_id(device_id=device.id)
-
-        if existing_record is None:
-            raise InvalidStateException("Device record could not be enabled. Device was not found in registry")
-
         device.enabled = True
 
         self.__update(device=device)
@@ -164,11 +154,6 @@ class DevicesRegistry:
 
     def disable(self, device: DeviceRecord) -> DeviceRecord:
         """Enable device for communication"""
-        existing_record = self.get_by_id(device_id=device.id)
-
-        if existing_record is None:
-            raise InvalidStateException("Device record could not be disabled. Device was not found in registry")
-
         device.enabled = False
 
         self.__update(device=device)
@@ -196,18 +181,27 @@ class DevicesRegistry:
 
         self.__attributes_registry.set_value(attribute=actual_state, value=state.value)
 
+        if state == ConnectionState.LOST:
+            device.lost_timestamp = time.time()
+            device.transmit_attempts = 0
+            device.last_writing_packet_timestamp = 0
+            device.last_reading_packet_timestamp = 0
+
+            self.__update(device=device)
+
+        updated_device = self.get_by_id(device.id)
+
+        if updated_device is None:
+            raise InvalidStateException("Device record could not be re-fetched from registry after update")
+
         return device
 
     # -----------------------------------------------------------------------------
 
-    def set_reading_register(
-        self,
-        device: DeviceRecord,
-        register_address: int,
-        register_type: RegisterType,
-    ) -> DeviceRecord:
-        """Set device register reading pointer"""
-        device.set_reading_register(register_address=register_address, register_type=register_type)
+    def set_write_packet_timestamp(self, device: DeviceRecord, success: bool = True) -> DeviceRecord:
+        """Set packet timestamp for registers writing"""
+        device.last_writing_packet_timestamp = time.time()
+        device.transmit_attempts = 0 if success else device.transmit_attempts + 1
 
         self.__update(device=device)
 
@@ -220,24 +214,10 @@ class DevicesRegistry:
 
     # -----------------------------------------------------------------------------
 
-    def reset_reading_register(self, device: DeviceRecord, reset_timestamp: bool = False) -> DeviceRecord:
-        """Reset device register reading pointer"""
-        device.reset_reading_register(reset_timestamp=reset_timestamp)
-
-        self.__update(device=device)
-
-        updated_device = self.get_by_id(device.id)
-
-        if updated_device is None:
-            raise InvalidStateException("Device record could not be re-fetched from registry after update")
-
-        return updated_device
-
-    # -----------------------------------------------------------------------------
-
-    def reset_communication(self, device: DeviceRecord) -> DeviceRecord:
-        """Reset device communication registers"""
-        device.reset_communication()
+    def set_read_packet_timestamp(self, device: DeviceRecord, success: bool = True) -> DeviceRecord:
+        """Set packet timestamp for registers reading"""
+        device.last_reading_packet_timestamp = time.time()
+        device.transmit_attempts = 0 if success else device.transmit_attempts + 1
 
         self.__update(device=device)
 
@@ -395,12 +375,19 @@ class RegistersRegistry:
         device_id: uuid.UUID,
         register_id: uuid.UUID,
         register_address: int,
+        register_format: Union[
+            Tuple[Optional[int], Optional[int]],
+            Tuple[Optional[float], Optional[float]],
+            List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
+            None,
+        ] = None,
     ) -> DiscreteRegister:
         """Append register record into registry"""
         register_record: DiscreteRegister = DiscreteRegister(
             device_id=device_id,
             register_id=register_id,
             register_address=register_address,
+            register_format=register_format,
         )
 
         self.__items[register_record.id.__str__()] = register_record
@@ -414,12 +401,19 @@ class RegistersRegistry:
         device_id: uuid.UUID,
         register_id: uuid.UUID,
         register_address: int,
+        register_format: Union[
+            Tuple[Optional[int], Optional[int]],
+            Tuple[Optional[float], Optional[float]],
+            List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
+            None,
+        ] = None,
     ) -> CoilRegister:
         """Append register record into registry"""
         register_record: CoilRegister = CoilRegister(
             device_id=device_id,
             register_id=register_id,
             register_address=register_address,
+            register_format=register_format,
         )
 
         self.__items[register_record.id.__str__()] = register_record
@@ -428,12 +422,18 @@ class RegistersRegistry:
 
     # -----------------------------------------------------------------------------
 
-    def append_input(
+    def append_input(  # pylint: disable=too-many-arguments
         self,
         device_id: uuid.UUID,
         register_id: uuid.UUID,
         register_address: int,
         register_data_type: DataType,
+        register_format: Union[
+            Tuple[Optional[int], Optional[int]],
+            Tuple[Optional[float], Optional[float]],
+            List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
+            None,
+        ] = None,
     ) -> InputRegister:
         """Append register record into registry"""
         register_record: InputRegister = InputRegister(
@@ -441,6 +441,7 @@ class RegistersRegistry:
             register_id=register_id,
             register_address=register_address,
             register_data_type=register_data_type,
+            register_format=register_format,
         )
 
         self.__items[register_record.id.__str__()] = register_record
@@ -449,12 +450,18 @@ class RegistersRegistry:
 
     # -----------------------------------------------------------------------------
 
-    def append_holding(
+    def append_holding(  # pylint: disable=too-many-arguments
         self,
         device_id: uuid.UUID,
         register_id: uuid.UUID,
         register_address: int,
         register_data_type: DataType,
+        register_format: Union[
+            Tuple[Optional[int], Optional[int]],
+            Tuple[Optional[float], Optional[float]],
+            List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
+            None,
+        ] = None,
     ) -> HoldingRegister:
         """Append register record into registry"""
         register_record: HoldingRegister = HoldingRegister(
@@ -462,6 +469,7 @@ class RegistersRegistry:
             register_id=register_id,
             register_address=register_address,
             register_data_type=register_data_type,
+            register_format=register_format,
         )
 
         self.__items[register_record.id.__str__()] = register_record
@@ -523,7 +531,7 @@ class RegistersRegistry:
     def set_actual_value(
         self,
         register: RegisterRecord,
-        value: Union[int, float, bool, None],
+        value: Union[str, int, float, bool, None],
     ) -> RegisterRecord:
         """Set register actual value"""
         existing_record = self.get_by_id(register_id=register.id)

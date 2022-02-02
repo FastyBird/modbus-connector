@@ -367,7 +367,7 @@ jobs :
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name : "Run code check"
-        run : "make python_qa"
+        run : "make py_qa"
 
   python-tests :
     name : "Tests for Python code"
@@ -408,7 +408,7 @@ jobs :
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name : "Run tests"
-        run : "make python_tests"
+        run : "make py_tests"
 
   python-tests-code-coverage :
     name : "Tests for Python code with code coverage"
@@ -452,7 +452,7 @@ jobs :
         run : "pip install coverage"
 
       - name : "Run code coverage"
-        run : "make python_coverage"
+        run : "make py_coverage"
 
       - name : "Report code coverage"
         run : "coverage report"

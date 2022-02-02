@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-#     Copyright 2021. FastyBird s.r.o.
+#     Copyright 2022. FastyBird s.r.o.
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.

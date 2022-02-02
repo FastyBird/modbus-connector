@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-#     Copyright 2021. FastyBird s.r.o.
+#     Copyright 2022. FastyBird s.r.o.
 #
 #     Licensed under the Apache License, Version 2.0 (the "License");
 #     you may not use this file except in compliance with the License.
@@ -20,9 +20,8 @@ Modbus connector module
 
 # Python base dependencies
 import logging
-import re
 import uuid
-from typing import Dict, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 # App dependencies
 from fastybird_devices_module.connectors.connector import IConnector
@@ -31,6 +30,7 @@ from fastybird_devices_module.entities.channel import (
     ChannelDynamicPropertyEntity,
     ChannelEntity,
     ChannelPropertyEntity,
+    ChannelStaticPropertyEntity,
 )
 from fastybird_devices_module.entities.connector import ConnectorControlEntity
 from fastybird_devices_module.entities.device import (
@@ -55,7 +55,7 @@ from fastybird_modbus_connector.registry.model import (
     DevicesRegistry,
     RegistersRegistry,
 )
-from fastybird_modbus_connector.types import DeviceAttribute
+from fastybird_modbus_connector.types import DeviceAttribute, RegisterAttribute
 
 
 @inject(alias=IConnector)
@@ -186,14 +186,90 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
     # -----------------------------------------------------------------------------
 
     def initialize_device_channel(self, channel: ChannelEntity) -> None:
-        """Initialize device channel in connector registry"""
+        """Initialize device channel aka registers group in connector registry"""
+        register_id: Optional[uuid.UUID] = None
+        register_address: Optional[int] = None
+        register_data_type: Optional[DataType] = None
+        register_settable: bool = False
+        register_format: Union[
+            Tuple[Optional[int], Optional[int]],
+            Tuple[Optional[float], Optional[float]],
+            List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
+            None,
+        ] = None
+
         for channel_property in channel.properties:
-            self.initialize_device_channel_property(channel_property=channel_property)
+            if (
+                channel_property.identifier == RegisterAttribute.ADDRESS.value
+                and isinstance(channel_property, ChannelStaticPropertyEntity)
+                and isinstance(channel_property.value, int)
+            ):
+                register_address = channel_property.value
+
+            if channel_property.identifier == RegisterAttribute.VALUE.value and isinstance(
+                channel_property, ChannelDynamicPropertyEntity
+            ):
+                register_id = channel_property.id
+                register_data_type = channel_property.data_type
+                register_settable = channel_property.settable
+                register_format = channel_property.format
+
+        if register_id is None or register_address is None or register_data_type is None:
+            self.__logger.warning(
+                "Channel does not have expected properties and can't be mapped to register",
+                extra={
+                    "device": {
+                        "id": channel.device.id.__str__(),
+                    },
+                    "channel": {
+                        "id": channel.device.id.__str__(),
+                    },
+                },
+            )
+
+            return
+
+        if register_settable:
+            if register_data_type == DataType.BOOLEAN:
+                self.__registers_registry.append_coil(
+                    device_id=channel.device.id,
+                    register_id=register_id,
+                    register_address=register_address,
+                    register_format=register_format,
+                )
+
+            else:
+                self.__registers_registry.append_holding(
+                    device_id=channel.device.id,
+                    register_id=register_id,
+                    register_address=register_address,
+                    register_data_type=register_data_type,
+                    register_format=register_format,
+                )
+
+        else:
+            if register_data_type == DataType.BOOLEAN:
+                self.__registers_registry.append_discrete(
+                    device_id=channel.device.id,
+                    register_id=register_id,
+                    register_address=register_address,
+                    register_format=register_format,
+                )
+
+            else:
+                self.__registers_registry.append_input(
+                    device_id=channel.device.id,
+                    register_id=register_id,
+                    register_address=register_address,
+                    register_data_type=register_data_type,
+                    register_format=register_format,
+                )
 
     # -----------------------------------------------------------------------------
 
     def remove_device_channel(self, channel_id: uuid.UUID) -> None:
         """Remove device channel from connector registry"""
+        self.__registers_registry.remove(register_id=channel_id)
 
     # -----------------------------------------------------------------------------
 
@@ -204,94 +280,17 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
     # -----------------------------------------------------------------------------
 
     def initialize_device_channel_property(self, channel_property: ChannelPropertyEntity) -> None:
-        """Initialize device channel property in connector registry"""
-        match = re.compile("(?P<identifier>[a-zA-Z_]+)_(?P<address>[0-9]+)")
-
-        parsed_property_identifier = match.fullmatch(channel_property.identifier)
-
-        if parsed_property_identifier is None:
-            self.__logger.warning(
-                "Channel's property name is not in expected format: %s",
-                channel_property.identifier,
-                extra={
-                    "device": {
-                        "id": channel_property.channel.device.id.__str__(),
-                    },
-                    "channel": {
-                        "id": channel_property.channel.device.id.__str__(),
-                    },
-                    "property": {
-                        "id": channel_property.id.__str__(),
-                    },
-                },
-            )
-
-            return
-
-        if (
-            parsed_property_identifier.group("address").isnumeric() is False
-            or int(parsed_property_identifier.group("address")) <= 0
-        ):
-            self.__logger.warning(
-                "Channel's property name is not in expected format. Attribute address could not be extracted",
-                extra={
-                    "device": {
-                        "id": channel_property.channel.device.id.__str__(),
-                    },
-                    "channel": {
-                        "id": channel_property.channel.device.id.__str__(),
-                    },
-                    "property": {
-                        "id": channel_property.id.__str__(),
-                    },
-                },
-            )
-
-            return
-
-        if channel_property.settable:
-            if channel_property.data_type == DataType.BOOLEAN:
-                self.__registers_registry.append_coil(
-                    device_id=channel_property.channel.device.id,
-                    register_id=channel_property.property_id,
-                    register_address=(int(parsed_property_identifier.group("address")) - 1),
-                )
-
-            else:
-                self.__registers_registry.append_holding(
-                    device_id=channel_property.channel.device.id,
-                    register_id=channel_property.property_id,
-                    register_address=(int(parsed_property_identifier.group("address")) - 1),
-                    register_data_type=channel_property.data_type,
-                )
-
-        else:
-            if channel_property.data_type == DataType.BOOLEAN:
-                self.__registers_registry.append_discrete(
-                    device_id=channel_property.channel.device.id,
-                    register_id=channel_property.property_id,
-                    register_address=(int(parsed_property_identifier.group("address")) - 1),
-                )
-
-            else:
-                self.__registers_registry.append_input(
-                    device_id=channel_property.channel.device.id,
-                    register_id=channel_property.property_id,
-                    register_address=(int(parsed_property_identifier.group("address")) - 1),
-                    register_data_type=channel_property.data_type,
-                )
+        """Initialize device channel property aka input or output register in connector registry"""
 
     # -----------------------------------------------------------------------------
 
     def remove_device_channel_property(self, property_id: uuid.UUID) -> None:
         """Remove device channel property from connector registry"""
-        self.__registers_registry.remove(register_id=property_id)
 
     # -----------------------------------------------------------------------------
 
     def reset_devices_channels_properties(self, channel: ChannelEntity) -> None:
         """Reset devices channels properties registry to initial state"""
-        self.__registers_registry.reset(device_id=channel.device.id)
 
     # -----------------------------------------------------------------------------
 
