@@ -47,8 +47,8 @@ class DeviceRecord:  # pylint: disable=too-many-instance-attributes
 
     __enabled: bool = False
 
-    __last_writing_packet_timestamp: float = 0.0  # Timestamp when request was sent to the device
-    __last_reading_packet_timestamp: float = 0.0  # Timestamp when request was sent to the device
+    __last_writing_packet_timestamp: float = 0.0  # Timestamp writing when request was sent to the device
+    __last_reading_packet_timestamp: float = 0.0  # Timestamp reading when request was sent to the device
 
     __attempts: int = 0
 

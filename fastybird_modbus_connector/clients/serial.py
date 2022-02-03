@@ -57,7 +57,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
     """
 
     __processed_devices: List[str] = []
-    __processed_devices_registers: Dict[str, Set[RegisterType]] = {}
+    __processed_devices_registers: Dict[str, Dict[int, Set[str]]] = {}
 
     __instrument: minimalmodbus.Instrument
 
@@ -199,35 +199,83 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
 
     # -----------------------------------------------------------------------------
 
-    def __read_registers_handler(self, device: DeviceRecord, device_address: int) -> bool:
-        """Read value from device register"""
-        if device.id.__str__() not in self.__processed_devices_registers:
-            self.__processed_devices_registers[device.id.__str__()] = set()
+    def __read_registers_handler(  # pylint: disable=too-many-branches,too-many-statements
+        self,
+        device: DeviceRecord,
+        device_address: int,
+    ) -> bool:
+        for registers_type in [  # pylint: disable=too-many-nested-blocks
+            RegisterType.COIL,
+            RegisterType.DISCRETE,
+            RegisterType.HOLDING,
+            RegisterType.INPUT,
+        ]:
+            if device.id.__str__() not in self.__processed_devices_registers:
+                self.__processed_devices_registers[device.id.__str__()] = {}
 
-        for register_type in [RegisterType.DISCRETE, RegisterType.COIL, RegisterType.INPUT, RegisterType.HOLDING]:
-            if register_type in self.__processed_devices_registers[device.id.__str__()]:
-                continue
+            if registers_type.value not in self.__processed_devices_registers[device.id.__str__()]:
+                self.__processed_devices_registers[device.id.__str__()][registers_type.value] = set()
 
-            registers = self.__registers_registry.get_all_for_device(device_id=device.id, register_type=register_type)
+            processed_length = len(self.__processed_devices_registers[device.id.__str__()][registers_type.value])
 
-            if len(registers) == 0:
-                self.__processed_devices_registers[device.id.__str__()].add(register_type)
-
-                continue
-
-            return self.__read_multiple_registers(
-                device=device,
-                device_address=device_address,
-                registers_type=register_type,
-                registers_count=len(registers),
+            registers = self.__registers_registry.get_all_for_device(
+                device_id=device.id,
+                register_type=registers_type,
             )
 
-        if time.time() - device.last_reading_packet_timestamp >= device.sampling_time:
+            if 0 < len(registers) != processed_length:
+                # Try to read all registers of one type at once
+                if self.__is_all_registers_readable(registers=registers):
+                    reading_result = self.__read_multiple_registers(
+                        device=device,
+                        device_address=device_address,
+                        registers_type=registers_type,
+                        registers_count=len(registers),
+                    )
+
+                    if reading_result:
+                        for register in registers:
+                            self.__processed_devices_registers[device.id.__str__()][registers_type.value].add(
+                                register.id.__str__(),
+                            )
+
+                    return reading_result
+
+                # Registers have to be read one by one
+                for register in registers:
+                    if (
+                        register.id.__str__()
+                        in self.__processed_devices_registers[device.id.__str__()][registers_type.value]
+                    ):
+                        continue
+
+                    reading_result = self.__read_single_register(
+                        device=device,
+                        device_address=device_address,
+                        register_type=registers_type,
+                        register_address=register.address,
+                        register_data_type=register.data_type,
+                    )
+
+                    if reading_result:
+                        self.__processed_devices_registers[device.id.__str__()][registers_type.value].add(
+                            register.id.__str__(),
+                        )
+
+                    return reading_result
+
+        if time.time() - device.last_reading_packet_timestamp < device.sampling_time:
             return True
 
-        self.__processed_devices_registers[device.id.__str__()] = set()
+        for registers_type in [  # pylint: disable=too-many-nested-blocks
+            RegisterType.COIL,
+            RegisterType.DISCRETE,
+            RegisterType.HOLDING,
+            RegisterType.INPUT,
+        ]:
+            self.__processed_devices_registers[device.id.__str__()][registers_type.value] = set()
 
-        return False
+        return True
 
     # -----------------------------------------------------------------------------
 
@@ -332,7 +380,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                         self.__instrument.write_register(
                             registeraddress=register.address,
                             value=transformed_value,
-                            functioncode=ModbusCommand.WRITE_SINGLE_REGISTER.value,
+                            functioncode=ModbusCommand.WRITE_SINGLE_HOLDING.value,
                             signed=(register.data_type in (DataType.CHAR, DataType.SHORT, DataType.INT)),
                         )
 
@@ -415,6 +463,118 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
 
     # -----------------------------------------------------------------------------
 
+    def __read_single_register(  # pylint: disable=too-many-arguments
+        self,
+        device: DeviceRecord,
+        device_address: int,
+        register_type: RegisterType,
+        register_data_type: DataType,
+        register_address: int,
+    ) -> bool:
+        self.__instrument.address = device_address
+
+        try:
+            if register_type in (RegisterType.DISCRETE, RegisterType.COIL):
+                function_code = (
+                    ModbusCommand.READ_DISCRETE if register_type == RegisterType.DISCRETE else ModbusCommand.READ_COILS
+                )
+
+                read_bit_result = self.__instrument.read_bit(
+                    registeraddress=register_address,
+                    functioncode=function_code.value,
+                )
+
+                self.__write_register_received_value(
+                    device=device,
+                    register_type=register_type,
+                    register_address=register_address,
+                    value=read_bit_result,
+                )
+
+            elif register_type in (RegisterType.INPUT, RegisterType.HOLDING):
+                function_code = (
+                    ModbusCommand.READ_INPUT if register_type == RegisterType.INPUT else ModbusCommand.READ_HOLDING
+                )
+
+                if register_data_type == DataType.FLOAT:
+                    read_float_result = self.__instrument.read_float(
+                        registeraddress=register_address,
+                        functioncode=function_code.value,
+                    )
+
+                    self.__write_register_received_value(
+                        device=device,
+                        register_type=register_type,
+                        register_address=register_address,
+                        value=read_float_result,
+                    )
+
+                elif register_data_type in (DataType.INT, DataType.UINT):
+                    read_long_result = self.__instrument.read_long(
+                        registeraddress=register_address,
+                        functioncode=function_code.value,
+                        signed=(register_data_type == DataType.INT),
+                    )
+
+                    self.__write_register_received_value(
+                        device=device,
+                        register_type=register_type,
+                        register_address=register_address,
+                        value=read_long_result,
+                    )
+
+                else:
+                    read_register_result = self.__instrument.read_register(
+                        registeraddress=register_address,
+                        functioncode=function_code.value,
+                        signed=(register_data_type in (DataType.SHORT, DataType.CHAR)),
+                    )
+
+                    self.__write_register_received_value(
+                        device=device,
+                        register_type=register_type,
+                        register_address=register_address,
+                        value=read_register_result,
+                    )
+
+            else:
+                self.__logger.error(
+                    "Trying to read from unsupported register",
+                    extra={
+                        "device": {
+                            "id": device.id.__str__(),
+                        },
+                    },
+                )
+
+                return False
+
+        except minimalmodbus.ModbusException as ex:
+            self.__logger.error(
+                "Something went wrong and register value cannot be read.",
+                extra={
+                    "device": {
+                        "id": device.id.__str__(),
+                    },
+                    "exception": {
+                        "message": str(ex),
+                        "code": type(ex).__name__,
+                    },
+                },
+            )
+
+            # Update communication timestamp
+            self.__devices_registry.set_read_packet_timestamp(device=device, success=False)
+
+            return False
+
+        # Update communication timestamp
+        self.__devices_registry.set_read_packet_timestamp(device=device)
+
+        return True
+
+    # -----------------------------------------------------------------------------
+
     def __read_multiple_registers(
         self,
         device: DeviceRecord,
@@ -427,61 +587,53 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
         self.__instrument.address = device_address
 
         try:
-            if registers_type == RegisterType.DISCRETE:
-                result = self.__instrument.read_bits(
+            if registers_type in (RegisterType.DISCRETE, RegisterType.COIL):
+                function_code = (
+                    ModbusCommand.READ_DISCRETE if registers_type == RegisterType.DISCRETE else ModbusCommand.READ_COILS
+                )
+
+                read_bits_result = self.__instrument.read_bits(
                     registeraddress=start_address,
                     number_of_bits=registers_count,
-                    functioncode=ModbusCommand.READ_DISCRETE_INPUTS.value,
+                    functioncode=function_code.value,
                 )
 
                 self.__write_registers_received_values(
                     device=device,
                     registers_type=registers_type,
                     start_address=start_address,
-                    values=result,
+                    values=read_bits_result,
                 )
 
-            elif registers_type == RegisterType.COIL:
-                result = self.__instrument.read_bits(
-                    registeraddress=start_address,
-                    number_of_bits=registers_count,
-                    functioncode=ModbusCommand.READ_COILS.value,
+            elif registers_type in (RegisterType.INPUT, RegisterType.HOLDING):
+                function_code = (
+                    ModbusCommand.READ_INPUT if registers_type == RegisterType.INPUT else ModbusCommand.READ_HOLDING
                 )
 
-                self.__write_registers_received_values(
-                    device=device,
-                    registers_type=registers_type,
-                    start_address=start_address,
-                    values=result,
-                )
-
-            elif registers_type == RegisterType.INPUT:
-                result = self.__instrument.read_registers(
+                read_registers_result = self.__instrument.read_registers(
                     registeraddress=start_address,
                     number_of_registers=registers_count,
-                    functioncode=ModbusCommand.READ_INPUT_REGISTERS.value,
+                    functioncode=function_code.value,
                 )
 
                 self.__write_registers_received_values(
                     device=device,
                     registers_type=registers_type,
                     start_address=start_address,
-                    values=result,
+                    values=read_registers_result,
                 )
 
-            elif registers_type == RegisterType.HOLDING:
-                result = self.__instrument.read_registers(
-                    registeraddress=start_address,
-                    number_of_registers=registers_count,
-                    functioncode=ModbusCommand.READ_HOLDING_REGISTERS.value,
+            else:
+                self.__logger.error(
+                    "Trying to read from unsupported register",
+                    extra={
+                        "device": {
+                            "id": device.id.__str__(),
+                        },
+                    },
                 )
 
-                self.__write_registers_received_values(
-                    device=device,
-                    registers_type=registers_type,
-                    start_address=start_address,
-                    values=result,
-                )
+                return False
 
         except minimalmodbus.ModbusException as ex:
             self.__logger.error(
@@ -497,8 +649,6 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                 },
             )
 
-            self.__logger.exception(ex)
-
             # Update communication timestamp
             self.__devices_registry.set_read_packet_timestamp(device=device, success=False)
 
@@ -507,10 +657,32 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
         # Update communication timestamp
         self.__devices_registry.set_read_packet_timestamp(device=device)
 
-        # All registers for giver register type were read
-        self.__processed_devices_registers[device.id.__str__()].add(registers_type)
-
         return True
+
+    # -----------------------------------------------------------------------------
+
+    def __write_register_received_value(
+        self,
+        device: DeviceRecord,
+        register_type: RegisterType,
+        register_address: int,
+        value: Union[int, float],
+    ) -> None:
+        register = self.__registers_registry.get_by_address(
+            device_id=device.id,
+            register_type=register_type,
+            register_address=register_address,
+        )
+
+        if register is not None:
+            self.__registers_registry.set_actual_value(
+                register=register,
+                value=DataTransformHelpers.transform_from_device(
+                    data_type=register.data_type,
+                    value_format=register.format,
+                    value=value,
+                ),
+            )
 
     # -----------------------------------------------------------------------------
 
@@ -524,20 +696,21 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
         register_address = start_address
 
         for value in values:
-            register = self.__registers_registry.get_by_address(
-                device_id=device.id,
+            self.__write_register_received_value(
+                device=device,
                 register_type=registers_type,
                 register_address=register_address,
+                value=value,
             )
 
-            if register is not None:
-                self.__registers_registry.set_actual_value(
-                    register=register,
-                    value=DataTransformHelpers.transform_from_device(
-                        data_type=register.data_type,
-                        value_format=register.format,
-                        value=value,
-                    ),
-                )
-
             register_address += 1
+
+    # -----------------------------------------------------------------------------
+
+    @staticmethod
+    def __is_all_registers_readable(registers: List[RegisterRecord]) -> bool:
+        for register in registers:
+            if register.data_type in (DataType.FLOAT, DataType.INT, DataType.UINT):
+                return False
+
+        return True

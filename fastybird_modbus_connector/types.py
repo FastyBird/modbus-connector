@@ -76,13 +76,13 @@ class ModbusCommand(Enum):
     """
 
     READ_COILS: int = 0x01
-    READ_DISCRETE_INPUTS: int = 0x02
-    READ_HOLDING_REGISTERS: int = 0x03
-    READ_INPUT_REGISTERS: int = 0x04
+    READ_DISCRETE: int = 0x02
+    READ_HOLDING: int = 0x03
+    READ_INPUT: int = 0x04
     WRITE_SINGLE_COIL: int = 0x05
-    WRITE_SINGLE_REGISTER: int = 0x06
+    WRITE_SINGLE_HOLDING: int = 0x06
     WRITE_MULTIPLE_COILS: int = 0x15
-    WRITE_MULTIPLE_REGISTERS: int = 0x16
+    WRITE_MULTIPLE_HOLDINGS: int = 0x16
 
     # -----------------------------------------------------------------------------
 

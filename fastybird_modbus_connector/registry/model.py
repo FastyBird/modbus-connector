@@ -181,13 +181,20 @@ class DevicesRegistry:
 
         self.__attributes_registry.set_value(attribute=actual_state, value=state.value)
 
+        if actual_state.value != state.value:
+            # Reset pointers & counters
+            device.lost_timestamp = 0
+            device.transmit_attempts = 0
+            device.last_writing_packet_timestamp = 0
+            device.last_reading_packet_timestamp = 0
+
         if state == ConnectionState.LOST:
             device.lost_timestamp = time.time()
             device.transmit_attempts = 0
             device.last_writing_packet_timestamp = 0
             device.last_reading_packet_timestamp = 0
 
-            self.__update(device=device)
+        self.__update(device=device)
 
         updated_device = self.get_by_id(device.id)
 

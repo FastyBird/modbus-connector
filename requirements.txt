@@ -6,3 +6,4 @@ kink>=0.6
 minimalmodbus>=2.0
 setuptools>=57.4
 whistle>=1.0
+pyserial>=3.5

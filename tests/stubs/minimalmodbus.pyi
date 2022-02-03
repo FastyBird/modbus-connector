@@ -47,6 +47,36 @@ class Instrument:
         functioncode: int = 3,
     ) -> List[int]: ...
 
+    def read_bit(
+        self,
+        registeraddress: int,
+        functioncode: int = 2,
+    ) -> int: ...
+
+    def read_float(
+        self,
+        registeraddress: int,
+        functioncode: int = 3,
+        number_of_registers: int = 2,
+        byteorder: int = BYTEORDER_BIG,
+    ) -> float: ...
+
+    def read_long(
+        self,
+        registeraddress: int,
+        functioncode: int = 3,
+        signed: bool = False,
+        byteorder: int = BYTEORDER_BIG,
+    ) -> int: ...
+
+    def read_register(
+        self,
+        registeraddress: int,
+        number_of_decimals: int = 0,
+        functioncode: int = 3,
+        signed: bool = False,
+    ) -> Union[int, float]: ...
+
 class ModbusException(IOError): ...
 
 class MasterReportedException(ModbusException): ...

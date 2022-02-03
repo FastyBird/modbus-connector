@@ -65,6 +65,7 @@ setup(
         "fastybird-metadata",
         "inflection",
         "kink",
+        "pyserial",
         "setuptools",
         "whistle",
         "zeroconf",
