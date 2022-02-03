@@ -75,7 +75,7 @@ class ModbusCommand(Enum):
     @author         Adam Kadlec <adam.kadlec@fastybird.com>
     """
 
-    READ_COILS: int = 0x01
+    READ_COIL: int = 0x01
     READ_DISCRETE: int = 0x02
     READ_HOLDING: int = 0x03
     READ_INPUT: int = 0x04

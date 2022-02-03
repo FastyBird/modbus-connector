@@ -31,14 +31,14 @@ interface IModbusConnector extends DevicesModuleEntities\Connectors\IConnector
 	/**
 	 * @return string|null
 	 */
-	public function getSerialInterface(): ?string;
+	public function getInterface(): ?string;
 
 	/**
-	 * @param string $serialInterface
+	 * @param string $interface
 	 *
 	 * @return void
 	 */
-	public function setSerialInterface(string $serialInterface): void;
+	public function setInterface(string $interface): void;
 
 	/**
 	 * @return int|null

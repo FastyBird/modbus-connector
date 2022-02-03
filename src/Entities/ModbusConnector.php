@@ -31,7 +31,7 @@ class ModbusConnector extends DevicesModuleEntities\Connectors\Connector impleme
 	 * @var string|null
 	 * @IPubDoctrine\Crud(is="writable")
 	 */
-	protected ?string $serialInterface = null;
+	protected ?string $interface = null;
 
 	/**
 	 * @var int|null
@@ -58,36 +58,29 @@ class ModbusConnector extends DevicesModuleEntities\Connectors\Connector impleme
 	/**
 	 * {@inheritDoc}
 	 */
-	public function toArray(): array
+	public function getInterface(): string
 	{
-		return array_merge(parent::toArray(), [
-			'serial_interface' => $this->getSerialInterface(),
-			'baud_rate'        => $this->getBaudRate(),
-		]);
+		$interface = $this->getParam('interface', '/dev/ttyAMA0');
+
+		return $interface ?? '/dev/ttyAMA0';
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public function getSerialInterface(): ?string
+	public function setinterface(?string $interface): void
 	{
-		return $this->getParam('serial_interface');
+		$this->setParam('interface', $interface);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public function setSerialInterface(string $serialInterface): void
+	public function getBaudRate(): int
 	{
-		$this->setParam('serial_interface', $serialInterface);
-	}
+		$baudRate = $this->getParam('baud_rate', 9600);
 
-	/**
-	 * {@inheritDoc}
-	 */
-	public function getBaudRate(): ?int
-	{
-		return $this->getParam('baud_rate');
+		return $baudRate === null ? 9600 : intval($baudRate);
 	}
 
 	/**
@@ -96,6 +89,17 @@ class ModbusConnector extends DevicesModuleEntities\Connectors\Connector impleme
 	public function setBaudRate(?int $baudRate): void
 	{
 		$this->setParam('baud_rate', $baudRate);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function toArray(): array
+	{
+		return array_merge(parent::toArray(), [
+			'interface' => $this->getInterface(),
+			'baud_rate' => $this->getBaudRate(),
+		]);
 	}
 
 }

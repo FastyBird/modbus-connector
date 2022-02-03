@@ -224,23 +224,6 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
             )
 
             if 0 < len(registers) != processed_length:
-                # Try to read all registers of one type at once
-                if self.__is_all_registers_readable(registers=registers):
-                    reading_result = self.__read_multiple_registers(
-                        device=device,
-                        device_address=device_address,
-                        registers_type=registers_type,
-                        registers_count=len(registers),
-                    )
-
-                    if reading_result:
-                        for register in registers:
-                            self.__processed_devices_registers[device.id.__str__()][registers_type.value].add(
-                                register.id.__str__(),
-                            )
-
-                    return reading_result
-
                 # Registers have to be read one by one
                 for register in registers:
                     if (
@@ -476,7 +459,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
         try:
             if register_type in (RegisterType.DISCRETE, RegisterType.COIL):
                 function_code = (
-                    ModbusCommand.READ_DISCRETE if register_type == RegisterType.DISCRETE else ModbusCommand.READ_COILS
+                    ModbusCommand.READ_DISCRETE if register_type == RegisterType.DISCRETE else ModbusCommand.READ_COIL
                 )
 
                 read_bit_result = self.__instrument.read_bit(
@@ -575,92 +558,6 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
 
     # -----------------------------------------------------------------------------
 
-    def __read_multiple_registers(
-        self,
-        device: DeviceRecord,
-        device_address: int,
-        registers_type: RegisterType,
-        registers_count: int,
-    ) -> bool:
-        start_address = 0
-
-        self.__instrument.address = device_address
-
-        try:
-            if registers_type in (RegisterType.DISCRETE, RegisterType.COIL):
-                function_code = (
-                    ModbusCommand.READ_DISCRETE if registers_type == RegisterType.DISCRETE else ModbusCommand.READ_COILS
-                )
-
-                read_bits_result = self.__instrument.read_bits(
-                    registeraddress=start_address,
-                    number_of_bits=registers_count,
-                    functioncode=function_code.value,
-                )
-
-                self.__write_registers_received_values(
-                    device=device,
-                    registers_type=registers_type,
-                    start_address=start_address,
-                    values=read_bits_result,
-                )
-
-            elif registers_type in (RegisterType.INPUT, RegisterType.HOLDING):
-                function_code = (
-                    ModbusCommand.READ_INPUT if registers_type == RegisterType.INPUT else ModbusCommand.READ_HOLDING
-                )
-
-                read_registers_result = self.__instrument.read_registers(
-                    registeraddress=start_address,
-                    number_of_registers=registers_count,
-                    functioncode=function_code.value,
-                )
-
-                self.__write_registers_received_values(
-                    device=device,
-                    registers_type=registers_type,
-                    start_address=start_address,
-                    values=read_registers_result,
-                )
-
-            else:
-                self.__logger.error(
-                    "Trying to read from unsupported register",
-                    extra={
-                        "device": {
-                            "id": device.id.__str__(),
-                        },
-                    },
-                )
-
-                return False
-
-        except minimalmodbus.ModbusException as ex:
-            self.__logger.error(
-                "Something went wrong and registers values cannot be read.",
-                extra={
-                    "device": {
-                        "id": device.id.__str__(),
-                    },
-                    "exception": {
-                        "message": str(ex),
-                        "code": type(ex).__name__,
-                    },
-                },
-            )
-
-            # Update communication timestamp
-            self.__devices_registry.set_read_packet_timestamp(device=device, success=False)
-
-            return False
-
-        # Update communication timestamp
-        self.__devices_registry.set_read_packet_timestamp(device=device)
-
-        return True
-
-    # -----------------------------------------------------------------------------
-
     def __write_register_received_value(
         self,
         device: DeviceRecord,
@@ -704,13 +601,3 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
             )
 
             register_address += 1
-
-    # -----------------------------------------------------------------------------
-
-    @staticmethod
-    def __is_all_registers_readable(registers: List[RegisterRecord]) -> bool:
-        for register in registers:
-            if register.data_type in (DataType.FLOAT, DataType.INT, DataType.UINT):
-                return False
-
-        return True

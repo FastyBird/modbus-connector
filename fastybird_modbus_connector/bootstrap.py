@@ -54,14 +54,6 @@ def create_connector(
     else:
         connector_logger = logger
 
-    connector_settings = {
-        **{
-            "baud_rate": 9600,
-            "interface": "/dev/ttyAMA0",
-        },
-        **connector.params,
-    }
-
     di[EventDispatcher] = EventDispatcher()
     di["modbus-connector_events-dispatcher"] = di[EventDispatcher]
 
@@ -78,8 +70,8 @@ def create_connector(
 
     # Connector clients
     di[SerialClient] = SerialClient(
-        baud_rate=int(str(connector_settings.get("baud_rate"))),
-        interface=str(connector_settings.get("interface")),
+        baud_rate=connector.baud_rate,
+        interface=connector.interface,
         devices_registry=di[DevicesRegistry],
         registers_registry=di[RegistersRegistry],
     )

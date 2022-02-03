@@ -1,6 +1,6 @@
 fastnumbers>=3.2
-fastybird-devices-module>=0.28
-fastybird-metadata>=0.37
+fastybird-devices-module>=0.29
+fastybird-metadata>=0.38
 inflection>=0.5
 kink>=0.6
 minimalmodbus>=2.0

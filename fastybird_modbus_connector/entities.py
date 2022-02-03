@@ -47,37 +47,35 @@ class ModbusConnectorEntity(ConnectorEntity):
         """Connector type"""
         return CONNECTOR_NAME
 
-    # -----------------------------------------------------------------------------
-
     @property
-    def serial_interface(self) -> Optional[str]:
+    def interface(self) -> str:
         """Connector serial interface"""
         return (
-            str(self.params.get("serial_interface", None))
-            if self.params is not None and self.params.get("serial_interface") is not None
-            else None
+            str(self.params.get("interface", None))
+            if self.params is not None and self.params.get("interface") is not None
+            else "/dev/ttyAMA0"
         )
 
     # -----------------------------------------------------------------------------
 
-    @serial_interface.setter
-    def serial_interface(self, serial_interface: Optional[str]) -> None:
+    @interface.setter
+    def interface(self, interface: Optional[str]) -> None:
         """Connector serial interface setter"""
         if self.params is not None and bool(self.params) is True:
-            self.params["serial_interface"] = serial_interface
+            self.params["interface"] = interface
 
         else:
-            self.params = {"serial_interface": serial_interface}
+            self.params = {"interface": interface}
 
     # -----------------------------------------------------------------------------
 
     @property
-    def baud_rate(self) -> Optional[int]:
+    def baud_rate(self) -> int:
         """Connector communication baud rate"""
         return (
             int(str(self.params.get("baud_rate", 9600)))
             if self.params is not None and self.params.get("baud_rate", 9600) is not None
-            else None
+            else 9600
         )
 
     # -----------------------------------------------------------------------------
@@ -98,7 +96,7 @@ class ModbusConnectorEntity(ConnectorEntity):
         return {
             **super().to_dict(),
             **{
-                "serial_interface": self.serial_interface,
+                "interface": self.interface,
                 "baud_rate": self.baud_rate,
             },
         }
