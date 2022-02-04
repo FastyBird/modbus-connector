@@ -60,6 +60,13 @@ class Logger:
 
     # -----------------------------------------------------------------------------
 
+    @property
+    def level(self) -> int:
+        """Logger configured logging level"""
+        return self.__logger.level
+
+    # -----------------------------------------------------------------------------
+
     def debug(self, msg: str, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         """Log debugging message"""
         extra = self.__get_connector_extra()

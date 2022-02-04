@@ -89,7 +89,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                 port=interface,
                 slaveaddress=0,
                 mode=minimalmodbus.MODE_RTU,
-                debug=(logger.level == logging.DEBUG or logger.level == logging.NOTSET),
+                debug=(logger.level in (logging.DEBUG, logging.NOTSET)),
             )
 
         except Exception as ex:
@@ -585,24 +585,3 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                     value=value,
                 ),
             )
-
-    # -----------------------------------------------------------------------------
-
-    def __write_registers_received_values(
-        self,
-        device: DeviceRecord,
-        registers_type: RegisterType,
-        start_address: int,
-        values: List[int],
-    ) -> None:
-        register_address = start_address
-
-        for value in values:
-            self.__write_register_received_value(
-                device=device,
-                register_type=registers_type,
-                register_address=register_address,
-                value=value,
-            )
-
-            register_address += 1

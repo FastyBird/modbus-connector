@@ -22,7 +22,7 @@ Modbus connector registry module models
 import time
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union, Sequence
 
 # Library dependencies
 from fastybird_metadata.devices_module import ConnectionState
@@ -359,11 +359,11 @@ class RegistersRegistry:
 
     # -----------------------------------------------------------------------------
 
-    def get_all_for_device(self, device_id: uuid.UUID, register_type: RegisterType) -> List[RegisterRecord]:
+    def get_all_for_device(self, device_id: uuid.UUID, register_type: RegisterType) -> Sequence[RegisterRecord]:
         """Find registers in registry by device unique identifier and register type"""
         items = self.__items.copy()
 
-        return [
+        registers = [
             record
             for record in items.values()
             if device_id.__eq__(record.device_id)
@@ -374,6 +374,10 @@ class RegistersRegistry:
                 or (register_type == RegisterType.HOLDING and isinstance(record, HoldingRegister))
             )
         ]
+
+        registers.sort(key=lambda r: r.address)
+
+        return registers
 
     # -----------------------------------------------------------------------------
 
