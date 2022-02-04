@@ -22,7 +22,7 @@ Modbus connector registry module models
 import time
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Union, Sequence
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 # Library dependencies
 from fastybird_metadata.devices_module import ConnectionState
@@ -546,7 +546,7 @@ class RegistersRegistry:
     def set_actual_value(
         self,
         register: RegisterRecord,
-        value: Union[str, int, float, bool, None],
+        value: Union[str, int, float, bool, SwitchPayload, None],
     ) -> RegisterRecord:
         """Set register actual value"""
         existing_record = self.get_by_id(register_id=register.id)

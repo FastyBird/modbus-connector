@@ -67,10 +67,13 @@ class DataTransformHelpers:
             None,
         ],
         value: Union[str, int, float, bool, None],
-    ) -> Union[str, int, float, bool, None]:
+    ) -> Union[str, int, float, bool, SwitchPayload, None]:
         """Transform value received from device"""
         if value is None:
             return None
+
+        if data_type == DataType.BOOLEAN:
+            return value if isinstance(value, bool) else bool(value)
 
         if data_type == DataType.FLOAT:
             try:
@@ -123,11 +126,26 @@ class DataTransformHelpers:
 
             return int_value
 
-        if data_type == DataType.BOOLEAN:
-            return value if isinstance(value, bool) else bool(value)
-
         if data_type == DataType.STRING:
             return str(value)
+
+        if data_type == DataType.SWITCH:
+            if value_format is not None and isinstance(value_format, list):
+                filtered = [item for item in value_format if filter_enum_format(item=item, value=value)]
+
+                if isinstance(filtered, list) and len(filtered) == 1:
+                    if isinstance(filtered[0], tuple):
+                        return (
+                            SwitchPayload(str(filtered[0][0]))
+                            if SwitchPayload.has_value(str(filtered[0][0])) and str(filtered[0][1]) == str(value)
+                            else None
+                        )
+
+                    return SwitchPayload(str(filtered[0])) if SwitchPayload.has_value(str(filtered[0])) else None
+
+                return None
+
+            return SwitchPayload(str(value)) if SwitchPayload.has_value(str(value)) else None
 
         if data_type == DataType.ENUM:
             if value_format is not None and isinstance(value_format, list):
@@ -153,7 +171,7 @@ class DataTransformHelpers:
             None,
         ],
         value: Union[str, int, float, bool, datetime, ButtonPayload, SwitchPayload, None],
-    ) -> Union[int, float, None]:
+    ) -> Union[str, int, float, None]:
         """Transform value to be sent to device"""
         if value is None:
             return None
@@ -184,6 +202,28 @@ class DataTransformHelpers:
 
             except ValueError:
                 return None
+
+        if data_type == DataType.STRING:
+            return str(value)
+
+        if data_type == DataType.SWITCH:
+            if value_format is not None and isinstance(value_format, list):
+                filtered = [item for item in value_format if filter_enum_format(item=item, value=value)]
+
+                if (
+                    isinstance(filtered, list)
+                    and len(filtered) == 1
+                    and isinstance(filtered[0], tuple)
+                    and str(filtered[0][0]) == str(value)
+                ):
+                    return int(str(filtered[0][2]))
+
+                return None
+
+            if isinstance(value, SwitchPayload):
+                return 1 if value == SwitchPayload.ON else 0
+
+            return None
 
         if data_type == DataType.ENUM:
             if value_format is not None and isinstance(value_format, list):

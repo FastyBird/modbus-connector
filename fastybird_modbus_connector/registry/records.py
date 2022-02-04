@@ -196,7 +196,7 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
     __queryable: bool = False
     __settable: bool = False
 
-    __actual_value: Union[str, int, float, bool, None] = None
+    __actual_value: Union[str, int, float, bool, SwitchPayload, None] = None
     __expected_value: Union[str, int, float, bool, None] = None
     __expected_pending: Optional[float] = None
 
@@ -302,7 +302,7 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
     # -----------------------------------------------------------------------------
 
     @actual_value.setter
-    def actual_value(self, value: Union[str, int, float, bool, None]) -> None:
+    def actual_value(self, value: Union[str, int, float, bool, SwitchPayload, None]) -> None:
         """Set register actual value"""
         self.__actual_value = value
 

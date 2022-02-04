@@ -33,6 +33,13 @@ class Instrument:
         byteorder: int = BYTEORDER_BIG,
     ) -> None: ...
 
+    def write_string(
+        self,
+        registeraddress: int,
+        textstring: str,
+        number_of_registers: int = 16,
+    ) -> None: ...
+
     def read_bits(
         self,
         registeraddress: int,

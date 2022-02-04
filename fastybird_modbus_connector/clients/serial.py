@@ -357,20 +357,45 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                             value=transformed_value,
                         )
 
-                    elif transformed_value.bit_length() == 32:
+                    elif isinstance(transformed_value, int) and transformed_value.bit_length() == 32:
                         self.__instrument.write_long(
                             registeraddress=register.address,
                             value=transformed_value,
                             signed=(register.data_type in (DataType.CHAR, DataType.SHORT, DataType.INT)),
                         )
 
-                    else:
+                    elif isinstance(transformed_value, str):
+                        self.__instrument.write_string(
+                            registeraddress=register.address,
+                            textstring=transformed_value,
+                        )
+
+                    elif isinstance(transformed_value, int):
                         self.__instrument.write_register(
                             registeraddress=register.address,
                             value=transformed_value,
                             functioncode=ModbusCommand.WRITE_SINGLE_HOLDING.value,
                             signed=(register.data_type in (DataType.CHAR, DataType.SHORT, DataType.INT)),
                         )
+
+                    else:
+                        self.__logger.error(
+                            "Trying to write unsupported value",
+                            extra={
+                                "device": {
+                                    "id": device.id.__str__(),
+                                },
+                                "register": {
+                                    "id": register.id.__str__(),
+                                    "address": register.address,
+                                },
+                            },
+                        )
+
+                        # Reset expected value for register
+                        self.__registers_registry.set_expected_value(register=register, value=None)
+
+                        return False
 
                     # Update communication timestamp
                     self.__devices_registry.set_write_packet_timestamp(device=device)
@@ -381,7 +406,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                     return True
 
                 self.__logger.error(
-                    "Trying to write to unsupported register.",
+                    "Trying to write to unsupported register",
                     extra={
                         "device": {
                             "id": device.id.__str__(),
@@ -408,7 +433,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
 
             except minimalmodbus.ModbusException as ex:
                 self.__logger.error(
-                    "Something went wrong and register value can not be writen.",
+                    "Something went wrong and register value can not be writen",
                     extra={
                         "device": {
                             "id": device.id.__str__(),
@@ -539,7 +564,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
 
         except minimalmodbus.ModbusException as ex:
             self.__logger.error(
-                "Something went wrong and register value cannot be read.",
+                "Something went wrong and register value cannot be read",
                 extra={
                     "device": {
                         "id": device.id.__str__(),
