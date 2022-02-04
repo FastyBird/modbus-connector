@@ -27,6 +27,7 @@ from typing import Dict, List, Set, Union
 # Library dependencies
 import minimalmodbus
 import serial
+from fastybird_devices_module.exceptions import TerminateConnectorException
 from fastybird_metadata.devices_module import ConnectionState
 from fastybird_metadata.types import ButtonPayload, DataType, SwitchPayload
 from kink import inject
@@ -83,12 +84,16 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
         self.__devices_registry = devices_registry
         self.__registers_registry = registers_registry
 
-        self.__instrument = minimalmodbus.Instrument(
-            port=interface,
-            slaveaddress=0,
-            mode=minimalmodbus.MODE_RTU,
-            debug=True,
-        )
+        try:
+            self.__instrument = minimalmodbus.Instrument(
+                port=interface,
+                slaveaddress=0,
+                mode=minimalmodbus.MODE_RTU,
+                debug=(logger.level == logging.DEBUG or logger.level == logging.NOTSET),
+            )
+
+        except Exception as ex:
+            raise TerminateConnectorException("Serial interface couldn't be initialised") from ex
 
         self.__instrument.serial.baudrate = baud_rate
         self.__instrument.serial.bytesize = 8

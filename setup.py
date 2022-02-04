@@ -65,10 +65,10 @@ setup(
         "fastybird-metadata",
         "inflection",
         "kink",
+        "minimalmodbus",
         "pyserial",
         "setuptools",
         "whistle",
-        "zeroconf",
     ],
     download_url="https://github.com/FastyBird/modbus-connector/archive/%s.tar.gz" % VERSION,
     classifiers=[

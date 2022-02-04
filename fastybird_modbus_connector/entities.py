@@ -38,7 +38,7 @@ class ModbusConnectorEntity(ConnectorEntity):
     @author         Adam Kadlec <adam.kadlec@fastybird.com>
     """
 
-    __mapper_args__ = {"polymorphic_identity": "fastybird_modbus_connector"}
+    __mapper_args__ = {"polymorphic_identity": CONNECTOR_NAME}
 
     # -----------------------------------------------------------------------------
 
