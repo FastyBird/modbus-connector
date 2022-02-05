@@ -42,7 +42,7 @@ from fastybird_devices_module.entities.device import (
 from fastybird_devices_module.repositories.device import DevicesRepository
 from fastybird_metadata.devices_module import ConnectionState
 from fastybird_metadata.helpers import normalize_value
-from fastybird_metadata.types import ControlAction, DataType
+from fastybird_metadata.types import ControlAction, DataType, SwitchPayload
 from kink import inject
 
 # App libs
@@ -371,7 +371,18 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
             else:
                 value_to_write = data.get("expected_value", None)
 
-            if isinstance(value_to_write, (int, float, bool)) or value_to_write is None:
+            if isinstance(value_to_write, (str, int, float, bool, SwitchPayload)) or value_to_write is None:
+                if (
+                    isinstance(value_to_write, SwitchPayload)
+                    and register_record.data_type == DataType.SWITCH
+                    and value_to_write == SwitchPayload.TOGGLE
+                ):
+                    if register_record.actual_value == SwitchPayload.ON:
+                        value_to_write = SwitchPayload.OFF
+
+                    else:
+                        value_to_write = SwitchPayload.ON
+
                 self.__registers_registry.set_expected_value(register=register_record, value=value_to_write)
 
                 return

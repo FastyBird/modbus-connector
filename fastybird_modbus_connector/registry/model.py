@@ -575,7 +575,7 @@ class RegistersRegistry:
     def set_expected_value(
         self,
         register: RegisterRecord,
-        value: Union[int, float, bool, None],
+        value: Union[str, int, float, bool, SwitchPayload, None],
     ) -> RegisterRecord:
         """Set register expected value"""
         register.expected_value = value
