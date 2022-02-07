@@ -212,7 +212,7 @@ class DevicesRegistry:
             attribute_type=DeviceAttribute.STATE,
         )
 
-        if actual_state is not None and ConnectionState.has_value(actual_state.value):
+        if actual_state is not None and ConnectionState.has_value(str(actual_state.value)):
             return ConnectionState(actual_state.value)
 
         return ConnectionState.UNKNOWN
