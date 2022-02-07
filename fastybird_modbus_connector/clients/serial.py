@@ -112,7 +112,9 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                 continue
 
             if device.id.__str__() not in self.__processed_devices:
-                self.__process_device(device=device)
+                if self.__process_device(device=device):
+                    if self.__devices_registry.get_state(device=device) == ConnectionState.UNKNOWN:
+                        self.__devices_registry.set_state(device=device, state=ConnectionState.RUNNING)
 
                 self.__processed_devices.append(device.id.__str__())
 
@@ -122,7 +124,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
 
     # -----------------------------------------------------------------------------
 
-    def __process_device(self, device: DeviceRecord) -> None:
+    def __process_device(self, device: DeviceRecord) -> bool:
         """Handle client read or write message to device"""
         device_address = self.__devices_registry.get_address(device=device)
 
@@ -138,7 +140,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
 
             self.__devices_registry.disable(device=device)
 
-            return
+            return False
 
         # Maximum communication attempts was reached, device is now marked as lost
         if device.transmit_attempts >= self.__MAX_TRANSMIT_ATTEMPTS:
@@ -168,17 +170,19 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
 
             self.__devices_registry.set_state(device=device, state=ConnectionState.LOST)
 
-            return
+            return False
 
         if device.is_lost and time.time() - device.lost_timestamp < self.__LOST_DELAY:
             # Device is lost, lets wait for some time before another communication
-            return
+            return False
 
         if self.__write_register_handler(device=device, device_address=device_address):
-            return
+            return True
 
         if self.__read_registers_handler(device=device, device_address=device_address):
-            return
+            return True
+
+        return False
 
     # -----------------------------------------------------------------------------
 
@@ -284,6 +288,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
             DataType.FLOAT,
             DataType.BOOLEAN,
             DataType.ENUM,
+            DataType.SWITCH,
         ):
             self.__instrument.address = device_address
 
@@ -327,6 +332,18 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
 
                         # Update write timestamp
                         self.__registers_registry.set_expected_pending(register=register, timestamp=time.time())
+
+                        # Add little delay before reading
+                        time.sleep(0.01)
+
+                        # Fetch written value
+                        self.__read_single_register(
+                            device=device,
+                            device_address=device_address,
+                            register_type=RegisterType.COIL,
+                            register_address=register.address,
+                            register_data_type=register.data_type,
+                        )
 
                     else:
                         self.__logger.error(
@@ -402,6 +419,18 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
 
                     # Update write timestamp
                     self.__registers_registry.set_expected_pending(register=register, timestamp=time.time())
+
+                    # Add little delay before reading
+                    time.sleep(0.01)
+
+                    # Fetch written value
+                    self.__read_single_register(
+                        device=device,
+                        device_address=device_address,
+                        register_type=RegisterType.HOLDING,
+                        register_address=register.address,
+                        register_data_type=register.data_type,
+                    )
 
                     return True
 
@@ -563,6 +592,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                 return False
 
         except minimalmodbus.ModbusException as ex:
+            print(ex)
             self.__logger.error(
                 "Something went wrong and register value cannot be read",
                 extra={

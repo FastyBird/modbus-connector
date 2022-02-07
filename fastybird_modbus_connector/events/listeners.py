@@ -174,6 +174,8 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
         if channel_property is not None:
             state_data: Dict[str, Union[str, int, float, bool, datetime, ButtonPayload, SwitchPayload, None]] = {
                 "actual_value": event.updated_record.actual_value,
+                "expected_value": event.updated_record.expected_value,
+                "pending": True if event.updated_record.expected_pending is not None else False,
             }
 
             property_state = self.__channels_properties_states_repository.get_by_id(property_id=channel_property.id)

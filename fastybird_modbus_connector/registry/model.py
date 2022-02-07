@@ -205,6 +205,20 @@ class DevicesRegistry:
 
     # -----------------------------------------------------------------------------
 
+    def get_state(self, device: DeviceRecord) -> ConnectionState:
+        """Set device actual state"""
+        actual_state = self.__attributes_registry.get_by_attribute(
+            device_id=device.id,
+            attribute_type=DeviceAttribute.STATE,
+        )
+
+        if actual_state is not None and ConnectionState.has_value(actual_state.value):
+            return ConnectionState(actual_state.value)
+
+        return ConnectionState.UNKNOWN
+
+    # -----------------------------------------------------------------------------
+
     def set_write_packet_timestamp(self, device: DeviceRecord, success: bool = True) -> DeviceRecord:
         """Set packet timestamp for registers writing"""
         device.last_writing_packet_timestamp = time.time()
@@ -578,6 +592,8 @@ class RegistersRegistry:
         value: Union[str, int, float, bool, SwitchPayload, None],
     ) -> RegisterRecord:
         """Set register expected value"""
+        existing_record = self.get_by_id(register_id=register.id)
+
         register.expected_value = value
 
         self.__update(register=register)
@@ -586,6 +602,14 @@ class RegistersRegistry:
 
         if updated_register is None:
             raise InvalidStateException("Register record could not be re-fetched from registry after update")
+
+        self.__event_dispatcher.dispatch(
+            event_id=RegisterActualValueEvent.EVENT_NAME,
+            event=RegisterActualValueEvent(
+                original_record=existing_record,
+                updated_record=updated_register,
+            ),
+        )
 
         return updated_register
 

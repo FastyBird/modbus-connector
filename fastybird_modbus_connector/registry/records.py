@@ -306,7 +306,7 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
         """Set register actual value"""
         self.__actual_value = value
 
-        if value == self.expected_value:
+        if self.actual_value == self.expected_value:
             self.expected_value = None
             self.expected_pending = None
 
