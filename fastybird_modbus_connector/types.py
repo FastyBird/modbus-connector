@@ -27,6 +27,9 @@ from fastybird_metadata.enum import ExtendedEnum
 CONNECTOR_NAME: str = "modbus"
 DEVICE_NAME: str = "modbus"
 
+DEFAULT_SERIAL_INTERFACE: str = "/dev/ttyAMA0"
+DEFAULT_BAUD_RATE: int = 9600
+
 
 @unique
 class RegisterType(Enum):

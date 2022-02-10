@@ -60,7 +60,7 @@ def create_connector(
     # Registers
     di[AttributesRegistry] = AttributesRegistry(event_dispatcher=di[EventDispatcher])
     di["modbus-connector_attributes-registry"] = di[AttributesRegistry]
-    di[RegistersRegistry] = RegistersRegistry(event_dispatcher=di[EventDispatcher])
+    di[RegistersRegistry] = RegistersRegistry(event_dispatcher=di[EventDispatcher])  # type: ignore[call-arg]
     di["modbus-connector_registers-registry"] = di[RegistersRegistry]
     di[DevicesRegistry] = DevicesRegistry(
         attributes_registry=di[AttributesRegistry],

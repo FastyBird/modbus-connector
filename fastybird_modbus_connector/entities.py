@@ -31,7 +31,12 @@ from fastybird_metadata.devices_module import ConnectorPropertyName
 from fastybird_metadata.types import ConnectorSource, ModuleSource, PluginSource
 
 # Library libs
-from fastybird_modbus_connector.types import CONNECTOR_NAME, DEVICE_NAME
+from fastybird_modbus_connector.types import (
+    CONNECTOR_NAME,
+    DEFAULT_BAUD_RATE,
+    DEFAULT_SERIAL_INTERFACE,
+    DEVICE_NAME,
+)
 
 
 class ModbusConnectorEntity(ConnectorEntity):
@@ -75,7 +80,7 @@ class ModbusConnectorEntity(ConnectorEntity):
             or not isinstance(interface_property, ConnectorStaticPropertyEntity)
             or not isinstance(interface_property.value, str)
         ):
-            return "/dev/ttyAMA0"
+            return DEFAULT_SERIAL_INTERFACE
 
         return interface_property.value
 
@@ -85,7 +90,7 @@ class ModbusConnectorEntity(ConnectorEntity):
     def baud_rate(self) -> int:
         """Connector communication baud rate"""
         baud_rate_property = next(
-            iter([record for record in self.properties if record.identifier == ConnectorPropertyName.INTERFACE.value]),
+            iter([record for record in self.properties if record.identifier == ConnectorPropertyName.BAUD_RATE.value]),
             None,
         )
 
@@ -94,7 +99,7 @@ class ModbusConnectorEntity(ConnectorEntity):
             or not isinstance(baud_rate_property, ConnectorStaticPropertyEntity)
             or not isinstance(baud_rate_property.value, int)
         ):
-            return 9600
+            return DEFAULT_BAUD_RATE
 
         return baud_rate_property.value
 

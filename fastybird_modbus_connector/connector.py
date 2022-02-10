@@ -23,7 +23,7 @@ import logging
 import uuid
 from typing import Dict, List, Optional, Tuple, Union
 
-# App dependencies
+# Library dependencies
 from fastybird_devices_module.connectors.connector import IConnector
 from fastybird_devices_module.entities.channel import (
     ChannelControlEntity,
@@ -45,7 +45,7 @@ from fastybird_metadata.helpers import normalize_value
 from fastybird_metadata.types import ControlAction, DataType, SwitchPayload
 from kink import inject
 
-# App libs
+# Library libs
 from fastybird_modbus_connector.clients.client import IClient
 from fastybird_modbus_connector.entities import ModbusDeviceEntity
 from fastybird_modbus_connector.events.listeners import EventsListener

@@ -25,8 +25,12 @@ from datetime import datetime
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 # Library dependencies
+from fastybird_devices_module.repositories.state import (
+    ChannelPropertiesStatesRepository,
+)
 from fastybird_metadata.devices_module import ConnectionState
 from fastybird_metadata.types import ButtonPayload, DataType, SwitchPayload
+from kink import inject
 from whistle import EventDispatcher
 
 # Library libs
@@ -308,6 +312,7 @@ class DevicesRegistry:
         raise StopIteration
 
 
+@inject
 class RegistersRegistry:
     """
     Registers registry
@@ -324,12 +329,20 @@ class RegistersRegistry:
 
     __event_dispatcher: EventDispatcher
 
+    __channel_property_state_repository: ChannelPropertiesStatesRepository
+
     # -----------------------------------------------------------------------------
 
-    def __init__(self, event_dispatcher: EventDispatcher) -> None:
+    def __init__(
+        self,
+        event_dispatcher: EventDispatcher,
+        channel_property_state_repository: ChannelPropertiesStatesRepository,
+    ) -> None:
         self.__items = {}
 
         self.__event_dispatcher = event_dispatcher
+
+        self.__channel_property_state_repository = channel_property_state_repository
 
     # -----------------------------------------------------------------------------
 
@@ -408,12 +421,26 @@ class RegistersRegistry:
         ] = None,
     ) -> DiscreteRegister:
         """Append register record into registry"""
+        existing_register = self.get_by_id(register_id=register_id)
+
         register_record: DiscreteRegister = DiscreteRegister(
             device_id=device_id,
             register_id=register_id,
             register_address=register_address,
             register_format=register_format,
         )
+
+        if existing_register is None:
+            try:
+                stored_state = self.__channel_property_state_repository.get_by_id(property_id=register_id)
+
+                if stored_state is not None:
+                    register_record.actual_value = stored_state.actual_value
+                    register_record.expected_value = stored_state.expected_value
+                    register_record.expected_pending = stored_state.pending
+
+            except NotImplementedError:
+                pass
 
         self.__items[register_record.id.__str__()] = register_record
 
@@ -434,12 +461,26 @@ class RegistersRegistry:
         ] = None,
     ) -> CoilRegister:
         """Append register record into registry"""
+        existing_register = self.get_by_id(register_id=register_id)
+
         register_record: CoilRegister = CoilRegister(
             device_id=device_id,
             register_id=register_id,
             register_address=register_address,
             register_format=register_format,
         )
+
+        if existing_register is None:
+            try:
+                stored_state = self.__channel_property_state_repository.get_by_id(property_id=register_id)
+
+                if stored_state is not None:
+                    register_record.actual_value = stored_state.actual_value
+                    register_record.expected_value = stored_state.expected_value
+                    register_record.expected_pending = stored_state.pending
+
+            except NotImplementedError:
+                pass
 
         self.__items[register_record.id.__str__()] = register_record
 
@@ -462,6 +503,8 @@ class RegistersRegistry:
         register_number_of_decimals: Optional[int] = None,
     ) -> InputRegister:
         """Append register record into registry"""
+        existing_register = self.get_by_id(register_id=register_id)
+
         register_record: InputRegister = InputRegister(
             device_id=device_id,
             register_id=register_id,
@@ -470,6 +513,18 @@ class RegistersRegistry:
             register_format=register_format,
             register_number_of_decimals=register_number_of_decimals,
         )
+
+        if existing_register is None:
+            try:
+                stored_state = self.__channel_property_state_repository.get_by_id(property_id=register_id)
+
+                if stored_state is not None:
+                    register_record.actual_value = stored_state.actual_value
+                    register_record.expected_value = stored_state.expected_value
+                    register_record.expected_pending = stored_state.pending
+
+            except NotImplementedError:
+                pass
 
         self.__items[register_record.id.__str__()] = register_record
 
@@ -492,6 +547,8 @@ class RegistersRegistry:
         register_number_of_decimals: Optional[int] = None,
     ) -> HoldingRegister:
         """Append register record into registry"""
+        existing_register = self.get_by_id(register_id=register_id)
+
         register_record: HoldingRegister = HoldingRegister(
             device_id=device_id,
             register_id=register_id,
@@ -500,6 +557,18 @@ class RegistersRegistry:
             register_format=register_format,
             register_number_of_decimals=register_number_of_decimals,
         )
+
+        if existing_register is None:
+            try:
+                stored_state = self.__channel_property_state_repository.get_by_id(property_id=register_id)
+
+                if stored_state is not None:
+                    register_record.actual_value = stored_state.actual_value
+                    register_record.expected_value = stored_state.expected_value
+                    register_record.expected_pending = stored_state.pending
+
+            except NotImplementedError:
+                pass
 
         self.__items[register_record.id.__str__()] = register_record
 
