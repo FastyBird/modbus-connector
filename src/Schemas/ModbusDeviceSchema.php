@@ -16,8 +16,8 @@
 namespace FastyBird\ModbusConnector\Schemas;
 
 use FastyBird\DevicesModule\Schemas as DevicesModuleSchemas;
-use FastyBird\ModbusConnector\Entities;
 use FastyBird\Metadata\Types as MetadataTypes;
+use FastyBird\ModbusConnector\Entities;
 
 /**
  * Modbus connector entity schema
