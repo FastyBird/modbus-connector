@@ -19,10 +19,16 @@ Modbus connector entities module
 """
 
 # Library dependencies
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Union
 
-from fastybird_devices_module.entities.connector import ConnectorEntity
+# Library dependencies
+from fastybird_devices_module.entities.connector import (
+    ConnectorEntity,
+    ConnectorStaticPropertyEntity,
+)
 from fastybird_devices_module.entities.device import DeviceEntity
+from fastybird_metadata.devices_module import ConnectorPropertyName
+from fastybird_metadata.types import ConnectorSource, ModuleSource, PluginSource
 
 # Library libs
 from fastybird_modbus_connector.types import CONNECTOR_NAME, DEVICE_NAME
@@ -47,47 +53,50 @@ class ModbusConnectorEntity(ConnectorEntity):
         """Connector type"""
         return CONNECTOR_NAME
 
+    # -----------------------------------------------------------------------------
+
     @property
-    def interface(self) -> str:
-        """Connector serial interface"""
-        return (
-            str(self.params.get("interface", None))
-            if self.params is not None and self.params.get("interface") is not None
-            else "/dev/ttyAMA0"
-        )
+    def source(self) -> Union[ModuleSource, ConnectorSource, PluginSource]:
+        """Entity source type"""
+        return ConnectorSource.MODBUS_CONNECTOR
 
     # -----------------------------------------------------------------------------
 
-    @interface.setter
-    def interface(self, interface: Optional[str]) -> None:
-        """Connector serial interface setter"""
-        if self.params is not None and bool(self.params) is True:
-            self.params["interface"] = interface
+    @property
+    def interface(self) -> str:
+        """Connector serial interface"""
+        interface_property = next(
+            iter([record for record in self.properties if record.identifier == ConnectorPropertyName.INTERFACE.value]),
+            None,
+        )
 
-        else:
-            self.params = {"interface": interface}
+        if (
+            interface_property is None
+            or not isinstance(interface_property, ConnectorStaticPropertyEntity)
+            or not isinstance(interface_property.value, str)
+        ):
+            return "/dev/ttyAMA0"
+
+        return interface_property.value
 
     # -----------------------------------------------------------------------------
 
     @property
     def baud_rate(self) -> int:
         """Connector communication baud rate"""
-        return (
-            int(str(self.params.get("baud_rate", 9600)))
-            if self.params is not None and self.params.get("baud_rate", 9600) is not None
-            else 9600
+        baud_rate_property = next(
+            iter([record for record in self.properties if record.identifier == ConnectorPropertyName.INTERFACE.value]),
+            None,
         )
 
-    # -----------------------------------------------------------------------------
+        if (
+            baud_rate_property is None
+            or not isinstance(baud_rate_property, ConnectorStaticPropertyEntity)
+            or not isinstance(baud_rate_property.value, int)
+        ):
+            return 9600
 
-    @baud_rate.setter
-    def baud_rate(self, baud_rate: Optional[int]) -> None:
-        """Connector communication baud rate setter"""
-        if self.params is not None and bool(self.params) is True:
-            self.params["baud_rate"] = baud_rate
-
-        else:
-            self.params = {"baud_rate": baud_rate}
+        return baud_rate_property.value
 
     # -----------------------------------------------------------------------------
 
@@ -120,3 +129,10 @@ class ModbusDeviceEntity(DeviceEntity):  # pylint: disable=too-few-public-method
     def type(self) -> str:
         """Device type"""
         return DEVICE_NAME
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def source(self) -> Union[ModuleSource, ConnectorSource, PluginSource]:
+        """Entity source type"""
+        return ConnectorSource.MODBUS_CONNECTOR

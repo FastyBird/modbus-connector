@@ -17,7 +17,7 @@ namespace FastyBird\ModbusConnector\Entities;
 
 use Doctrine\ORM\Mapping as ORM;
 use FastyBird\DevicesModule\Entities as DevicesModuleEntities;
-use IPub\DoctrineCrud\Mapping\Annotation as IPubDoctrine;
+use FastyBird\Metadata\Types as MetadataTypes;
 
 /**
  * @ORM\Entity
@@ -28,23 +28,58 @@ class ModbusConnector extends DevicesModuleEntities\Connectors\Connector impleme
 	public const CONNECTOR_TYPE = 'modbus';
 
 	/**
-	 * @var string|null
-	 * @IPubDoctrine\Crud(is="writable")
-	 */
-	protected ?string $interface = null;
-
-	/**
-	 * @var int|null
-	 * @IPubDoctrine\Crud(is="writable")
-	 */
-	protected ?int $baudRate = null;
-
-	/**
 	 * {@inheritDoc}
 	 */
 	public function getType(): string
 	{
 		return self::CONNECTOR_TYPE;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getInterface(): string
+	{
+		$property = $this->findProperty(MetadataTypes\ConnectorPropertyNameType::NAME_INTERFACE);
+
+		if (
+			$property === null
+			|| !$property instanceof DevicesModuleEntities\Connectors\Properties\IStaticProperty
+			|| !is_string($property->getValue())
+		) {
+			return '/dev/ttyAMA0';
+		}
+
+		return $property->getValue();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getBaudRate(): int
+	{
+		$property = $this->findProperty(MetadataTypes\ConnectorPropertyNameType::NAME_BAUD_RATE);
+
+		if (
+			$property === null
+			|| !$property instanceof DevicesModuleEntities\Connectors\Properties\IStaticProperty
+			|| !is_int($property->getValue())
+		) {
+			return 9600;
+		}
+
+		return $property->getValue();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function toArray(): array
+	{
+		return array_merge(parent::toArray(), [
+			'interface' => $this->getInterface(),
+			'baud_rate' => $this->getBaudRate(),
+		]);
 	}
 
 	/**
@@ -58,48 +93,9 @@ class ModbusConnector extends DevicesModuleEntities\Connectors\Connector impleme
 	/**
 	 * {@inheritDoc}
 	 */
-	public function getInterface(): string
+	public function getSource()
 	{
-		$interface = $this->getParam('interface', '/dev/ttyAMA0');
-
-		return $interface ?? '/dev/ttyAMA0';
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public function setinterface(?string $interface): void
-	{
-		$this->setParam('interface', $interface);
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public function getBaudRate(): int
-	{
-		$baudRate = $this->getParam('baud_rate', 9600);
-
-		return $baudRate === null ? 9600 : intval($baudRate);
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public function setBaudRate(?int $baudRate): void
-	{
-		$this->setParam('baud_rate', $baudRate);
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public function toArray(): array
-	{
-		return array_merge(parent::toArray(), [
-			'interface' => $this->getInterface(),
-			'baud_rate' => $this->getBaudRate(),
-		]);
+		return MetadataTypes\ConnectorSourceType::get(MetadataTypes\ConnectorSourceType::SOURCE_CONNECTOR_MODBUS);
 	}
 
 }

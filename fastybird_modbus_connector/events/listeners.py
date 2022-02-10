@@ -21,14 +21,16 @@ Modbus connector events module listeners
 # Python base dependencies
 import logging
 from datetime import datetime
-from typing import Dict, Optional, Union
+from typing import Dict, Union
 
 # Library dependencies
 from fastybird_devices_module.managers.device import DevicePropertiesManager
-from fastybird_devices_module.managers.state import IChannelPropertiesStatesManager
-from fastybird_devices_module.repositories.channel import ChannelsPropertiesRepository
-from fastybird_devices_module.repositories.device import DevicesPropertiesRepository
-from fastybird_devices_module.repositories.state import IChannelPropertyStateRepository
+from fastybird_devices_module.managers.state import ChannelPropertiesStatesManager
+from fastybird_devices_module.repositories.channel import ChannelPropertiesRepository
+from fastybird_devices_module.repositories.device import DevicePropertiesRepository
+from fastybird_devices_module.repositories.state import (
+    ChannelPropertiesStatesRepository,
+)
 from fastybird_metadata.types import ButtonPayload, SwitchPayload
 from kink import inject
 from whistle import Event, EventDispatcher
@@ -41,12 +43,7 @@ from fastybird_modbus_connector.events.events import (
 from fastybird_modbus_connector.logger import Logger
 
 
-@inject(
-    bind={
-        "channels_properties_states_repository": IChannelPropertyStateRepository,
-        "channels_properties_states_manager": IChannelPropertiesStatesManager,
-    }
-)
+@inject
 class EventsListener:  # pylint: disable=too-many-instance-attributes
     """
     Events listener
@@ -57,12 +54,12 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
     @author         Adam Kadlec <adam.kadlec@fastybird.com>
     """
 
-    __devices_properties_repository: DevicesPropertiesRepository
+    __devices_properties_repository: DevicePropertiesRepository
     __devices_properties_manager: DevicePropertiesManager
 
-    __channels_properties_repository: ChannelsPropertiesRepository
-    __channels_properties_states_repository: Optional[IChannelPropertyStateRepository] = None
-    __channels_properties_states_manager: Optional[IChannelPropertiesStatesManager] = None
+    __channels_properties_repository: ChannelPropertiesRepository
+    __channels_properties_states_repository: ChannelPropertiesStatesRepository
+    __channels_properties_states_manager: ChannelPropertiesStatesManager
 
     __event_dispatcher: EventDispatcher
 
@@ -72,12 +69,12 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
-        devices_properties_repository: DevicesPropertiesRepository,
+        devices_properties_repository: DevicePropertiesRepository,
         devices_properties_manager: DevicePropertiesManager,
-        channels_properties_repository: ChannelsPropertiesRepository,
+        channels_properties_repository: ChannelPropertiesRepository,
         event_dispatcher: EventDispatcher,
-        channels_properties_states_repository: Optional[IChannelPropertyStateRepository] = None,
-        channels_properties_states_manager: Optional[IChannelPropertiesStatesManager] = None,
+        channels_properties_states_repository: ChannelPropertiesStatesRepository,
+        channels_properties_states_manager: ChannelPropertiesStatesManager,
         logger: Union[Logger, logging.Logger] = logging.getLogger("dummy"),
     ) -> None:
         self.__devices_properties_repository = devices_properties_repository
@@ -166,25 +163,34 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
         if not isinstance(event, RegisterActualValueEvent):
             return
 
-        if self.__channels_properties_states_repository is None or self.__channels_properties_states_manager is None:
-            return
-
         channel_property = self.__channels_properties_repository.get_by_id(property_id=event.updated_record.id)
 
         if channel_property is not None:
             state_data: Dict[str, Union[str, int, float, bool, datetime, ButtonPayload, SwitchPayload, None]] = {
                 "actual_value": event.updated_record.actual_value,
                 "expected_value": event.updated_record.expected_value,
-                "pending": event.updated_record.expected_pending is not None
+                "pending": event.updated_record.expected_pending is not None,
             }
 
-            property_state = self.__channels_properties_states_repository.get_by_id(property_id=channel_property.id)
+            try:
+                property_state = self.__channels_properties_states_repository.get_by_id(property_id=channel_property.id)
+
+            except NotImplementedError:
+                self.__logger.warning("States repository is not configured. State could not be fetched")
+
+                return
 
             if property_state is None:
-                property_state = self.__channels_properties_states_manager.create(
-                    channel_property=channel_property,
-                    data=state_data,
-                )
+                try:
+                    property_state = self.__channels_properties_states_manager.create(
+                        channel_property=channel_property,
+                        data=state_data,
+                    )
+
+                except NotImplementedError:
+                    self.__logger.warning("States manager is not configured. State could not be saved")
+
+                    return
 
                 self.__logger.debug(
                     "Creating new channel property state",
@@ -208,11 +214,17 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
                 )
 
             else:
-                property_state = self.__channels_properties_states_manager.update(
-                    channel_property=channel_property,
-                    state=property_state,
-                    data=state_data,
-                )
+                try:
+                    property_state = self.__channels_properties_states_manager.update(
+                        channel_property=channel_property,
+                        state=property_state,
+                        data=state_data,
+                    )
+
+                except NotImplementedError:
+                    self.__logger.warning("States manager is not configured. State could not be saved")
+
+                    return
 
                 self.__logger.debug(
                     "Updating existing channel property state",

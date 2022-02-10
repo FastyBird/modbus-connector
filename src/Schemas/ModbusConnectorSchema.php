@@ -17,6 +17,7 @@ namespace FastyBird\ModbusConnector\Schemas;
 
 use FastyBird\DevicesModule\Schemas as DevicesModuleSchemas;
 use FastyBird\ModbusConnector\Entities;
+use FastyBird\Metadata\Types as MetadataTypes;
 use Neomerx\JsonApi;
 
 /**
@@ -35,7 +36,7 @@ final class ModbusConnectorSchema extends DevicesModuleSchemas\Connectors\Connec
 	/**
 	 * Define entity schema type string
 	 */
-	public const SCHEMA_TYPE = 'devices-module/connector-modbus';
+	public const SCHEMA_TYPE = MetadataTypes\ConnectorSourceType::SOURCE_CONNECTOR_MODBUS . '/connector/' . Entities\ModbusConnector::CONNECTOR_TYPE;
 
 	/**
 	 * {@inheritDoc}

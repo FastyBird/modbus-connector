@@ -310,6 +310,9 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
             self.expected_value = None
             self.expected_pending = None
 
+        if self.expected_value is None:
+            self.expected_pending = None
+
     # -----------------------------------------------------------------------------
 
     @property
@@ -323,9 +326,7 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
     def expected_value(self, value: Union[str, int, float, bool, None]) -> None:
         """Set register expected value"""
         self.__expected_value = value
-
-        if value is not None:
-            self.expected_pending = None
+        self.expected_pending = None
 
     # -----------------------------------------------------------------------------
 

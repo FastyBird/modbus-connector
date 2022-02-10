@@ -34,22 +34,8 @@ interface IModbusConnector extends DevicesModuleEntities\Connectors\IConnector
 	public function getInterface(): ?string;
 
 	/**
-	 * @param string $interface
-	 *
-	 * @return void
-	 */
-	public function setInterface(string $interface): void;
-
-	/**
 	 * @return int|null
 	 */
 	public function getBaudRate(): ?int;
-
-	/**
-	 * @param int|null $baudRate
-	 *
-	 * @return void
-	 */
-	public function setBaudRate(?int $baudRate): void;
 
 }

@@ -17,6 +17,7 @@ namespace FastyBird\ModbusConnector\Entities;
 
 use Doctrine\ORM\Mapping as ORM;
 use FastyBird\DevicesModule\Entities as DevicesModuleEntities;
+use FastyBird\Metadata\Types as MetadataTypes;
 
 /**
  * @ORM\Entity
@@ -40,6 +41,14 @@ class ModbusDevice extends DevicesModuleEntities\Devices\Device implements IModb
 	public function getDiscriminatorName(): string
 	{
 		return self::DEVICE_TYPE;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getSource()
+	{
+		return MetadataTypes\ConnectorSourceType::get(MetadataTypes\ConnectorSourceType::SOURCE_CONNECTOR_MODBUS);
 	}
 
 }

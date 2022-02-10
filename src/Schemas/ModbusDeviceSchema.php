@@ -17,6 +17,7 @@ namespace FastyBird\ModbusConnector\Schemas;
 
 use FastyBird\DevicesModule\Schemas as DevicesModuleSchemas;
 use FastyBird\ModbusConnector\Entities;
+use FastyBird\Metadata\Types as MetadataTypes;
 
 /**
  * Modbus connector entity schema
@@ -34,7 +35,7 @@ final class ModbusDeviceSchema extends DevicesModuleSchemas\Devices\DeviceSchema
 	/**
 	 * Define entity schema type string
 	 */
-	public const SCHEMA_TYPE = 'devices-module/device-modbus';
+	public const SCHEMA_TYPE = MetadataTypes\ConnectorSourceType::SOURCE_CONNECTOR_MODBUS . '/device/' . Entities\ModbusDevice::DEVICE_TYPE;
 
 	/**
 	 * {@inheritDoc}
