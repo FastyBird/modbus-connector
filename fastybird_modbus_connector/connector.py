@@ -114,7 +114,8 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
     # -----------------------------------------------------------------------------
 
-    def id(self) -> uuid.UUID:
+    @property
+    def id(self) -> uuid.UUID:  # pylint: disable=invalid-name
         """Connector identifier"""
         return self.__connector_id
 
