@@ -119,8 +119,8 @@ class DeviceAttribute(ExtendedEnum):
     @author         Adam Kadlec <adam.kadlec@fastybird.com>
     """
 
-    STATE: str = DevicePropertyName.STATE
-    ADDRESS: str = DevicePropertyName.ADDRESS
+    STATE: str = DevicePropertyName.STATE.value
+    ADDRESS: str = DevicePropertyName.ADDRESS.value
     BYTE_SIZE: str = "byte_size"
     PARITY: str = "parity"
     STOP_BITS: str = "stop_bits"
