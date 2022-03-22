@@ -37,7 +37,6 @@ from fastybird_devices_module.entities.device import (
     DeviceControlEntity,
     DeviceEntity,
     DevicePropertyEntity,
-    DeviceStaticPropertyEntity,
 )
 from fastybird_devices_module.repositories.device import DevicesRepository
 from fastybird_metadata.devices_module import ConnectionState
@@ -138,10 +137,10 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
         )
 
         for device_property in device.properties:
-            self.initialize_device_property(device_property=device_property)
+            self.initialize_device_property(device=device, device_property=device_property)
 
         for channel in device.channels:
-            self.initialize_device_channel(channel=channel)
+            self.initialize_device_channel(device=device, channel=channel)
 
         if device.enabled:
             self.__devices_registry.enable(device=device_record)
@@ -160,11 +159,8 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
     # -----------------------------------------------------------------------------
 
-    def initialize_device_property(self, device_property: DevicePropertyEntity) -> None:
+    def initialize_device_property(self, device: DeviceEntity, device_property: DevicePropertyEntity) -> None:
         """Initialize device property in connector registry"""
-        if not isinstance(device_property, DeviceStaticPropertyEntity):
-            return
-
         if not DeviceAttribute.has_value(device_property.identifier):
             return
 
@@ -180,7 +176,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
     # -----------------------------------------------------------------------------
 
-    def remove_device_property(self, property_id: uuid.UUID) -> None:
+    def remove_device_property(self, device: DeviceEntity, property_id: uuid.UUID) -> None:
         """Remove device from connector registry"""
         self.__attributes_registry.remove(attribute_id=property_id)
 
@@ -192,9 +188,8 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
     # -----------------------------------------------------------------------------
 
-    def initialize_device_channel(self, channel: ChannelEntity) -> None:
+    def initialize_device_channel(self, device: DeviceEntity, channel: ChannelEntity) -> None:
         """Initialize device channel aka registers group in connector registry"""
-        register_id: Optional[uuid.UUID] = None
         register_address: Optional[int] = None
         register_data_type: Optional[DataType] = None
         register_settable: bool = False
@@ -217,13 +212,12 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
             if channel_property.identifier == RegisterAttribute.VALUE.value and isinstance(
                 channel_property, ChannelDynamicPropertyEntity
             ):
-                register_id = channel_property.id
                 register_data_type = channel_property.data_type
                 register_settable = channel_property.settable
                 register_format = channel_property.format
                 register_number_of_decimals = channel_property.number_of_decimals
 
-        if register_id is None or register_address is None or register_data_type is None:
+        if register_address is None or register_data_type is None:
             self.__logger.warning(
                 "Channel does not have expected properties and can't be mapped to register",
                 extra={
@@ -242,7 +236,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
             if register_data_type == DataType.BOOLEAN:
                 self.__registers_registry.append_coil(
                     device_id=channel.device.id,
-                    register_id=register_id,
+                    register_id=channel.id,
                     register_address=register_address,
                     register_format=register_format,
                 )
@@ -250,7 +244,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
             else:
                 self.__registers_registry.append_holding(
                     device_id=channel.device.id,
-                    register_id=register_id,
+                    register_id=channel.id,
                     register_address=register_address,
                     register_data_type=register_data_type,
                     register_format=register_format,
@@ -261,7 +255,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
             if register_data_type == DataType.BOOLEAN:
                 self.__registers_registry.append_discrete(
                     device_id=channel.device.id,
-                    register_id=register_id,
+                    register_id=channel.id,
                     register_address=register_address,
                     register_format=register_format,
                 )
@@ -269,7 +263,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
             else:
                 self.__registers_registry.append_input(
                     device_id=channel.device.id,
-                    register_id=register_id,
+                    register_id=channel.id,
                     register_address=register_address,
                     register_data_type=register_data_type,
                     register_format=register_format,
@@ -278,7 +272,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
     # -----------------------------------------------------------------------------
 
-    def remove_device_channel(self, channel_id: uuid.UUID) -> None:
+    def remove_device_channel(self, device: DeviceEntity, channel_id: uuid.UUID) -> None:
         """Remove device channel from connector registry"""
         self.__registers_registry.remove(register_id=channel_id)
 
@@ -290,13 +284,21 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
     # -----------------------------------------------------------------------------
 
-    def initialize_device_channel_property(self, channel_property: ChannelPropertyEntity) -> None:
+    def initialize_device_channel_property(
+        self,
+        channel: ChannelEntity,
+        channel_property: ChannelPropertyEntity,
+    ) -> None:
         """Initialize device channel property aka input or output register in connector registry"""
+        self.initialize_device_channel(device=channel.device, channel=channel)
 
     # -----------------------------------------------------------------------------
 
-    def remove_device_channel_property(self, property_id: uuid.UUID) -> None:
+    def remove_device_channel_property(self, channel: ChannelEntity, property_id: uuid.UUID) -> None:
         """Remove device channel property from connector registry"""
+        self.__registers_registry.remove(register_id=channel.id)
+
+        self.initialize_device_channel(device=channel.device, channel=channel)
 
     # -----------------------------------------------------------------------------
 
@@ -363,7 +365,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
             return
 
         if isinstance(property_item, ChannelDynamicPropertyEntity):
-            register_record = self.__registers_registry.get_by_id(register_id=property_item.id)
+            register_record = self.__registers_registry.get_by_id(register_id=property_item.channel.id)
 
             if register_record is None:
                 return

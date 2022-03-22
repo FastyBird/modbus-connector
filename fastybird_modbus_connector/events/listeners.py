@@ -24,12 +24,14 @@ from datetime import datetime
 from typing import Dict, Union
 
 # Library dependencies
+from fastybird_devices_module.entities.device import DeviceDynamicPropertyEntity, DeviceStaticPropertyEntity
 from fastybird_devices_module.managers.device import DevicePropertiesManager
-from fastybird_devices_module.managers.state import ChannelPropertiesStatesManager
+from fastybird_devices_module.managers.state import ChannelPropertiesStatesManager, DevicePropertiesStatesManager
 from fastybird_devices_module.repositories.channel import ChannelPropertiesRepository
 from fastybird_devices_module.repositories.device import DevicePropertiesRepository
 from fastybird_devices_module.repositories.state import (
     ChannelPropertiesStatesRepository,
+    DevicePropertiesStatesRepository,
 )
 from fastybird_metadata.types import ButtonPayload, SwitchPayload
 from kink import inject
@@ -41,6 +43,7 @@ from fastybird_modbus_connector.events.events import (
     RegisterActualValueEvent,
 )
 from fastybird_modbus_connector.logger import Logger
+from fastybird_modbus_connector.types import RegisterAttribute
 
 
 @inject
@@ -56,6 +59,8 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
 
     __devices_properties_repository: DevicePropertiesRepository
     __devices_properties_manager: DevicePropertiesManager
+    __devices_properties_states_repository: DevicePropertiesStatesRepository
+    __devices_properties_states_manager: DevicePropertiesStatesManager
 
     __channels_properties_repository: ChannelPropertiesRepository
     __channels_properties_states_repository: ChannelPropertiesStatesRepository
@@ -71,6 +76,8 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
         self,
         devices_properties_repository: DevicePropertiesRepository,
         devices_properties_manager: DevicePropertiesManager,
+        devices_properties_states_repository: DevicePropertiesStatesRepository,
+        devices_properties_states_manager: DevicePropertiesStatesManager,
         channels_properties_repository: ChannelPropertiesRepository,
         event_dispatcher: EventDispatcher,
         channels_properties_states_repository: ChannelPropertiesStatesRepository,
@@ -79,6 +86,8 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
     ) -> None:
         self.__devices_properties_repository = devices_properties_repository
         self.__devices_properties_manager = devices_properties_manager
+        self.__devices_properties_states_repository = devices_properties_states_repository
+        self.__devices_properties_states_manager = devices_properties_states_manager
 
         self.__channels_properties_repository = channels_properties_repository
         self.__channels_properties_states_repository = channels_properties_states_repository
@@ -138,24 +147,103 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
         updated_value_normalized = str(event.updated_record.value) if event.updated_record.value is not None else None
 
         if actual_value_normalized != updated_value_normalized:
-            self.__devices_properties_manager.update(
-                data={
-                    "value": event.updated_record.value,
-                },
-                device_property=device_property,
-            )
+            if isinstance(device_property, DeviceDynamicPropertyEntity):
+                try:
+                    property_state = self.__devices_properties_states_repository.get_by_id(
+                        property_id=device_property.id,
+                    )
 
-            self.__logger.debug(
-                "Updating existing device property",
-                extra={
-                    "device": {
-                        "id": device_property.device.id.__str__(),
+                except NotImplementedError:
+                    self.__logger.warning("States repository is not configured. State could not be fetched")
+
+                    return
+
+                state_data: Dict[str, Union[str, int, float, bool, datetime, ButtonPayload, SwitchPayload, None]] = {
+                    "actual_value": event.updated_record.value,
+                    "expected_value": None,
+                    "pending": False,
+                }
+
+                if property_state is None:
+                    try:
+                        property_state = self.__devices_properties_states_manager.create(
+                            device_property=device_property,
+                            data=state_data,
+                        )
+
+                    except NotImplementedError:
+                        self.__logger.warning("States manager is not configured. State could not be saved")
+
+                        return
+
+                    self.__logger.debug(
+                        "Creating new device property state",
+                        extra={
+                            "device": {
+                                "id": device_property.device.id.__str__(),
+                            },
+                            "property": {
+                                "id": device_property.id.__str__(),
+                            },
+                            "state": {
+                                "id": property_state.id.__str__(),
+                                "actual_value": property_state.actual_value,
+                                "expected_value": property_state.expected_value,
+                                "pending": property_state.pending,
+                            },
+                        },
+                    )
+
+                else:
+                    try:
+                        property_state = self.__devices_properties_states_manager.update(
+                            device_property=device_property,
+                            state=property_state,
+                            data=state_data,
+                        )
+
+                    except NotImplementedError:
+                        self.__logger.warning("States manager is not configured. State could not be saved")
+
+                        return
+
+                    self.__logger.debug(
+                        "Updating existing device property state",
+                        extra={
+                            "device": {
+                                "id": device_property.device.id.__str__(),
+                            },
+                            "property": {
+                                "id": device_property.id.__str__(),
+                            },
+                            "state": {
+                                "id": property_state.id.__str__(),
+                                "actual_value": property_state.actual_value,
+                                "expected_value": property_state.expected_value,
+                                "pending": property_state.pending,
+                            },
+                        },
+                    )
+
+            elif isinstance(device_property, DeviceStaticPropertyEntity):
+                self.__devices_properties_manager.update(
+                    data={
+                        "value": event.updated_record.value,
                     },
-                    "property": {
-                        "id": device_property.id.__str__(),
+                    device_property=device_property,
+                )
+
+                self.__logger.debug(
+                    "Updating existing device property",
+                    extra={
+                        "device": {
+                            "id": device_property.device.id.__str__(),
+                        },
+                        "property": {
+                            "id": device_property.id.__str__(),
+                        },
                     },
-                },
-            )
+                )
 
     # -----------------------------------------------------------------------------
 
@@ -163,7 +251,10 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
         if not isinstance(event, RegisterActualValueEvent):
             return
 
-        channel_property = self.__channels_properties_repository.get_by_id(property_id=event.updated_record.id)
+        channel_property = self.__channels_properties_repository.get_by_identifier(
+            channel_id=event.updated_record.id,
+            property_identifier=RegisterAttribute.VALUE.value,
+        )
 
         if channel_property is not None:
             state_data: Dict[str, Union[str, int, float, bool, datetime, ButtonPayload, SwitchPayload, None]] = {

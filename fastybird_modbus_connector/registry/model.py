@@ -25,6 +25,7 @@ from datetime import datetime
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 # Library dependencies
+from fastybird_devices_module.repositories.channel import ChannelPropertiesRepository
 from fastybird_devices_module.repositories.state import (
     ChannelPropertiesStatesRepository,
 )
@@ -48,7 +49,7 @@ from fastybird_modbus_connector.registry.records import (
     InputRegister,
     RegisterRecord,
 )
-from fastybird_modbus_connector.types import DeviceAttribute, RegisterType
+from fastybird_modbus_connector.types import DeviceAttribute, RegisterType, RegisterAttribute
 
 
 class DevicesRegistry:
@@ -329,6 +330,7 @@ class RegistersRegistry:
 
     __event_dispatcher: EventDispatcher
 
+    __channels_properties_repository: ChannelPropertiesRepository
     __channel_property_state_repository: ChannelPropertiesStatesRepository
 
     # -----------------------------------------------------------------------------
@@ -336,12 +338,14 @@ class RegistersRegistry:
     def __init__(
         self,
         event_dispatcher: EventDispatcher,
+        channels_properties_repository: ChannelPropertiesRepository,
         channel_property_state_repository: ChannelPropertiesStatesRepository,
     ) -> None:
         self.__items = {}
 
         self.__event_dispatcher = event_dispatcher
 
+        self.__channels_properties_repository = channels_properties_repository
         self.__channel_property_state_repository = channel_property_state_repository
 
     # -----------------------------------------------------------------------------
@@ -432,14 +436,20 @@ class RegistersRegistry:
 
         if existing_register is None:
             try:
-                stored_state = self.__channel_property_state_repository.get_by_id(property_id=register_id)
+                channel_property = self.__channels_properties_repository.get_by_identifier(
+                    channel_id=register_id,
+                    property_identifier=RegisterAttribute.VALUE.value,
+                )
 
-                if stored_state is not None:
-                    register_record.actual_value = stored_state.actual_value
-                    register_record.expected_value = stored_state.expected_value
-                    register_record.expected_pending = stored_state.pending
+                if channel_property is not None:
+                    stored_state = self.__channel_property_state_repository.get_by_id(property_id=channel_property.id)
 
-            except NotImplementedError:
+                    if stored_state is not None:
+                        register_record.actual_value = stored_state.actual_value
+                        register_record.expected_value = stored_state.expected_value
+                        register_record.expected_pending = stored_state.pending
+
+            except (NotImplementedError, AttributeError):
                 pass
 
         self.__items[register_record.id.__str__()] = register_record
@@ -472,14 +482,20 @@ class RegistersRegistry:
 
         if existing_register is None:
             try:
-                stored_state = self.__channel_property_state_repository.get_by_id(property_id=register_id)
+                channel_property = self.__channels_properties_repository.get_by_identifier(
+                    channel_id=register_id,
+                    property_identifier=RegisterAttribute.VALUE.value,
+                )
 
-                if stored_state is not None:
-                    register_record.actual_value = stored_state.actual_value
-                    register_record.expected_value = stored_state.expected_value
-                    register_record.expected_pending = stored_state.pending
+                if channel_property is not None:
+                    stored_state = self.__channel_property_state_repository.get_by_id(property_id=channel_property.id)
 
-            except NotImplementedError:
+                    if stored_state is not None:
+                        register_record.actual_value = stored_state.actual_value
+                        register_record.expected_value = stored_state.expected_value
+                        register_record.expected_pending = stored_state.pending
+
+            except (NotImplementedError, AttributeError):
                 pass
 
         self.__items[register_record.id.__str__()] = register_record
@@ -516,14 +532,20 @@ class RegistersRegistry:
 
         if existing_register is None:
             try:
-                stored_state = self.__channel_property_state_repository.get_by_id(property_id=register_id)
+                channel_property = self.__channels_properties_repository.get_by_identifier(
+                    channel_id=register_id,
+                    property_identifier=RegisterAttribute.VALUE.value,
+                )
 
-                if stored_state is not None:
-                    register_record.actual_value = stored_state.actual_value
-                    register_record.expected_value = stored_state.expected_value
-                    register_record.expected_pending = stored_state.pending
+                if channel_property is not None:
+                    stored_state = self.__channel_property_state_repository.get_by_id(property_id=channel_property.id)
 
-            except NotImplementedError:
+                    if stored_state is not None:
+                        register_record.actual_value = stored_state.actual_value
+                        register_record.expected_value = stored_state.expected_value
+                        register_record.expected_pending = stored_state.pending
+
+            except (NotImplementedError, AttributeError):
                 pass
 
         self.__items[register_record.id.__str__()] = register_record
@@ -560,14 +582,20 @@ class RegistersRegistry:
 
         if existing_register is None:
             try:
-                stored_state = self.__channel_property_state_repository.get_by_id(property_id=register_id)
+                channel_property = self.__channels_properties_repository.get_by_identifier(
+                    channel_id=register_id,
+                    property_identifier=RegisterAttribute.VALUE.value,
+                )
 
-                if stored_state is not None:
-                    register_record.actual_value = stored_state.actual_value
-                    register_record.expected_value = stored_state.expected_value
-                    register_record.expected_pending = stored_state.pending
+                if channel_property is not None:
+                    stored_state = self.__channel_property_state_repository.get_by_id(property_id=channel_property.id)
 
-            except NotImplementedError:
+                    if stored_state is not None:
+                        register_record.actual_value = stored_state.actual_value
+                        register_record.expected_value = stored_state.expected_value
+                        register_record.expected_pending = stored_state.pending
+
+            except (NotImplementedError, AttributeError):
                 pass
 
         self.__items[register_record.id.__str__()] = register_record
