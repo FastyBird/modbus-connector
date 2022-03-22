@@ -22,6 +22,7 @@ Modbus connector types
 from enum import Enum, unique
 
 # Library dependencies
+from fastybird_metadata.devices_module import DevicePropertyName
 from fastybird_metadata.enum import ExtendedEnum
 
 CONNECTOR_NAME: str = "modbus"
@@ -108,7 +109,7 @@ class ModbusCommand(Enum):
 
 
 @unique
-class DeviceAttribute(ExtendedEnum, Enum):
+class DeviceAttribute(ExtendedEnum):
     """
     Device attribute name
 
@@ -118,8 +119,8 @@ class DeviceAttribute(ExtendedEnum, Enum):
     @author         Adam Kadlec <adam.kadlec@fastybird.com>
     """
 
-    STATE: str = "state"
-    ADDRESS: str = "address"
+    STATE: str = DevicePropertyName.STATE
+    ADDRESS: str = DevicePropertyName.ADDRESS
     BYTE_SIZE: str = "byte_size"
     PARITY: str = "parity"
     STOP_BITS: str = "stop_bits"
@@ -131,7 +132,7 @@ class DeviceAttribute(ExtendedEnum, Enum):
 
 
 @unique
-class RegisterAttribute(ExtendedEnum, Enum):
+class RegisterAttribute(ExtendedEnum):
     """
     Known register attribute name
 
@@ -142,7 +143,7 @@ class RegisterAttribute(ExtendedEnum, Enum):
     """
 
     VALUE: str = "value"
-    ADDRESS: str = "addr"
+    ADDRESS: str = "address"
 
     # -----------------------------------------------------------------------------
 
