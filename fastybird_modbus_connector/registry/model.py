@@ -49,7 +49,11 @@ from fastybird_modbus_connector.registry.records import (
     InputRegister,
     RegisterRecord,
 )
-from fastybird_modbus_connector.types import DeviceAttribute, RegisterType, RegisterAttribute
+from fastybird_modbus_connector.types import (
+    DeviceAttribute,
+    RegisterAttribute,
+    RegisterType,
+)
 
 
 class DevicesRegistry:

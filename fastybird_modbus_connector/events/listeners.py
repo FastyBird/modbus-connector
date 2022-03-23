@@ -24,9 +24,15 @@ from datetime import datetime
 from typing import Dict, Union
 
 # Library dependencies
-from fastybird_devices_module.entities.device import DeviceDynamicPropertyEntity, DeviceStaticPropertyEntity
+from fastybird_devices_module.entities.device import (
+    DeviceDynamicPropertyEntity,
+    DeviceStaticPropertyEntity,
+)
 from fastybird_devices_module.managers.device import DevicePropertiesManager
-from fastybird_devices_module.managers.state import ChannelPropertiesStatesManager, DevicePropertiesStatesManager
+from fastybird_devices_module.managers.state import (
+    ChannelPropertiesStatesManager,
+    DevicePropertiesStatesManager,
+)
 from fastybird_devices_module.repositories.channel import ChannelPropertiesRepository
 from fastybird_devices_module.repositories.device import DevicePropertiesRepository
 from fastybird_devices_module.repositories.state import (
