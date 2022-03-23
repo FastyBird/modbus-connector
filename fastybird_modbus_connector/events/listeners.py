@@ -223,7 +223,9 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
 
         elif isinstance(device_property, DeviceStaticPropertyEntity):
             actual_value_normalized = str(device_property.value) if device_property.value is not None else None
-            updated_value_normalized = str(event.updated_record.value) if event.updated_record.value is not None else None
+            updated_value_normalized = (
+                str(event.updated_record.value) if event.updated_record.value is not None else None
+            )
 
             if actual_value_normalized != updated_value_normalized:
                 self.__devices_properties_manager.update(

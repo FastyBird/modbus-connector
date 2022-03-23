@@ -36,7 +36,8 @@ from fastybird_devices_module.entities.connector import ConnectorControlEntity
 from fastybird_devices_module.entities.device import (
     DeviceControlEntity,
     DeviceEntity,
-    DevicePropertyEntity, DeviceDynamicPropertyEntity,
+    DevicePropertyEntity,
+    DeviceDynamicPropertyEntity,
 )
 from fastybird_devices_module.repositories.device import DevicesRepository
 from fastybird_metadata.devices_module import ConnectionState
