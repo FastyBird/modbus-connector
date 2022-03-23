@@ -190,7 +190,7 @@ class DevicesRegistry:
 
         self.__attributes_registry.set_value(attribute=actual_state, value=state.value)
 
-        if actual_state.value != state.value:
+        if actual_state.actual_value != state.value:
             # Reset pointers & counters
             device.lost_timestamp = 0
             device.transmit_attempts = 0
@@ -221,8 +221,8 @@ class DevicesRegistry:
             attribute_type=DeviceAttribute.STATE,
         )
 
-        if actual_state is not None and ConnectionState.has_value(str(actual_state.value)):
-            return ConnectionState(actual_state.value)
+        if actual_state is not None and ConnectionState.has_value(str(actual_state.actual_value)):
+            return ConnectionState(actual_state.actual_value)
 
         return ConnectionState.UNKNOWN
 
@@ -267,10 +267,10 @@ class DevicesRegistry:
             attribute_type=DeviceAttribute.ADDRESS,
         )
 
-        if actual_address is None or not isinstance(actual_address.value, int):
+        if actual_address is None or not isinstance(actual_address.actual_value, int):
             return None
 
-        return actual_address.value
+        return actual_address.actual_value
 
     # -----------------------------------------------------------------------------
 
@@ -907,7 +907,7 @@ class AttributesRegistry:
         """Set attribute value"""
         existing_record = self.get_by_id(attribute_id=attribute.id)
 
-        attribute.value = value
+        attribute.actual_value = value
 
         self.__update(attribute=attribute)
 

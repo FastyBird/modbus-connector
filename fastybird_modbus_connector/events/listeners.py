@@ -24,10 +24,15 @@ from datetime import datetime
 from typing import Dict, Union
 
 # Library dependencies
+from fastybird_devices_module.entities.channel import (
+    ChannelDynamicPropertyEntity,
+    ChannelStaticPropertyEntity,
+)
 from fastybird_devices_module.entities.device import (
     DeviceDynamicPropertyEntity,
     DeviceStaticPropertyEntity,
 )
+from fastybird_devices_module.managers.channel import ChannelPropertiesManager
 from fastybird_devices_module.managers.device import DevicePropertiesManager
 from fastybird_devices_module.managers.state import (
     ChannelPropertiesStatesManager,
@@ -69,6 +74,7 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
     __devices_properties_states_manager: DevicePropertiesStatesManager
 
     __channels_properties_repository: ChannelPropertiesRepository
+    __channels_properties_manager: ChannelPropertiesManager
     __channels_properties_states_repository: ChannelPropertiesStatesRepository
     __channels_properties_states_manager: ChannelPropertiesStatesManager
 
@@ -85,6 +91,7 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
         devices_properties_states_repository: DevicePropertiesStatesRepository,
         devices_properties_states_manager: DevicePropertiesStatesManager,
         channels_properties_repository: ChannelPropertiesRepository,
+        channels_properties_manager: ChannelPropertiesManager,
         event_dispatcher: EventDispatcher,
         channels_properties_states_repository: ChannelPropertiesStatesRepository,
         channels_properties_states_manager: ChannelPropertiesStatesManager,
@@ -96,6 +103,7 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
         self.__devices_properties_states_manager = devices_properties_states_manager
 
         self.__channels_properties_repository = channels_properties_repository
+        self.__channels_properties_manager = channels_properties_manager
         self.__channels_properties_states_repository = channels_properties_states_repository
         self.__channels_properties_states_manager = channels_properties_states_manager
 
@@ -161,7 +169,7 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
                 return
 
             state_data: Dict[str, Union[str, int, float, bool, datetime, ButtonPayload, SwitchPayload, None]] = {
-                "actual_value": event.updated_record.value,
+                "actual_value": event.updated_record.actual_value,
                 "expected_value": None,
                 "pending": False,
             }
@@ -230,13 +238,13 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
         elif isinstance(device_property, DeviceStaticPropertyEntity):
             actual_value_normalized = str(device_property.value) if device_property.value is not None else None
             updated_value_normalized = (
-                str(event.updated_record.value) if event.updated_record.value is not None else None
+                str(event.updated_record.actual_value) if event.updated_record.actual_value is not None else None
             )
 
             if actual_value_normalized != updated_value_normalized:
                 self.__devices_properties_manager.update(
                     data={
-                        "value": event.updated_record.value,
+                        "value": event.updated_record.actual_value,
                     },
                     device_property=device_property,
                 )
@@ -264,13 +272,18 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
             property_identifier=RegisterAttribute.VALUE.value,
         )
 
-        if channel_property is not None:
-            state_data: Dict[str, Union[str, int, float, bool, datetime, ButtonPayload, SwitchPayload, None]] = {
-                "actual_value": event.updated_record.actual_value,
-                "expected_value": event.updated_record.expected_value,
-                "pending": event.updated_record.expected_pending is not None,
-            }
+        if channel_property is None:
+            self.__logger.warning(
+                "Channel property couldn't be found in database",
+                extra={
+                    "device": {"id": event.updated_record.device_id.__str__()},
+                    "channel": {"id": event.updated_record.id.__str__()},
+                    "property": {"identifier": RegisterAttribute.VALUE.value},
+                },
+            )
+            return
 
+        if isinstance(channel_property, ChannelDynamicPropertyEntity):
             try:
                 property_state = self.__channels_properties_states_repository.get_by_id(property_id=channel_property.id)
 
@@ -278,6 +291,12 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
                 self.__logger.warning("States repository is not configured. State could not be fetched")
 
                 return
+
+            state_data: Dict[str, Union[str, int, float, bool, datetime, ButtonPayload, SwitchPayload, None]] = {
+                "actual_value": event.updated_record.actual_value,
+                "expected_value": event.updated_record.expected_value,
+                "pending": event.updated_record.expected_pending is not None,
+            }
 
             if property_state is None:
                 try:
@@ -342,6 +361,32 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
                             "actual_value": property_state.actual_value,
                             "expected_value": property_state.expected_value,
                             "pending": property_state.pending,
+                        },
+                    },
+                )
+
+        elif isinstance(channel_property, ChannelStaticPropertyEntity):
+            actual_value_normalized = str(channel_property.value) if channel_property.value is not None else None
+            updated_value_normalized = (
+                str(event.updated_record.actual_value) if event.updated_record.actual_value is not None else None
+            )
+
+            if actual_value_normalized != updated_value_normalized:
+                self.__channels_properties_manager.update(
+                    data={
+                        "value": event.updated_record.actual_value,
+                    },
+                    channel_property=channel_property,
+                )
+
+                self.__logger.debug(
+                    "Updating existing device property",
+                    extra={
+                        "device": {
+                            "id": channel_property.device.id.__str__(),
+                        },
+                        "property": {
+                            "id": channel_property.id.__str__(),
                         },
                     },
                 )

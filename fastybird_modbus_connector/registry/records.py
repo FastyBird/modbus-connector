@@ -563,15 +563,15 @@ class AttributeRecord:  # pylint: disable=too-many-public-methods,too-many-insta
     # -----------------------------------------------------------------------------
 
     @property
-    def value(self) -> Union[int, float, str, bool, datetime, ButtonPayload, SwitchPayload, None]:
-        """Attribute value"""
+    def actual_value(self) -> Union[int, float, str, bool, datetime, ButtonPayload, SwitchPayload, None]:
+        """Attribute actual value"""
         return self.__value
 
     # -----------------------------------------------------------------------------
 
-    @value.setter
-    def value(self, value: Union[int, float, str, bool, datetime, ButtonPayload, SwitchPayload, None]) -> None:
-        """Set attribute value"""
+    @actual_value.setter
+    def actual_value(self, value: Union[int, float, str, bool, datetime, ButtonPayload, SwitchPayload, None]) -> None:
+        """Set attribute actual value"""
         self.__value = value
 
     # -----------------------------------------------------------------------------
@@ -616,7 +616,7 @@ class AttributeRecord:  # pylint: disable=too-many-public-methods,too-many-insta
             and self.type == other.type
             and self.data_type == other.data_type
             and self.format == other.format
-            and self.value == other.value
+            and self.actual_value == other.actual_value
         )
 
     # -----------------------------------------------------------------------------
