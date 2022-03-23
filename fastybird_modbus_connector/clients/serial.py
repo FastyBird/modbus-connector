@@ -114,7 +114,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
             if device.id.__str__() not in self.__processed_devices:
                 if self.__process_device(device=device):
                     if self.__devices_registry.get_state(device=device) == ConnectionState.UNKNOWN:
-                        self.__devices_registry.set_state(device=device, state=ConnectionState.RUNNING)
+                        self.__devices_registry.set_state(device=device, state=ConnectionState.CONNECTED)
 
                 self.__processed_devices.append(device.id.__str__())
 

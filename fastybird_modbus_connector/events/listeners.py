@@ -143,89 +143,89 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
             )
             return
 
-        actual_value_normalized = str(device_property.value) if device_property.value is not None else None
-        updated_value_normalized = str(event.updated_record.value) if event.updated_record.value is not None else None
+        if isinstance(device_property, DeviceDynamicPropertyEntity):
+            try:
+                property_state = self.__devices_properties_states_repository.get_by_id(
+                    property_id=device_property.id,
+                )
 
-        if actual_value_normalized != updated_value_normalized:
-            if isinstance(device_property, DeviceDynamicPropertyEntity):
+            except NotImplementedError:
+                self.__logger.warning("States repository is not configured. State could not be fetched")
+
+                return
+
+            state_data: Dict[str, Union[str, int, float, bool, datetime, ButtonPayload, SwitchPayload, None]] = {
+                "actual_value": event.updated_record.value,
+                "expected_value": None,
+                "pending": False,
+            }
+
+            if property_state is None:
                 try:
-                    property_state = self.__devices_properties_states_repository.get_by_id(
-                        property_id=device_property.id,
+                    property_state = self.__devices_properties_states_manager.create(
+                        device_property=device_property,
+                        data=state_data,
                     )
 
                 except NotImplementedError:
-                    self.__logger.warning("States repository is not configured. State could not be fetched")
+                    self.__logger.warning("States manager is not configured. State could not be saved")
 
                     return
 
-                state_data: Dict[str, Union[str, int, float, bool, datetime, ButtonPayload, SwitchPayload, None]] = {
-                    "actual_value": event.updated_record.value,
-                    "expected_value": None,
-                    "pending": False,
-                }
-
-                if property_state is None:
-                    try:
-                        property_state = self.__devices_properties_states_manager.create(
-                            device_property=device_property,
-                            data=state_data,
-                        )
-
-                    except NotImplementedError:
-                        self.__logger.warning("States manager is not configured. State could not be saved")
-
-                        return
-
-                    self.__logger.debug(
-                        "Creating new device property state",
-                        extra={
-                            "device": {
-                                "id": device_property.device.id.__str__(),
-                            },
-                            "property": {
-                                "id": device_property.id.__str__(),
-                            },
-                            "state": {
-                                "id": property_state.id.__str__(),
-                                "actual_value": property_state.actual_value,
-                                "expected_value": property_state.expected_value,
-                                "pending": property_state.pending,
-                            },
+                self.__logger.debug(
+                    "Creating new device property state",
+                    extra={
+                        "device": {
+                            "id": device_property.device.id.__str__(),
                         },
+                        "property": {
+                            "id": device_property.id.__str__(),
+                        },
+                        "state": {
+                            "id": property_state.id.__str__(),
+                            "actual_value": property_state.actual_value,
+                            "expected_value": property_state.expected_value,
+                            "pending": property_state.pending,
+                        },
+                    },
+                )
+
+            else:
+                try:
+                    property_state = self.__devices_properties_states_manager.update(
+                        device_property=device_property,
+                        state=property_state,
+                        data=state_data,
                     )
 
-                else:
-                    try:
-                        property_state = self.__devices_properties_states_manager.update(
-                            device_property=device_property,
-                            state=property_state,
-                            data=state_data,
-                        )
+                except NotImplementedError:
+                    self.__logger.warning("States manager is not configured. State could not be saved")
 
-                    except NotImplementedError:
-                        self.__logger.warning("States manager is not configured. State could not be saved")
+                    return
 
-                        return
-
-                    self.__logger.debug(
-                        "Updating existing device property state",
-                        extra={
-                            "device": {
-                                "id": device_property.device.id.__str__(),
-                            },
-                            "property": {
-                                "id": device_property.id.__str__(),
-                            },
-                            "state": {
-                                "id": property_state.id.__str__(),
-                                "actual_value": property_state.actual_value,
-                                "expected_value": property_state.expected_value,
-                                "pending": property_state.pending,
-                            },
+                self.__logger.debug(
+                    "Updating existing device property state",
+                    extra={
+                        "device": {
+                            "id": device_property.device.id.__str__(),
                         },
-                    )
+                        "property": {
+                            "id": device_property.id.__str__(),
+                        },
+                        "state": {
+                            "id": property_state.id.__str__(),
+                            "actual_value": property_state.actual_value,
+                            "expected_value": property_state.expected_value,
+                            "pending": property_state.pending,
+                        },
+                    },
+                )
 
-            elif isinstance(device_property, DeviceStaticPropertyEntity):
+        elif isinstance(device_property, DeviceStaticPropertyEntity):
+            actual_value_normalized = str(device_property.value) if device_property.value is not None else None
+            updated_value_normalized = str(event.updated_record.value) if event.updated_record.value is not None else None
+
+            if actual_value_normalized != updated_value_normalized:
                 self.__devices_properties_manager.update(
                     data={
                         "value": event.updated_record.value,
