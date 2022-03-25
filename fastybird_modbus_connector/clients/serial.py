@@ -103,6 +103,9 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
 
         self.__logger = logger
 
+        self.__processed_devices = []
+        self.__processed_devices_registers = {}
+
     # -----------------------------------------------------------------------------
 
     def handle(self) -> None:
