@@ -33,13 +33,19 @@ from fastybird_devices_module.entities.device import (
     DeviceStaticPropertyEntity,
 )
 from fastybird_devices_module.managers.channel import ChannelPropertiesManager
-from fastybird_devices_module.managers.device import DevicePropertiesManager
+from fastybird_devices_module.managers.device import (
+    DevicePropertiesManager,
+    DevicesManager,
+)
 from fastybird_devices_module.managers.state import (
     ChannelPropertiesStatesManager,
     DevicePropertiesStatesManager,
 )
 from fastybird_devices_module.repositories.channel import ChannelPropertiesRepository
-from fastybird_devices_module.repositories.device import DevicePropertiesRepository
+from fastybird_devices_module.repositories.device import (
+    DevicePropertiesRepository,
+    DevicesRepository,
+)
 from fastybird_devices_module.repositories.state import (
     ChannelPropertiesStatesRepository,
     DevicePropertiesStatesRepository,
@@ -51,10 +57,10 @@ from whistle import Event, EventDispatcher
 # Library libs
 from fastybird_modbus_connector.events.events import (
     AttributeActualValueEvent,
+    DeviceRecordUpdatedEvent,
     RegisterActualValueEvent,
 )
 from fastybird_modbus_connector.logger import Logger
-from fastybird_modbus_connector.types import RegisterAttribute
 
 
 @inject
@@ -67,6 +73,9 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
 
     @author         Adam Kadlec <adam.kadlec@fastybird.com>
     """
+
+    __devices_repository: DevicesRepository
+    __devices_manager: DevicesManager
 
     __devices_properties_repository: DevicePropertiesRepository
     __devices_properties_manager: DevicePropertiesManager
@@ -86,6 +95,8 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
+        devices_repository: DevicesRepository,
+        devices_manager: DevicesManager,
         devices_properties_repository: DevicePropertiesRepository,
         devices_properties_manager: DevicePropertiesManager,
         devices_properties_states_repository: DevicePropertiesStatesRepository,
@@ -97,6 +108,9 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
         channels_properties_states_manager: ChannelPropertiesStatesManager,
         logger: Union[Logger, logging.Logger] = logging.getLogger("dummy"),
     ) -> None:
+        self.__devices_repository = devices_repository
+        self.__devices_manager = devices_manager
+
         self.__devices_properties_repository = devices_properties_repository
         self.__devices_properties_manager = devices_properties_manager
         self.__devices_properties_states_repository = devices_properties_states_repository
@@ -116,8 +130,13 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
     def open(self) -> None:
         """Open all listeners callbacks"""
         self.__event_dispatcher.add_listener(
-            event_id=AttributeActualValueEvent.EVENT_NAME,
+            event_id=DeviceRecordUpdatedEvent.EVENT_NAME,
             listener=self.__handle_device_updated_event,
+        )
+
+        self.__event_dispatcher.add_listener(
+            event_id=AttributeActualValueEvent.EVENT_NAME,
+            listener=self.__handle_attribute_actual_value_updated_event,
         )
 
         self.__event_dispatcher.add_listener(
@@ -130,8 +149,13 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
     def close(self) -> None:
         """Close all listeners registrations"""
         self.__event_dispatcher.remove_listener(
-            event_id=AttributeActualValueEvent.EVENT_NAME,
+            event_id=DeviceRecordUpdatedEvent.EVENT_NAME,
             listener=self.__handle_device_updated_event,
+        )
+
+        self.__event_dispatcher.remove_listener(
+            event_id=AttributeActualValueEvent.EVENT_NAME,
+            listener=self.__handle_attribute_actual_value_updated_event,
         )
 
         self.__event_dispatcher.remove_listener(
@@ -142,6 +166,30 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
     # -----------------------------------------------------------------------------
 
     def __handle_device_updated_event(self, event: Event) -> None:
+        if not isinstance(event, DeviceRecordUpdatedEvent):
+            return
+
+        device_data = {
+            "enabled": event.record.enabled,
+        }
+
+        device = self.__devices_repository.get_by_id(device_id=event.record.id)
+
+        if device is not None:
+            device = self.__devices_manager.update(data=device_data, device=device)
+
+            self.__logger.debug(
+                "Updating existing device",
+                extra={
+                    "device": {
+                        "id": device.id.__str__(),
+                    },
+                },
+            )
+
+    # -----------------------------------------------------------------------------
+
+    def __handle_attribute_actual_value_updated_event(self, event: Event) -> None:
         if not isinstance(event, AttributeActualValueEvent):
             return
 
@@ -267,18 +315,19 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
         if not isinstance(event, RegisterActualValueEvent):
             return
 
-        channel_property = self.__channels_properties_repository.get_by_identifier(
-            channel_id=event.updated_record.id,
-            property_identifier=RegisterAttribute.VALUE.value,
-        )
+        channel_property = self.__channels_properties_repository.get_by_id(property_id=event.updated_record.id)
 
         if channel_property is None:
             self.__logger.warning(
                 "Channel property couldn't be found in database",
                 extra={
                     "device": {"id": event.updated_record.device_id.__str__()},
-                    "channel": {"id": event.updated_record.id.__str__()},
-                    "property": {"identifier": RegisterAttribute.VALUE.value},
+                    "channel": {
+                        "id": event.updated_record.channel_id.__str__()
+                        if event.updated_record.channel_id is not None
+                        else None
+                    },
+                    "property": {"id": event.updated_record.id.__str__()},
                 },
             )
             return

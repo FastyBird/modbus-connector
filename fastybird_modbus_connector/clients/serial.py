@@ -34,6 +34,7 @@ from kink import inject
 
 # Library libs
 from fastybird_modbus_connector.clients.client import IClient
+from fastybird_modbus_connector.exceptions import InvalidStateException
 from fastybird_modbus_connector.logger import Logger
 from fastybird_modbus_connector.registry.model import DevicesRegistry, RegistersRegistry
 from fastybird_modbus_connector.registry.records import (
@@ -117,7 +118,22 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
             if device.id.__str__() not in self.__processed_devices:
                 if self.__process_device(device=device):
                     if self.__devices_registry.get_state(device=device) == ConnectionState.UNKNOWN:
-                        self.__devices_registry.set_state(device=device, state=ConnectionState.CONNECTED)
+                        try:
+                            self.__devices_registry.set_state(device=device, state=ConnectionState.CONNECTED)
+
+                        except InvalidStateException:
+                            self.__logger.error(
+                                "Device state could not be updated. Device is disabled and have to be updated",
+                                extra={
+                                    "device": {
+                                        "id": device.id.__str__(),
+                                    },
+                                },
+                            )
+
+                            self.__devices_registry.disable(device=device)
+
+                            continue
 
                 self.__processed_devices.append(device.id.__str__())
 
@@ -171,7 +187,20 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                     },
                 )
 
-            self.__devices_registry.set_state(device=device, state=ConnectionState.LOST)
+            try:
+                self.__devices_registry.set_state(device=device, state=ConnectionState.LOST)
+
+            except InvalidStateException:
+                self.__logger.error(
+                    "Device state could not be updated. Device is disabled and have to be updated",
+                    extra={
+                        "device": {
+                            "id": device.id.__str__(),
+                        },
+                    },
+                )
+
+                self.__devices_registry.disable(device=device)
 
             return False
 

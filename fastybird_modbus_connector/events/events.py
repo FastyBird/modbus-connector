@@ -25,7 +25,38 @@ from typing import Optional
 from whistle import Event
 
 # Library libs
-from fastybird_modbus_connector.registry.records import AttributeRecord, RegisterRecord
+from fastybird_modbus_connector.registry.records import (
+    AttributeRecord,
+    DeviceRecord,
+    RegisterRecord,
+)
+
+
+class DeviceRecordUpdatedEvent(Event):  # pylint: disable=too-few-public-methods
+    """
+    Device record was updated in registry
+
+    @package        FastyBird:ModbusConnector!
+    @module         events/events
+
+    @author         Adam Kadlec <adam.kadlec@fastybird.com>
+    """
+
+    __record: DeviceRecord
+
+    EVENT_NAME: str = "registry.deviceRecordUpdated"
+
+    # -----------------------------------------------------------------------------
+
+    def __init__(self, record: DeviceRecord) -> None:
+        self.__record = record
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def record(self) -> DeviceRecord:
+        """Created or updated device record"""
+        return self.__record
 
 
 class RegisterActualValueEvent(Event):

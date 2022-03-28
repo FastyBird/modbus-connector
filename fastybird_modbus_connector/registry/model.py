@@ -28,6 +28,7 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 from fastybird_devices_module.repositories.channel import ChannelPropertiesRepository
 from fastybird_devices_module.repositories.state import (
     ChannelPropertiesStatesRepository,
+    DevicePropertiesStatesRepository,
 )
 from fastybird_metadata.devices_module import ConnectionState
 from fastybird_metadata.types import ButtonPayload, DataType, SwitchPayload
@@ -37,6 +38,7 @@ from whistle import EventDispatcher
 # Library libs
 from fastybird_modbus_connector.events.events import (
     AttributeActualValueEvent,
+    DeviceRecordUpdatedEvent,
     RegisterActualValueEvent,
 )
 from fastybird_modbus_connector.exceptions import InvalidStateException
@@ -49,11 +51,7 @@ from fastybird_modbus_connector.registry.records import (
     InputRegister,
     RegisterRecord,
 )
-from fastybird_modbus_connector.types import (
-    DeviceAttribute,
-    RegisterAttribute,
-    RegisterType,
-)
+from fastybird_modbus_connector.types import DeviceAttribute, RegisterType
 
 
 class DevicesRegistry:
@@ -73,14 +71,19 @@ class DevicesRegistry:
     __attributes_registry: "AttributesRegistry"
     __registers_registry: "RegistersRegistry"
 
+    __event_dispatcher: EventDispatcher
+
     # -----------------------------------------------------------------------------
 
     def __init__(
         self,
+        event_dispatcher: EventDispatcher,
         attributes_registry: "AttributesRegistry",
         registers_registry: "RegistersRegistry",
     ) -> None:
         self.__items = {}
+
+        self.__event_dispatcher = event_dispatcher
 
         self.__attributes_registry = attributes_registry
         self.__registers_registry = registers_registry
@@ -150,7 +153,7 @@ class DevicesRegistry:
         """Enable device for communication"""
         device.enabled = True
 
-        self.__update(device=device)
+        self.__update(device=device, dispatch=True)
 
         updated_device = self.get_by_id(device.id)
 
@@ -165,7 +168,7 @@ class DevicesRegistry:
         """Enable device for communication"""
         device.enabled = False
 
-        self.__update(device=device)
+        self.__update(device=device, dispatch=True)
 
         updated_device = self.get_by_id(device.id)
 
@@ -274,12 +277,18 @@ class DevicesRegistry:
 
     # -----------------------------------------------------------------------------
 
-    def __update(self, device: DeviceRecord) -> bool:
+    def __update(self, device: DeviceRecord, dispatch: bool = False) -> bool:
         items = self.__items.copy()
 
         for record in items.values():
             if record.id == device.id:
                 self.__items[device.id.__str__()] = device
+
+                if dispatch:
+                    self.__event_dispatcher.dispatch(
+                        event_id=DeviceRecordUpdatedEvent.EVENT_NAME,
+                        event=DeviceRecordUpdatedEvent(record=device),
+                    )
 
                 return True
 
@@ -394,7 +403,11 @@ class RegistersRegistry:
 
     # -----------------------------------------------------------------------------
 
-    def get_all_for_device(self, device_id: uuid.UUID, register_type: RegisterType) -> Sequence[RegisterRecord]:
+    def get_all_for_device(
+        self,
+        device_id: uuid.UUID,
+        register_type: Union[RegisterType, List[RegisterType]],
+    ) -> Sequence[RegisterRecord]:
         """Find registers in registry by device unique identifier and register type"""
         items = self.__items.copy()
 
@@ -403,10 +416,24 @@ class RegistersRegistry:
             for record in items.values()
             if device_id.__eq__(record.device_id)
             and (
-                (register_type == RegisterType.DISCRETE and isinstance(record, DiscreteRegister))
-                or (register_type == RegisterType.COIL and isinstance(record, CoilRegister))
-                or (register_type == RegisterType.INPUT and isinstance(record, InputRegister))
-                or (register_type == RegisterType.HOLDING and isinstance(record, HoldingRegister))
+                (
+                    isinstance(register_type, RegisterType)
+                    and (
+                        (register_type == RegisterType.DISCRETE and isinstance(record, DiscreteRegister))
+                        or (register_type == RegisterType.COIL and isinstance(record, CoilRegister))
+                        or (register_type == RegisterType.INPUT and isinstance(record, InputRegister))
+                        or (register_type == RegisterType.HOLDING and isinstance(record, HoldingRegister))
+                    )
+                )
+                or (
+                    isinstance(register_type, list)
+                    and (
+                        (isinstance(record, DiscreteRegister) and RegisterType.DISCRETE in register_type)
+                        or (isinstance(record, CoilRegister) and RegisterType.COIL in register_type)
+                        or (isinstance(record, InputRegister) and RegisterType.INPUT in register_type)
+                        or (isinstance(record, HoldingRegister) and RegisterType.HOLDING in register_type)
+                    )
+                )
             )
         ]
 
@@ -416,7 +443,7 @@ class RegistersRegistry:
 
     # -----------------------------------------------------------------------------
 
-    def append_discrete(
+    def append_discrete(  # pylint: disable=too-many-arguments
         self,
         device_id: uuid.UUID,
         register_id: uuid.UUID,
@@ -427,6 +454,7 @@ class RegistersRegistry:
             List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
             None,
         ] = None,
+        channel_id: Optional[uuid.UUID] = None,
     ) -> DiscreteRegister:
         """Append register record into registry"""
         existing_register = self.get_by_id(register_id=register_id)
@@ -436,14 +464,12 @@ class RegistersRegistry:
             register_id=register_id,
             register_address=register_address,
             register_format=register_format,
+            channel_id=channel_id,
         )
 
         if existing_register is None:
             try:
-                channel_property = self.__channels_properties_repository.get_by_identifier(
-                    channel_id=register_id,
-                    property_identifier=RegisterAttribute.VALUE.value,
-                )
+                channel_property = self.__channels_properties_repository.get_by_id(property_id=register_id)
 
                 if channel_property is not None:
                     stored_state = self.__channel_property_state_repository.get_by_id(property_id=channel_property.id)
@@ -462,7 +488,7 @@ class RegistersRegistry:
 
     # -----------------------------------------------------------------------------
 
-    def append_coil(
+    def append_coil(  # pylint: disable=too-many-arguments
         self,
         device_id: uuid.UUID,
         register_id: uuid.UUID,
@@ -473,6 +499,7 @@ class RegistersRegistry:
             List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
             None,
         ] = None,
+        channel_id: Optional[uuid.UUID] = None,
     ) -> CoilRegister:
         """Append register record into registry"""
         existing_register = self.get_by_id(register_id=register_id)
@@ -482,14 +509,12 @@ class RegistersRegistry:
             register_id=register_id,
             register_address=register_address,
             register_format=register_format,
+            channel_id=channel_id,
         )
 
         if existing_register is None:
             try:
-                channel_property = self.__channels_properties_repository.get_by_identifier(
-                    channel_id=register_id,
-                    property_identifier=RegisterAttribute.VALUE.value,
-                )
+                channel_property = self.__channels_properties_repository.get_by_id(property_id=register_id)
 
                 if channel_property is not None:
                     stored_state = self.__channel_property_state_repository.get_by_id(property_id=channel_property.id)
@@ -521,6 +546,7 @@ class RegistersRegistry:
             None,
         ] = None,
         register_number_of_decimals: Optional[int] = None,
+        channel_id: Optional[uuid.UUID] = None,
     ) -> InputRegister:
         """Append register record into registry"""
         existing_register = self.get_by_id(register_id=register_id)
@@ -532,14 +558,12 @@ class RegistersRegistry:
             register_data_type=register_data_type,
             register_format=register_format,
             register_number_of_decimals=register_number_of_decimals,
+            channel_id=channel_id,
         )
 
         if existing_register is None:
             try:
-                channel_property = self.__channels_properties_repository.get_by_identifier(
-                    channel_id=register_id,
-                    property_identifier=RegisterAttribute.VALUE.value,
-                )
+                channel_property = self.__channels_properties_repository.get_by_id(property_id=register_id)
 
                 if channel_property is not None:
                     stored_state = self.__channel_property_state_repository.get_by_id(property_id=channel_property.id)
@@ -571,6 +595,7 @@ class RegistersRegistry:
             None,
         ] = None,
         register_number_of_decimals: Optional[int] = None,
+        channel_id: Optional[uuid.UUID] = None,
     ) -> HoldingRegister:
         """Append register record into registry"""
         existing_register = self.get_by_id(register_id=register_id)
@@ -582,14 +607,12 @@ class RegistersRegistry:
             register_data_type=register_data_type,
             register_format=register_format,
             register_number_of_decimals=register_number_of_decimals,
+            channel_id=channel_id,
         )
 
         if existing_register is None:
             try:
-                channel_property = self.__channels_properties_repository.get_by_identifier(
-                    channel_id=register_id,
-                    property_identifier=RegisterAttribute.VALUE.value,
-                )
+                channel_property = self.__channels_properties_repository.get_by_id(property_id=register_id)
 
                 if channel_property is not None:
                     stored_state = self.__channel_property_state_repository.get_by_id(property_id=channel_property.id)
@@ -774,6 +797,7 @@ class RegistersRegistry:
         raise StopIteration
 
 
+@inject
 class AttributesRegistry:
     """
     Attributes registry
@@ -788,15 +812,19 @@ class AttributesRegistry:
 
     __event_dispatcher: EventDispatcher
 
+    __device_property_state_repository: DevicePropertiesStatesRepository
+
     # -----------------------------------------------------------------------------
 
     def __init__(
         self,
         event_dispatcher: EventDispatcher,
+        device_property_state_repository: DevicePropertiesStatesRepository,
     ) -> None:
         self.__items = {}
 
         self.__event_dispatcher = event_dispatcher
+        self.__device_property_state_repository = device_property_state_repository
 
     # -----------------------------------------------------------------------------
 
@@ -849,15 +877,41 @@ class AttributesRegistry:
         device_id: uuid.UUID,
         attribute_id: uuid.UUID,
         attribute_type: DeviceAttribute,
-        attribute_value: Union[int, float, str, bool, datetime, ButtonPayload, SwitchPayload, None],
+        attribute_value: Union[int, float, str, bool, datetime, ButtonPayload, SwitchPayload, None] = None,
     ) -> AttributeRecord:
         """Append new device record"""
+        existing_attribute = self.get_by_id(attribute_id=attribute_id)
+
         attribute_record = AttributeRecord(
             device_id=device_id,
             attribute_id=attribute_id,
             attribute_type=attribute_type,
             attribute_value=attribute_value,
         )
+
+        if existing_attribute is None:
+            if attribute_value is None:
+                try:
+                    stored_state = self.__device_property_state_repository.get_by_id(property_id=attribute_id)
+
+                    if stored_state is not None:
+                        attribute_record.actual_value = stored_state.actual_value
+
+                    else:
+                        attribute_record.actual_value = None
+
+                except (NotImplementedError, AttributeError):
+                    pass
+
+            else:
+                attribute_record.actual_value = attribute_value
+
+        else:
+            if attribute_value is None:
+                attribute_record.actual_value = existing_attribute.actual_value
+
+            else:
+                attribute_record.actual_value = attribute_value
 
         self.__items[attribute_record.id.__str__()] = attribute_record
 

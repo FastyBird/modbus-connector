@@ -200,6 +200,8 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
     __expected_value: Union[str, int, float, bool, None] = None
     __expected_pending: Optional[float] = None
 
+    __channel_id: Optional[uuid.UUID]
+
     # -----------------------------------------------------------------------------
 
     def __init__(  # pylint: disable=too-many-arguments
@@ -217,6 +219,7 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
         register_queryable: bool = False,
         register_settable: bool = False,
         register_number_of_decimals: Optional[int] = None,
+        channel_id: Optional[uuid.UUID] = None,
     ) -> None:
         self.__device_id = device_id
 
@@ -228,6 +231,8 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
 
         self.__queryable = register_queryable
         self.__settable = register_settable
+
+        self.__channel_id = channel_id
 
     # -----------------------------------------------------------------------------
 
@@ -344,6 +349,13 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
 
     # -----------------------------------------------------------------------------
 
+    @property
+    def channel_id(self) -> Optional[uuid.UUID]:
+        """Device channel unique database identifier"""
+        return self.__channel_id
+
+    # -----------------------------------------------------------------------------
+
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, RegisterRecord):
             return False
@@ -374,7 +386,7 @@ class DiscreteRegister(RegisterRecord):
 
     # -----------------------------------------------------------------------------
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         device_id: uuid.UUID,
         register_id: uuid.UUID,
@@ -385,6 +397,7 @@ class DiscreteRegister(RegisterRecord):
             List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
             None,
         ] = None,
+        channel_id: Optional[uuid.UUID] = None,
     ) -> None:
         super().__init__(
             device_id=device_id,
@@ -394,6 +407,7 @@ class DiscreteRegister(RegisterRecord):
             register_format=register_format,
             register_settable=False,
             register_queryable=True,
+            channel_id=channel_id,
         )
 
 
@@ -409,7 +423,7 @@ class CoilRegister(RegisterRecord):
 
     # -----------------------------------------------------------------------------
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         device_id: uuid.UUID,
         register_id: uuid.UUID,
@@ -420,6 +434,7 @@ class CoilRegister(RegisterRecord):
             List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
             None,
         ] = None,
+        channel_id: Optional[uuid.UUID] = None,
     ) -> None:
         super().__init__(
             device_id=device_id,
@@ -429,6 +444,7 @@ class CoilRegister(RegisterRecord):
             register_format=register_format,
             register_settable=True,
             register_queryable=True,
+            channel_id=channel_id,
         )
 
 
@@ -457,6 +473,7 @@ class InputRegister(RegisterRecord):
             None,
         ] = None,
         register_number_of_decimals: Optional[int] = None,
+        channel_id: Optional[uuid.UUID] = None,
     ) -> None:
         super().__init__(
             device_id=device_id,
@@ -467,6 +484,7 @@ class InputRegister(RegisterRecord):
             register_settable=False,
             register_queryable=True,
             register_number_of_decimals=register_number_of_decimals,
+            channel_id=channel_id,
         )
 
 
@@ -495,6 +513,7 @@ class HoldingRegister(RegisterRecord):
             None,
         ] = None,
         register_number_of_decimals: Optional[int] = None,
+        channel_id: Optional[uuid.UUID] = None,
     ) -> None:
         super().__init__(
             device_id=device_id,
@@ -505,6 +524,7 @@ class HoldingRegister(RegisterRecord):
             register_settable=True,
             register_queryable=True,
             register_number_of_decimals=register_number_of_decimals,
+            channel_id=channel_id,
         )
 
 
