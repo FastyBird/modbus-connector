@@ -15,7 +15,7 @@
 #     limitations under the License.
 
 """
-FastyBird BUS connector logger module
+Modbus connector logger module
 """
 
 # Python base dependencies
