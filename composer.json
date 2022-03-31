@@ -77,6 +77,7 @@
   },
 
   "extra" : {
+    "enable-patching": false,
     "patches" : {
       "nettrine/orm" : {
         "Enable connection overides" : "patches/nettrine.orm.mangerRegistry.diff"
