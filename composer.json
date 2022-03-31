@@ -39,8 +39,8 @@
   "require" : {
     "php": ">=7.4.0|>=8.0.0",
     "cweagans/composer-patches": "^1.7",
-    "fastybird/devices-module": "^0.45",
-    "fastybird/json-api": "^0.9",
+    "fastybird/devices-module": "^0.46",
+    "fastybird/json-api": "^0.10",
     "fastybird/metadata": "^0.49"
   },
 
@@ -80,7 +80,7 @@
     "enable-patching": false,
     "patches" : {
       "nettrine/orm" : {
-        "Enable connection overides" : "patches/nettrine.orm.mangerRegistry.diff"
+        "Enable connection overrides" : "https://raw.githubusercontent.com/FastyBird/libraries-patches/master/nettrine.orm.mangerRegistry.diff"
       }
     }
   }
