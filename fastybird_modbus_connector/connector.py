@@ -36,7 +36,6 @@ from fastybird_devices_module.entities.connector import ConnectorControlEntity
 from fastybird_devices_module.entities.device import (
     DeviceControlEntity,
     DeviceDynamicPropertyEntity,
-    DeviceEntity,
     DevicePropertyEntity,
 )
 from fastybird_devices_module.repositories.device import DevicesRepository
@@ -167,7 +166,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
     # -----------------------------------------------------------------------------
 
-    def initialize_device_property(self, device: DeviceEntity, device_property: DevicePropertyEntity) -> None:
+    def initialize_device_property(self, device: ModbusDeviceEntity, device_property: DevicePropertyEntity) -> None:
         """Initialize device property in connector registry"""
         if not DeviceAttribute.has_value(device_property.identifier):
             return
@@ -192,31 +191,31 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
     # -----------------------------------------------------------------------------
 
-    def notify_device_property(self, device: DeviceEntity, device_property: DevicePropertyEntity) -> None:
+    def notify_device_property(self, device: ModbusDeviceEntity, device_property: DevicePropertyEntity) -> None:
         """Notify device property was reported to connector"""
 
     # -----------------------------------------------------------------------------
 
-    def remove_device_property(self, device: DeviceEntity, property_id: uuid.UUID) -> None:
+    def remove_device_property(self, device: ModbusDeviceEntity, property_id: uuid.UUID) -> None:
         """Remove device from connector registry"""
         self.__attributes_registry.remove(attribute_id=property_id)
 
     # -----------------------------------------------------------------------------
 
-    def reset_devices_properties(self, device: DeviceEntity) -> None:
+    def reset_devices_properties(self, device: ModbusDeviceEntity) -> None:
         """Reset devices properties registry to initial state"""
         self.__attributes_registry.reset(device_id=device.id)
 
     # -----------------------------------------------------------------------------
 
-    def initialize_device_channel(self, device: DeviceEntity, channel: ChannelEntity) -> None:
+    def initialize_device_channel(self, device: ModbusDeviceEntity, channel: ChannelEntity) -> None:
         """Initialize device channel aka registers group in connector registry"""
         for channel_property in channel.properties:
             self.initialize_device_channel_property(channel=channel, channel_property=channel_property)
 
     # -----------------------------------------------------------------------------
 
-    def remove_device_channel(self, device: DeviceEntity, channel_id: uuid.UUID) -> None:
+    def remove_device_channel(self, device: ModbusDeviceEntity, channel_id: uuid.UUID) -> None:
         """Remove device channel from connector registry"""
         registers = self.__registers_registry.get_all_for_device(
             device_id=device.id,
@@ -233,7 +232,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
     # -----------------------------------------------------------------------------
 
-    def reset_devices_channels(self, device: DeviceEntity) -> None:
+    def reset_devices_channels(self, device: ModbusDeviceEntity) -> None:
         """Reset devices channels registry to initial state"""
         self.__registers_registry.reset(device_id=device.id)
 
