@@ -1,5 +1,5 @@
 fastnumbers>=3.2
-fastybird-devices-module>=0.44
+fastybird-devices-module>=0.45
 fastybird-metadata>=0.49
 inflection>=0.5
 kink>=0.6

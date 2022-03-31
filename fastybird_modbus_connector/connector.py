@@ -192,6 +192,11 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
     # -----------------------------------------------------------------------------
 
+    def notify_device_property(self, device: DeviceEntity, device_property: DevicePropertyEntity) -> None:
+        """Notify device property was reported to connector"""
+
+    # -----------------------------------------------------------------------------
+
     def remove_device_property(self, device: DeviceEntity, property_id: uuid.UUID) -> None:
         """Remove device from connector registry"""
         self.__attributes_registry.remove(attribute_id=property_id)
@@ -286,6 +291,15 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
                         register_number_of_decimals=channel_property.number_of_decimals,
                         channel_id=channel.id,
                     )
+
+    # -----------------------------------------------------------------------------
+
+    def notify_device_channel_property(
+        self,
+        channel: ChannelEntity,
+        channel_property: ChannelPropertyEntity,
+    ) -> None:
+        """Notify device channel property was reported to connector"""
 
     # -----------------------------------------------------------------------------
 
