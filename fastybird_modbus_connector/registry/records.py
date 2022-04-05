@@ -25,8 +25,8 @@ from datetime import datetime
 from typing import List, Optional, Tuple, Union
 
 # Library dependencies
+from fastybird_devices_module.utils import normalize_value
 from fastybird_metadata.devices_module import ConnectionState
-from fastybird_metadata.helpers import normalize_value
 from fastybird_metadata.types import ButtonPayload, DataType, SwitchPayload
 
 # Library libs
@@ -192,6 +192,7 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
         List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
         None,
     ] = None
+    __invalid: Union[int, float, str, None] = None
     __number_of_decimals: Optional[int] = None
     __queryable: bool = False
     __settable: bool = False
@@ -199,6 +200,7 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
     __actual_value: Union[str, int, float, bool, SwitchPayload, None] = None
     __expected_value: Union[str, int, float, bool, None] = None
     __expected_pending: Optional[float] = None
+    __actual_value_valid: bool = False
 
     __channel_id: Optional[uuid.UUID]
 
@@ -216,6 +218,7 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
             List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
             None,
         ] = None,
+        register_invalid: Union[int, float, str, None] = None,
         register_queryable: bool = False,
         register_settable: bool = False,
         register_number_of_decimals: Optional[int] = None,
@@ -227,6 +230,7 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
         self.__address = register_address
         self.__data_type = register_data_type
         self.__format = register_format
+        self.__invalid = register_invalid
         self.__number_of_decimals = register_number_of_decimals
 
         self.__queryable = register_queryable
@@ -279,6 +283,13 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
     # -----------------------------------------------------------------------------
 
     @property
+    def invalid(self) -> Union[int, float, str, None]:
+        """Invalid value representation"""
+        return self.__invalid
+
+    # -----------------------------------------------------------------------------
+
+    @property
     def number_of_decimals(self) -> Optional[int]:
         """Number of decimals for transforming int to float"""
         return self.__number_of_decimals
@@ -302,7 +313,12 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
     @property
     def actual_value(self) -> Union[int, float, str, bool, datetime, ButtonPayload, SwitchPayload, None]:
         """Register actual value"""
-        return normalize_value(data_type=self.data_type, value=self.__actual_value, value_format=self.format)
+        return normalize_value(
+            data_type=self.data_type,
+            value=self.__actual_value,
+            value_format=self.format,
+            value_invalid=self.invalid,
+        )
 
     # -----------------------------------------------------------------------------
 
@@ -323,7 +339,12 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
     @property
     def expected_value(self) -> Union[int, float, str, bool, datetime, ButtonPayload, SwitchPayload, None]:
         """Register expected value"""
-        return normalize_value(data_type=self.data_type, value=self.__expected_value, value_format=self.format)
+        return normalize_value(
+            data_type=self.data_type,
+            value=self.__expected_value,
+            value_format=self.format,
+            value_invalid=self.invalid,
+        )
 
     # -----------------------------------------------------------------------------
 
@@ -346,6 +367,20 @@ class RegisterRecord(ABC):  # pylint: disable=too-many-instance-attributes
     def expected_pending(self, timestamp: Optional[float]) -> None:
         """Set register expected value transmit timestamp"""
         self.__expected_pending = timestamp
+
+    # -----------------------------------------------------------------------------
+
+    @property
+    def actual_value_valid(self) -> bool:
+        """Register actual value reading status"""
+        return self.__actual_value_valid
+
+    # -----------------------------------------------------------------------------
+
+    @actual_value_valid.setter
+    def actual_value_valid(self, state: bool) -> None:
+        """Register actual value reading status setter"""
+        self.__actual_value_valid = state
 
     # -----------------------------------------------------------------------------
 
@@ -397,6 +432,7 @@ class DiscreteRegister(RegisterRecord):
             List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
             None,
         ] = None,
+        register_invalid: Union[int, float, str, None] = None,
         channel_id: Optional[uuid.UUID] = None,
     ) -> None:
         super().__init__(
@@ -405,6 +441,7 @@ class DiscreteRegister(RegisterRecord):
             register_address=register_address,
             register_data_type=DataType.BOOLEAN,
             register_format=register_format,
+            register_invalid=register_invalid,
             register_settable=False,
             register_queryable=True,
             channel_id=channel_id,
@@ -434,6 +471,7 @@ class CoilRegister(RegisterRecord):
             List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
             None,
         ] = None,
+        register_invalid: Union[int, float, str, None] = None,
         channel_id: Optional[uuid.UUID] = None,
     ) -> None:
         super().__init__(
@@ -442,6 +480,7 @@ class CoilRegister(RegisterRecord):
             register_address=register_address,
             register_data_type=DataType.BOOLEAN,
             register_format=register_format,
+            register_invalid=register_invalid,
             register_settable=True,
             register_queryable=True,
             channel_id=channel_id,
@@ -472,6 +511,7 @@ class InputRegister(RegisterRecord):
             List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
             None,
         ] = None,
+        register_invalid: Union[int, float, str, None] = None,
         register_number_of_decimals: Optional[int] = None,
         channel_id: Optional[uuid.UUID] = None,
     ) -> None:
@@ -481,6 +521,7 @@ class InputRegister(RegisterRecord):
             register_address=register_address,
             register_data_type=register_data_type,
             register_format=register_format,
+            register_invalid=register_invalid,
             register_settable=False,
             register_queryable=True,
             register_number_of_decimals=register_number_of_decimals,
@@ -512,6 +553,7 @@ class HoldingRegister(RegisterRecord):
             List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
             None,
         ] = None,
+        register_invalid: Union[int, float, str, None] = None,
         register_number_of_decimals: Optional[int] = None,
         channel_id: Optional[uuid.UUID] = None,
     ) -> None:
@@ -521,6 +563,7 @@ class HoldingRegister(RegisterRecord):
             register_address=register_address,
             register_data_type=register_data_type,
             register_format=register_format,
+            register_invalid=register_invalid,
             register_settable=True,
             register_queryable=True,
             register_number_of_decimals=register_number_of_decimals,

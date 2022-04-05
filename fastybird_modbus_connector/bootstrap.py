@@ -86,7 +86,7 @@ def create_connector(
     di["modbus-connector_events-listener"] = di[EventsListener]
 
     # Main connector service
-    connector_service = ModbusConnector(  # type: ignore[call-arg]
+    connector_service = ModbusConnector(
         connector_id=connector.id,
         devices_registry=di[DevicesRegistry],
         attributes_registry=di[AttributesRegistry],

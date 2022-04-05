@@ -71,6 +71,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
     __MAX_TRANSMIT_ATTEMPTS: int = 5  # Maximum count of sending packets before connector mark device as lost
 
     __LOST_DELAY: float = 5.0  # Waiting delay before another communication with device after device was lost
+    __WRITE_DELAY: float = 2.0  # Waiting delay before another write request to register is made
 
     # -----------------------------------------------------------------------------
 
@@ -227,7 +228,9 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
             )
 
             for register in registers:
-                if register.expected_value is not None and register.expected_pending is None:
+                if register.expected_value is not None and (
+                    register.expected_pending is None or time.time() - register.expected_pending < self.__WRITE_DELAY
+                ):
                     if self.__write_single_register(
                         device=device,
                         device_address=device_address,
@@ -273,7 +276,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                     ):
                         continue
 
-                    reading_result = self.__read_single_register(
+                    self.__read_single_register(
                         device=device,
                         device_address=device_address,
                         register_type=registers_type,
@@ -281,12 +284,11 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                         register_data_type=register.data_type,
                     )
 
-                    if reading_result:
-                        self.__processed_devices_registers[device.id.__str__()][registers_type.value].add(
-                            register.id.__str__(),
-                        )
+                    self.__processed_devices_registers[device.id.__str__()][registers_type.value].add(
+                        register.id.__str__(),
+                    )
 
-                    return reading_result
+                    return True
 
         if time.time() - device.last_reading_packet_timestamp < device.sampling_time:
             return True
@@ -544,7 +546,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
         register_type: RegisterType,
         register_data_type: DataType,
         register_address: int,
-    ) -> bool:
+    ) -> None:
         self.__instrument.address = device_address
 
         try:
@@ -621,10 +623,9 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                     },
                 )
 
-                return False
+                return
 
         except minimalmodbus.ModbusException as ex:
-            print(ex)
             self.__logger.error(
                 "Something went wrong and register value cannot be read",
                 extra={
@@ -638,15 +639,21 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                 },
             )
 
+            self.__write_register_received_error(
+                device=device,
+                register_type=register_type,
+                register_address=register_address,
+            )
+
             # Update communication timestamp
             self.__devices_registry.set_read_packet_timestamp(device=device, success=False)
 
-            return False
+            return
 
         # Update communication timestamp
         self.__devices_registry.set_read_packet_timestamp(device=device)
 
-        return True
+        return
 
     # -----------------------------------------------------------------------------
 
@@ -671,4 +678,24 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                     value_format=register.format,
                     value=value,
                 ),
+            )
+
+    # -----------------------------------------------------------------------------
+
+    def __write_register_received_error(
+        self,
+        device: DeviceRecord,
+        register_type: RegisterType,
+        register_address: int,
+    ) -> None:
+        register = self.__registers_registry.get_by_address(
+            device_id=device.id,
+            register_type=register_type,
+            register_address=register_address,
+        )
+
+        if register is not None:
+            self.__registers_registry.set_valid_state(
+                register=register,
+                state=False,
             )

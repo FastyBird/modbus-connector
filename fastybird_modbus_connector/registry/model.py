@@ -14,6 +14,8 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
+# pylint: disable=too-many-lines
+
 """
 Modbus connector registry module models
 """
@@ -454,6 +456,7 @@ class RegistersRegistry:
             List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
             None,
         ] = None,
+        register_invalid: Union[int, float, str, None] = None,
         channel_id: Optional[uuid.UUID] = None,
     ) -> DiscreteRegister:
         """Append register record into registry"""
@@ -464,6 +467,7 @@ class RegistersRegistry:
             register_id=register_id,
             register_address=register_address,
             register_format=register_format,
+            register_invalid=register_invalid,
             channel_id=channel_id,
         )
 
@@ -499,6 +503,7 @@ class RegistersRegistry:
             List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
             None,
         ] = None,
+        register_invalid: Union[int, float, str, None] = None,
         channel_id: Optional[uuid.UUID] = None,
     ) -> CoilRegister:
         """Append register record into registry"""
@@ -509,6 +514,7 @@ class RegistersRegistry:
             register_id=register_id,
             register_address=register_address,
             register_format=register_format,
+            register_invalid=register_invalid,
             channel_id=channel_id,
         )
 
@@ -545,6 +551,7 @@ class RegistersRegistry:
             List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
             None,
         ] = None,
+        register_invalid: Union[int, float, str, None] = None,
         register_number_of_decimals: Optional[int] = None,
         channel_id: Optional[uuid.UUID] = None,
     ) -> InputRegister:
@@ -557,6 +564,7 @@ class RegistersRegistry:
             register_address=register_address,
             register_data_type=register_data_type,
             register_format=register_format,
+            register_invalid=register_invalid,
             register_number_of_decimals=register_number_of_decimals,
             channel_id=channel_id,
         )
@@ -594,6 +602,7 @@ class RegistersRegistry:
             List[Union[str, Tuple[str, Optional[str], Optional[str]]]],
             None,
         ] = None,
+        register_invalid: Union[int, float, str, None] = None,
         register_number_of_decimals: Optional[int] = None,
         channel_id: Optional[uuid.UUID] = None,
     ) -> HoldingRegister:
@@ -606,6 +615,7 @@ class RegistersRegistry:
             register_address=register_address,
             register_data_type=register_data_type,
             register_format=register_format,
+            register_invalid=register_invalid,
             register_number_of_decimals=register_number_of_decimals,
             channel_id=channel_id,
         )
@@ -690,6 +700,7 @@ class RegistersRegistry:
         existing_record = self.get_by_id(register_id=register.id)
 
         register.actual_value = value
+        register.actual_value_valid = True
 
         self.__update(register=register)
 
@@ -749,6 +760,31 @@ class RegistersRegistry:
 
         if updated_register is None:
             raise InvalidStateException("Register record could not be re-fetched from registry after update")
+
+        return updated_register
+
+    # -----------------------------------------------------------------------------
+
+    def set_valid_state(self, register: RegisterRecord, state: bool) -> RegisterRecord:
+        """Set register actual value reading state"""
+        existing_record = self.get_by_id(register_id=register.id)
+
+        register.actual_value_valid = state
+
+        self.__update(register=register)
+
+        updated_register = self.get_by_id(register.id)
+
+        if updated_register is None:
+            raise InvalidStateException("Register record could not be re-fetched from registry after update")
+
+        self.__event_dispatcher.dispatch(
+            event_id=RegisterActualValueEvent.EVENT_NAME,
+            event=RegisterActualValueEvent(
+                original_record=existing_record,
+                updated_record=updated_register,
+            ),
+        )
 
         return updated_register
 

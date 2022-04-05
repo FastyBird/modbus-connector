@@ -38,15 +38,17 @@ from fastybird_devices_module.entities.device import (
     DeviceDynamicPropertyEntity,
     DevicePropertyEntity,
 )
-from fastybird_devices_module.repositories.device import DevicesRepository
+from fastybird_devices_module.utils import normalize_value
 from fastybird_metadata.devices_module import ConnectionState
-from fastybird_metadata.helpers import normalize_value
 from fastybird_metadata.types import ControlAction, DataType, SwitchPayload
 from kink import inject
 
 # Library libs
 from fastybird_modbus_connector.clients.client import IClient
-from fastybird_modbus_connector.entities import ModbusDeviceEntity
+from fastybird_modbus_connector.entities import (
+    ModbusConnectorEntity,
+    ModbusDeviceEntity,
+)
 from fastybird_modbus_connector.events.listeners import EventsListener
 from fastybird_modbus_connector.exceptions import InvalidStateException
 from fastybird_modbus_connector.logger import Logger
@@ -79,8 +81,6 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
     __connector_id: uuid.UUID
 
-    __devices_repository: DevicesRepository
-
     __devices_registry: DevicesRegistry
     __attributes_registry: AttributesRegistry
     __registers_registry: RegistersRegistry
@@ -96,7 +96,6 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
     def __init__(  # pylint: disable=too-many-arguments
         self,
         connector_id: uuid.UUID,
-        devices_repository: DevicesRepository,
         attributes_registry: AttributesRegistry,
         devices_registry: DevicesRegistry,
         registers_registry: RegistersRegistry,
@@ -105,8 +104,6 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
         logger: Union[Logger, logging.Logger] = logging.getLogger("dummy"),
     ) -> None:
         self.__connector_id = connector_id
-
-        self.__devices_repository = devices_repository
 
         self.__devices_registry = devices_registry
         self.__attributes_registry = attributes_registry
@@ -127,11 +124,11 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
     # -----------------------------------------------------------------------------
 
-    def initialize(self, settings: Optional[Dict] = None) -> None:
+    def initialize(self, connector: ModbusConnectorEntity) -> None:
         """Set connector to initial state"""
         self.__devices_registry.reset()
 
-        for device in self.__devices_repository.get_all_by_connector(connector_id=self.__connector_id):
+        for device in connector.devices:
             self.initialize_device(device=device)
 
     # -----------------------------------------------------------------------------
@@ -256,6 +253,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
                         register_id=channel_property.id,
                         register_address=int(parsed_property_identifier.group("address")),
                         register_format=channel_property.format,
+                        register_invalid=channel_property.invalid,
                         channel_id=channel.id,
                     )
 
@@ -266,6 +264,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
                         register_address=int(parsed_property_identifier.group("address")),
                         register_data_type=channel_property.data_type,
                         register_format=channel_property.format,
+                        register_invalid=channel_property.invalid,
                         register_number_of_decimals=channel_property.number_of_decimals,
                         channel_id=channel.id,
                     )
@@ -277,6 +276,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
                         register_id=channel_property.id,
                         register_address=int(parsed_property_identifier.group("address")),
                         register_format=channel_property.format,
+                        register_invalid=channel_property.invalid,
                         channel_id=channel.id,
                     )
 
@@ -287,6 +287,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
                         register_address=int(parsed_property_identifier.group("address")),
                         register_data_type=channel_property.data_type,
                         register_format=channel_property.format,
+                        register_invalid=channel_property.invalid,
                         register_number_of_decimals=channel_property.number_of_decimals,
                         channel_id=channel.id,
                     )
@@ -347,7 +348,13 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
                 self.__devices_registry.disable(device=device)
 
-                continue
+            registers = self.__registers_registry.get_all_for_device(
+                device_id=device.id,
+                register_type=[RegisterType.DISCRETE, RegisterType.COIL, RegisterType.INPUT, RegisterType.HOLDING],
+            )
+
+            for register in registers:
+                self.__registers_registry.set_valid_state(register=register, state=False)
 
         self.__logger.info("Connector has been started")
 
@@ -375,7 +382,13 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
                 self.__devices_registry.disable(device=device)
 
-                continue
+            registers = self.__registers_registry.get_all_for_device(
+                device_id=device.id,
+                register_type=[RegisterType.DISCRETE, RegisterType.COIL, RegisterType.INPUT, RegisterType.HOLDING],
+            )
+
+            for register in registers:
+                self.__registers_registry.set_valid_state(register=register, state=False)
 
         self.__events_listener.close()
 
@@ -423,6 +436,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
                     data_type=property_item.data_type,
                     value=data.get("expected_value", None),
                     value_format=property_item.format,
+                    value_invalid=property_item.invalid,
                 )
 
             else:

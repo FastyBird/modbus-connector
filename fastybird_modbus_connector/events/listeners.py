@@ -220,6 +220,7 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
                 "actual_value": event.updated_record.actual_value,
                 "expected_value": None,
                 "pending": False,
+                "valid": True,
             }
 
             if property_state is None:
@@ -345,6 +346,7 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
                 "actual_value": event.updated_record.actual_value,
                 "expected_value": event.updated_record.expected_value,
                 "pending": event.updated_record.expected_pending is not None,
+                "valid": event.updated_record.actual_value_valid,
             }
 
             if property_state is None:
