@@ -245,7 +245,10 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
                 )
 
                 if device_property.identifier == DeviceAttribute.STATE.value:
-                    self.__attributes_registry.set_value(attribute=attribute_record, value=ConnectionState.UNKNOWN.value)
+                    self.__attributes_registry.set_value(
+                        attribute=attribute_record,
+                        value=ConnectionState.UNKNOWN.value,
+                    )
 
     # -----------------------------------------------------------------------------
 

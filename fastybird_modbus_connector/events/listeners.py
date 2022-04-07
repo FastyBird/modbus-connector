@@ -21,7 +21,6 @@ Modbus connector events module listeners
 # Python base dependencies
 import logging
 from datetime import datetime
-from enum import Enum
 from typing import Dict, Union
 
 # Library dependencies
