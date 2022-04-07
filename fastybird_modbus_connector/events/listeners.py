@@ -363,8 +363,8 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
             )
 
             state_data: Dict[str, Union[str, int, float, bool, datetime, ButtonPayload, SwitchPayload, None]] = {
-                "actual_value": actual_value,
-                "expected_value": expected_value,
+                "actual_value": event.updated_record.actual_value,
+                "expected_value": event.updated_record.expected_value,
                 "pending": actual_value != expected_value and expected_value is not None,
                 "valid": event.updated_record.actual_value_valid,
             }
@@ -499,8 +499,8 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
             )
 
             state_data: Dict[str, Union[str, int, float, bool, datetime, ButtonPayload, SwitchPayload, None]] = {
-                "actual_value": actual_value,
-                "expected_value": expected_value,
+                "actual_value": event.updated_record.actual_value,
+                "expected_value": event.updated_record.expected_value,
                 "pending": actual_value != expected_value and expected_value is not None,
                 "valid": event.updated_record.actual_value_valid,
             }
