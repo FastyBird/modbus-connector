@@ -169,9 +169,6 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
         device_property: DevicePropertyEntity,
     ) -> None:
         """Initialize device property in connector registry"""
-        if not DeviceAttribute.has_value(device_property.identifier):
-            return
-
         if isinstance(device_property, DeviceDynamicPropertyEntity):
             if DeviceAttribute.has_value(device_property.identifier):
                 attribute_record = self.__attributes_registry.append(
@@ -239,15 +236,16 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
                             )
 
         else:
-            attribute_record = self.__attributes_registry.append(
-                device_id=device_property.device.id,
-                attribute_id=device_property.id,
-                attribute_type=DeviceAttribute(device_property.identifier),
-                attribute_value=device_property.value,
-            )
+            if DeviceAttribute.has_value(device_property.identifier):
+                attribute_record = self.__attributes_registry.append(
+                    device_id=device_property.device.id,
+                    attribute_id=device_property.id,
+                    attribute_type=DeviceAttribute(device_property.identifier),
+                    attribute_value=device_property.value,
+                )
 
-            if device_property.identifier == DeviceAttribute.STATE.value:
-                self.__attributes_registry.set_value(attribute=attribute_record, value=ConnectionState.UNKNOWN.value)
+                if device_property.identifier == DeviceAttribute.STATE.value:
+                    self.__attributes_registry.set_value(attribute=attribute_record, value=ConnectionState.UNKNOWN.value)
 
     # -----------------------------------------------------------------------------
 
@@ -497,7 +495,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
             return
 
-        if isinstance(property_item, ChannelDynamicPropertyEntity):
+        if isinstance(property_item, (DeviceDynamicPropertyEntity, ChannelDynamicPropertyEntity)):
             register_record = self.__registers_registry.get_by_id(register_id=property_item.id)
 
             if register_record is None:
