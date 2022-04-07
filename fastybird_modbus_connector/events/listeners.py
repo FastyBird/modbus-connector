@@ -21,6 +21,7 @@ Modbus connector events module listeners
 # Python base dependencies
 import logging
 from datetime import datetime
+from enum import Enum
 from typing import Dict, Union
 
 # Library dependencies
@@ -348,10 +349,23 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
 
                 return
 
+            actual_value = (
+                event.updated_record.actual_value
+                if isinstance(event.updated_record.actual_value, (str, int, float, bool))
+                or event.updated_record.actual_value is None
+                else str(event.updated_record.actual_value)
+            )
+            expected_value = (
+                event.updated_record.expected_value
+                if isinstance(event.updated_record.expected_value, (str, int, float, bool))
+                or event.updated_record.expected_value is None
+                else str(event.updated_record.expected_value)
+            )
+
             state_data: Dict[str, Union[str, int, float, bool, datetime, ButtonPayload, SwitchPayload, None]] = {
-                "actual_value": event.updated_record.actual_value,
-                "expected_value": event.updated_record.expected_value,
-                "pending": event.updated_record.actual_value != event.updated_record.expected_value,
+                "actual_value": actual_value,
+                "expected_value": expected_value,
+                "pending": actual_value != expected_value and expected_value is not None,
                 "valid": event.updated_record.actual_value_valid,
             }
 
@@ -471,10 +485,23 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
 
                 return
 
+            actual_value = (
+                event.updated_record.actual_value
+                if isinstance(event.updated_record.actual_value, (str, int, float, bool))
+                or event.updated_record.actual_value is None
+                else str(event.updated_record.actual_value)
+            )
+            expected_value = (
+                event.updated_record.expected_value
+                if isinstance(event.updated_record.expected_value, (str, int, float, bool))
+                or event.updated_record.expected_value is None
+                else str(event.updated_record.expected_value)
+            )
+
             state_data: Dict[str, Union[str, int, float, bool, datetime, ButtonPayload, SwitchPayload, None]] = {
-                "actual_value": event.updated_record.actual_value,
-                "expected_value": event.updated_record.expected_value,
-                "pending": event.updated_record.actual_value != event.updated_record.expected_value,
+                "actual_value": actual_value,
+                "expected_value": expected_value,
+                "pending": actual_value != expected_value and expected_value is not None,
                 "valid": event.updated_record.actual_value_valid,
             }
 
