@@ -163,17 +163,80 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
     # -----------------------------------------------------------------------------
 
-    def initialize_device_property(self, device: ModbusDeviceEntity, device_property: DevicePropertyEntity) -> None:
+    def initialize_device_property(  # pylint: disable=too-many-branches
+        self,
+        device: ModbusDeviceEntity,
+        device_property: DevicePropertyEntity,
+    ) -> None:
         """Initialize device property in connector registry"""
         if not DeviceAttribute.has_value(device_property.identifier):
             return
 
         if isinstance(device_property, DeviceDynamicPropertyEntity):
-            attribute_record = self.__attributes_registry.append(
-                device_id=device_property.device.id,
-                attribute_id=device_property.id,
-                attribute_type=DeviceAttribute(device_property.identifier),
-            )
+            if DeviceAttribute.has_value(device_property.identifier):
+                attribute_record = self.__attributes_registry.append(
+                    device_id=device_property.device.id,
+                    attribute_id=device_property.id,
+                    attribute_type=DeviceAttribute(device_property.identifier),
+                )
+
+                if device_property.identifier == DeviceAttribute.STATE.value:
+                    self.__attributes_registry.set_value(
+                        attribute=attribute_record,
+                        value=ConnectionState.UNKNOWN.value,
+                    )
+
+            else:
+                match = re.compile("(?P<name>[a-zA-Z-]+)_(?P<address>[0-9]+)")
+
+                parsed_property_identifier = match.fullmatch(device_property.identifier)
+
+                if parsed_property_identifier is not None:
+                    if device_property.settable:
+                        if device_property.data_type == DataType.BOOLEAN:
+                            self.__registers_registry.append_coil(
+                                device_id=device.id,
+                                register_id=device_property.id,
+                                register_address=int(parsed_property_identifier.group("address")),
+                                register_format=device_property.format,
+                                register_invalid=device_property.invalid,
+                                channel_id=device.id,
+                            )
+
+                        else:
+                            self.__registers_registry.append_holding(
+                                device_id=device.id,
+                                register_id=device_property.id,
+                                register_address=int(parsed_property_identifier.group("address")),
+                                register_data_type=device_property.data_type,
+                                register_format=device_property.format,
+                                register_invalid=device_property.invalid,
+                                register_number_of_decimals=device_property.number_of_decimals,
+                                channel_id=device.id,
+                            )
+
+                    else:
+                        if device_property.data_type == DataType.BOOLEAN:
+                            self.__registers_registry.append_discrete(
+                                device_id=device.id,
+                                register_id=device_property.id,
+                                register_address=int(parsed_property_identifier.group("address")),
+                                register_format=device_property.format,
+                                register_invalid=device_property.invalid,
+                                channel_id=device.id,
+                            )
+
+                        else:
+                            self.__registers_registry.append_input(
+                                device_id=device.id,
+                                register_id=device_property.id,
+                                register_address=int(parsed_property_identifier.group("address")),
+                                register_data_type=device_property.data_type,
+                                register_format=device_property.format,
+                                register_invalid=device_property.invalid,
+                                register_number_of_decimals=device_property.number_of_decimals,
+                                channel_id=device.id,
+                            )
 
         else:
             attribute_record = self.__attributes_registry.append(
@@ -183,8 +246,8 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
                 attribute_value=device_property.value,
             )
 
-        if device_property.identifier == DeviceAttribute.STATE.value:
-            self.__attributes_registry.set_value(attribute=attribute_record, value=ConnectionState.UNKNOWN.value)
+            if device_property.identifier == DeviceAttribute.STATE.value:
+                self.__attributes_registry.set_value(attribute=attribute_record, value=ConnectionState.UNKNOWN.value)
 
     # -----------------------------------------------------------------------------
 
@@ -196,12 +259,21 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
     def remove_device_property(self, device: ModbusDeviceEntity, property_id: uuid.UUID) -> None:
         """Remove device from connector registry"""
         self.__attributes_registry.remove(attribute_id=property_id)
+        self.__registers_registry.remove(register_id=property_id)
 
     # -----------------------------------------------------------------------------
 
     def reset_devices_properties(self, device: ModbusDeviceEntity) -> None:
         """Reset devices properties registry to initial state"""
         self.__attributes_registry.reset(device_id=device.id)
+
+        for register in self.__registers_registry:
+            if (
+                register.device_id.__eq__(device.id)
+                and register.channel_id is not None
+                and register.channel_id.__eq__(device.id)
+            ):
+                self.__registers_registry.remove(register_id=register.id)
 
     # -----------------------------------------------------------------------------
 
