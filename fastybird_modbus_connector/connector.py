@@ -478,7 +478,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
     # -----------------------------------------------------------------------------
 
-    def handle(self) -> None:
+    async def handle(self) -> None:
         """Run connector service"""
         if self.__stopped and not self.has_unfinished_tasks():
             self.__logger.warning("Connector is stopped and can't process another requests")
