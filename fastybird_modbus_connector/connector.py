@@ -481,19 +481,6 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
     # -----------------------------------------------------------------------------
 
-    async def __worker(self) -> None:
-        """Run connector service"""
-        while True:
-            if self.__stopped and self.has_unfinished_tasks():
-                return
-
-            self.__client.handle()
-
-            # Be gentle to server
-            await asyncio.sleep(0.01)
-
-    # -----------------------------------------------------------------------------
-
     def write_property(self, property_item: Union[DevicePropertyEntity, ChannelPropertyEntity], data: Dict) -> None:
         """Write device or channel property value to device"""
         if self.__stopped:
@@ -539,3 +526,16 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
         action: ControlAction,
     ) -> None:
         """Write connector control action"""
+
+    # -----------------------------------------------------------------------------
+
+    async def __worker(self) -> None:
+        """Run connector service"""
+        while True:
+            if self.__stopped and self.has_unfinished_tasks():
+                return
+
+            self.__client.handle()
+
+            # Be gentle to server
+            await asyncio.sleep(0.01)
