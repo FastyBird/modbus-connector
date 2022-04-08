@@ -481,11 +481,6 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
     # -----------------------------------------------------------------------------
 
-    async def handle(self) -> None:
-        """Run connector service"""
-
-    # -----------------------------------------------------------------------------
-
     async def __worker(self) -> None:
         """Run connector service"""
         while True:
