@@ -434,6 +434,9 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
         self.__stopped = False
 
+        # Register connector coroutine
+        asyncio.ensure_future(self.__worker())
+
     # -----------------------------------------------------------------------------
 
     def stop(self) -> None:
@@ -480,18 +483,19 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
     async def handle(self) -> None:
         """Run connector service"""
-        if self.__stopped and not self.has_unfinished_tasks():
-            self.__logger.warning("Connector is stopped and can't process another requests")
 
-            return
+    # -----------------------------------------------------------------------------
 
-        if self.__stopped:
-            return
+    async def __worker(self) -> None:
+        """Run connector service"""
+        while True:
+            if self.__stopped and self.has_unfinished_tasks():
+                return
 
-        self.__client.handle()
+            self.__client.handle()
 
-        # Be gentle to server
-        await asyncio.sleep(0.01)
+            # Be gentle to server
+            await asyncio.sleep(0.01)
 
     # -----------------------------------------------------------------------------
 
