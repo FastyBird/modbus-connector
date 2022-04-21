@@ -40,7 +40,6 @@ from whistle import EventDispatcher
 # Library libs
 from fastybird_modbus_connector.events.events import (
     AttributeActualValueEvent,
-    DeviceRecordUpdatedEvent,
     RegisterActualValueEvent,
 )
 from fastybird_modbus_connector.exceptions import InvalidStateException
@@ -155,7 +154,7 @@ class DevicesRegistry:
         """Enable device for communication"""
         device.enabled = True
 
-        self.__update(device=device, dispatch=True)
+        self.__update(device=device)
 
         updated_device = self.get_by_id(device.id)
 
@@ -170,7 +169,7 @@ class DevicesRegistry:
         """Enable device for communication"""
         device.enabled = False
 
-        self.__update(device=device, dispatch=True)
+        self.__update(device=device)
 
         updated_device = self.get_by_id(device.id)
 
@@ -279,18 +278,12 @@ class DevicesRegistry:
 
     # -----------------------------------------------------------------------------
 
-    def __update(self, device: DeviceRecord, dispatch: bool = False) -> bool:
+    def __update(self, device: DeviceRecord) -> bool:
         items = self.__items.copy()
 
         for record in items.values():
             if record.id == device.id:
                 self.__items[device.id.__str__()] = device
-
-                if dispatch:
-                    self.__event_dispatcher.dispatch(
-                        event_id=DeviceRecordUpdatedEvent.EVENT_NAME,
-                        event=DeviceRecordUpdatedEvent(record=device),
-                    )
 
                 return True
 

@@ -32,33 +32,6 @@ from fastybird_modbus_connector.registry.records import (
 )
 
 
-class DeviceRecordUpdatedEvent(Event):  # pylint: disable=too-few-public-methods
-    """
-    Device record was updated in registry
-
-    @package        FastyBird:ModbusConnector!
-    @module         events/events
-
-    @author         Adam Kadlec <adam.kadlec@fastybird.com>
-    """
-
-    __record: DeviceRecord
-
-    EVENT_NAME: str = "registry.deviceRecordUpdated"
-
-    # -----------------------------------------------------------------------------
-
-    def __init__(self, record: DeviceRecord) -> None:
-        self.__record = record
-
-    # -----------------------------------------------------------------------------
-
-    @property
-    def record(self) -> DeviceRecord:
-        """Created or updated device record"""
-        return self.__record
-
-
 class RegisterActualValueEvent(Event):
     """
     Register record actual value was updated in registry

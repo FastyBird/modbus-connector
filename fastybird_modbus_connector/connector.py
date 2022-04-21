@@ -147,8 +147,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
         for channel in device.channels:
             self.initialize_device_channel(device=device, channel=channel)
 
-        if device.enabled:
-            self.__devices_registry.enable(device=device_record)
+        self.__devices_registry.enable(device=device_record)
 
     # -----------------------------------------------------------------------------
 

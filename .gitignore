@@ -7,3 +7,4 @@
 tests/*/output
 tests/tmp
 __pycache__
+.DS_Store

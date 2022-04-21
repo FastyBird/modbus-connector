@@ -57,7 +57,6 @@ from whistle import Event, EventDispatcher
 # Library libs
 from fastybird_modbus_connector.events.events import (
     AttributeActualValueEvent,
-    DeviceRecordUpdatedEvent,
     RegisterActualValueEvent,
 )
 from fastybird_modbus_connector.logger import Logger
@@ -130,11 +129,6 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
     def open(self) -> None:
         """Open all listeners callbacks"""
         self.__event_dispatcher.add_listener(
-            event_id=DeviceRecordUpdatedEvent.EVENT_NAME,
-            listener=self.__handle_device_updated_event,
-        )
-
-        self.__event_dispatcher.add_listener(
             event_id=AttributeActualValueEvent.EVENT_NAME,
             listener=self.__handle_attribute_actual_value_updated_event,
         )
@@ -149,11 +143,6 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
     def close(self) -> None:
         """Close all listeners registrations"""
         self.__event_dispatcher.remove_listener(
-            event_id=DeviceRecordUpdatedEvent.EVENT_NAME,
-            listener=self.__handle_device_updated_event,
-        )
-
-        self.__event_dispatcher.remove_listener(
             event_id=AttributeActualValueEvent.EVENT_NAME,
             listener=self.__handle_attribute_actual_value_updated_event,
         )
@@ -162,30 +151,6 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
             event_id=RegisterActualValueEvent.EVENT_NAME,
             listener=self.__handle_register_actual_value_updated_event,
         )
-
-    # -----------------------------------------------------------------------------
-
-    def __handle_device_updated_event(self, event: Event) -> None:
-        if not isinstance(event, DeviceRecordUpdatedEvent):
-            return
-
-        device_data = {
-            "enabled": event.record.enabled,
-        }
-
-        device = self.__devices_repository.get_by_id(device_id=event.record.id)
-
-        if device is not None:
-            device = self.__devices_manager.update(data=device_data, device=device)
-
-            self.__logger.debug(
-                "Updating existing device",
-                extra={
-                    "device": {
-                        "id": device.id.__str__(),
-                    },
-                },
-            )
 
     # -----------------------------------------------------------------------------
 
