@@ -20,7 +20,7 @@ Modbus connector module
 
 from .bootstrap import create_connector
 
-__version__ = "0.24.0"
+__version__ = "0.25.0"
 
 __all__ = ["connector", "bootstrap", "__connector_version__"]
 
