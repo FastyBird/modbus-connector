@@ -72,19 +72,14 @@ class DevicesRegistry:
     __attributes_registry: "AttributesRegistry"
     __registers_registry: "RegistersRegistry"
 
-    __event_dispatcher: EventDispatcher
-
     # -----------------------------------------------------------------------------
 
     def __init__(
         self,
-        event_dispatcher: EventDispatcher,
         attributes_registry: "AttributesRegistry",
         registers_registry: "RegistersRegistry",
     ) -> None:
         self.__items = {}
-
-        self.__event_dispatcher = event_dispatcher
 
         self.__attributes_registry = attributes_registry
         self.__registers_registry = registers_registry

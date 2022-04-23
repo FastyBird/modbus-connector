@@ -25,11 +25,7 @@ from typing import Optional
 from whistle import Event
 
 # Library libs
-from fastybird_modbus_connector.registry.records import (
-    AttributeRecord,
-    DeviceRecord,
-    RegisterRecord,
-)
+from fastybird_modbus_connector.registry.records import AttributeRecord, RegisterRecord
 
 
 class RegisterActualValueEvent(Event):

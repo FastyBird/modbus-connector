@@ -33,19 +33,13 @@ from fastybird_devices_module.entities.device import (
     DeviceStaticPropertyEntity,
 )
 from fastybird_devices_module.managers.channel import ChannelPropertiesManager
-from fastybird_devices_module.managers.device import (
-    DevicePropertiesManager,
-    DevicesManager,
-)
+from fastybird_devices_module.managers.device import DevicePropertiesManager
 from fastybird_devices_module.managers.state import (
     ChannelPropertiesStatesManager,
     DevicePropertiesStatesManager,
 )
 from fastybird_devices_module.repositories.channel import ChannelPropertiesRepository
-from fastybird_devices_module.repositories.device import (
-    DevicePropertiesRepository,
-    DevicesRepository,
-)
+from fastybird_devices_module.repositories.device import DevicePropertiesRepository
 from fastybird_devices_module.repositories.state import (
     ChannelPropertiesStatesRepository,
     DevicePropertiesStatesRepository,
@@ -73,9 +67,6 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
     @author         Adam Kadlec <adam.kadlec@fastybird.com>
     """
 
-    __devices_repository: DevicesRepository
-    __devices_manager: DevicesManager
-
     __devices_properties_repository: DevicePropertiesRepository
     __devices_properties_manager: DevicePropertiesManager
     __devices_properties_states_repository: DevicePropertiesStatesRepository
@@ -94,8 +85,6 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
-        devices_repository: DevicesRepository,
-        devices_manager: DevicesManager,
         devices_properties_repository: DevicePropertiesRepository,
         devices_properties_manager: DevicePropertiesManager,
         devices_properties_states_repository: DevicePropertiesStatesRepository,
@@ -107,9 +96,6 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
         channels_properties_states_manager: ChannelPropertiesStatesManager,
         logger: Union[Logger, logging.Logger] = logging.getLogger("dummy"),
     ) -> None:
-        self.__devices_repository = devices_repository
-        self.__devices_manager = devices_manager
-
         self.__devices_properties_repository = devices_properties_repository
         self.__devices_properties_manager = devices_properties_manager
         self.__devices_properties_states_repository = devices_properties_states_repository

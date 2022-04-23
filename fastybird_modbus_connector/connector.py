@@ -35,6 +35,7 @@ from fastybird_devices_module.entities.channel import (
 )
 from fastybird_devices_module.entities.connector import ConnectorControlEntity
 from fastybird_devices_module.entities.device import (
+    DeviceAttributeEntity,
     DeviceControlEntity,
     DeviceDynamicPropertyEntity,
     DevicePropertyEntity,
@@ -275,6 +276,26 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
                 and register.channel_id.__eq__(device.id)
             ):
                 self.__registers_registry.remove(register_id=register.id)
+
+    # -----------------------------------------------------------------------------
+
+    def initialize_device_attribute(self, device: ModbusDeviceEntity, device_attribute: DeviceAttributeEntity) -> None:
+        """Initialize device attribute in connector"""
+
+    # -----------------------------------------------------------------------------
+
+    def notify_device_attribute(self, device: ModbusDeviceEntity, device_attribute: DeviceAttributeEntity) -> None:
+        """Notify device attribute was reported to connector"""
+
+    # -----------------------------------------------------------------------------
+
+    def remove_device_attribute(self, device: ModbusDeviceEntity, attribute_id: uuid.UUID) -> None:
+        """Remove device attribute from connector"""
+
+    # -----------------------------------------------------------------------------
+
+    def reset_devices_attributes(self, device: ModbusDeviceEntity) -> None:
+        """Reset devices attributes to initial state"""
 
     # -----------------------------------------------------------------------------
 
