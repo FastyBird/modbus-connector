@@ -50,7 +50,7 @@ from whistle import Event, EventDispatcher
 
 # Library libs
 from fastybird_modbus_connector.events.events import (
-    AttributeActualValueEvent,
+    PropertyActualValueEvent,
     RegisterActualValueEvent,
 )
 from fastybird_modbus_connector.logger import Logger
@@ -115,7 +115,7 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
     def open(self) -> None:
         """Open all listeners callbacks"""
         self.__event_dispatcher.add_listener(
-            event_id=AttributeActualValueEvent.EVENT_NAME,
+            event_id=PropertyActualValueEvent.EVENT_NAME,
             listener=self.__handle_attribute_actual_value_updated_event,
         )
 
@@ -129,7 +129,7 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
     def close(self) -> None:
         """Close all listeners registrations"""
         self.__event_dispatcher.remove_listener(
-            event_id=AttributeActualValueEvent.EVENT_NAME,
+            event_id=PropertyActualValueEvent.EVENT_NAME,
             listener=self.__handle_attribute_actual_value_updated_event,
         )
 
@@ -141,7 +141,7 @@ class EventsListener:  # pylint: disable=too-many-instance-attributes
     # -----------------------------------------------------------------------------
 
     def __handle_attribute_actual_value_updated_event(self, event: Event) -> None:
-        if not isinstance(event, AttributeActualValueEvent):
+        if not isinstance(event, PropertyActualValueEvent):
             return
 
         device_property = self.__devices_properties_repository.get_by_id(property_id=event.updated_record.id)

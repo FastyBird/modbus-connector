@@ -55,8 +55,8 @@ from fastybird_modbus_connector.events.listeners import EventsListener
 from fastybird_modbus_connector.exceptions import InvalidStateException
 from fastybird_modbus_connector.logger import Logger
 from fastybird_modbus_connector.registry.model import (
-    AttributesRegistry,
     DevicesRegistry,
+    PropertiesRegistry,
     RegistersRegistry,
 )
 from fastybird_modbus_connector.registry.records import (
@@ -65,7 +65,7 @@ from fastybird_modbus_connector.registry.records import (
     HoldingRegister,
     InputRegister,
 )
-from fastybird_modbus_connector.types import DeviceAttribute, RegisterType
+from fastybird_modbus_connector.types import DeviceProperty, RegisterType
 
 
 @inject(alias=IConnector)
@@ -84,7 +84,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
     __connector_id: uuid.UUID
 
     __devices_registry: DevicesRegistry
-    __attributes_registry: AttributesRegistry
+    __properties_registry: PropertiesRegistry
     __registers_registry: RegistersRegistry
 
     __client: IClient
@@ -98,7 +98,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
     def __init__(  # pylint: disable=too-many-arguments
         self,
         connector_id: uuid.UUID,
-        attributes_registry: AttributesRegistry,
+        properties_registry: PropertiesRegistry,
         devices_registry: DevicesRegistry,
         registers_registry: RegistersRegistry,
         client: IClient,
@@ -108,7 +108,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
         self.__connector_id = connector_id
 
         self.__devices_registry = devices_registry
-        self.__attributes_registry = attributes_registry
+        self.__properties_registry = properties_registry
         self.__registers_registry = registers_registry
 
         self.__client = client
@@ -171,16 +171,16 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
     ) -> None:
         """Initialize device property in connector registry"""
         if isinstance(device_property, DeviceDynamicPropertyEntity):
-            if DeviceAttribute.has_value(device_property.identifier):
-                attribute_record = self.__attributes_registry.append(
+            if DeviceProperty.has_value(device_property.identifier):
+                property_record = self.__properties_registry.append(
                     device_id=device_property.device.id,
-                    attribute_id=device_property.id,
-                    attribute_type=DeviceAttribute(device_property.identifier),
+                    property_id=device_property.id,
+                    property_type=DeviceProperty(device_property.identifier),
                 )
 
-                if device_property.identifier == DeviceAttribute.STATE.value:
-                    self.__attributes_registry.set_value(
-                        attribute=attribute_record,
+                if device_property.identifier == DeviceProperty.STATE.value:
+                    self.__properties_registry.set_value(
+                        item=property_record,
                         value=ConnectionState.UNKNOWN.value,
                     )
 
@@ -237,17 +237,17 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
                             )
 
         else:
-            if DeviceAttribute.has_value(device_property.identifier):
-                attribute_record = self.__attributes_registry.append(
+            if DeviceProperty.has_value(device_property.identifier):
+                property_record = self.__properties_registry.append(
                     device_id=device_property.device.id,
-                    attribute_id=device_property.id,
-                    attribute_type=DeviceAttribute(device_property.identifier),
-                    attribute_value=device_property.value,
+                    property_id=device_property.id,
+                    property_type=DeviceProperty(device_property.identifier),
+                    property_value=device_property.value,
                 )
 
-                if device_property.identifier == DeviceAttribute.STATE.value:
-                    self.__attributes_registry.set_value(
-                        attribute=attribute_record,
+                if device_property.identifier == DeviceProperty.STATE.value:
+                    self.__properties_registry.set_value(
+                        item=property_record,
                         value=ConnectionState.UNKNOWN.value,
                     )
 
@@ -260,14 +260,14 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
     def remove_device_property(self, device: ModbusDeviceEntity, property_id: uuid.UUID) -> None:
         """Remove device from connector registry"""
-        self.__attributes_registry.remove(attribute_id=property_id)
+        self.__properties_registry.remove(property_id=property_id)
         self.__registers_registry.remove(register_id=property_id)
 
     # -----------------------------------------------------------------------------
 
     def reset_devices_properties(self, device: ModbusDeviceEntity) -> None:
         """Reset devices properties registry to initial state"""
-        self.__attributes_registry.reset(device_id=device.id)
+        self.__properties_registry.reset(device_id=device.id)
 
         for register in self.__registers_registry:
             if (
@@ -420,7 +420,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
     # -----------------------------------------------------------------------------
 
-    def start(self) -> None:
+    async def start(self) -> None:
         """Start connector services"""
         # When connector is starting...
         self.__events_listener.open()
@@ -501,7 +501,11 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
     # -----------------------------------------------------------------------------
 
-    def write_property(self, property_item: Union[DevicePropertyEntity, ChannelPropertyEntity], data: Dict) -> None:
+    async def write_property(
+        self,
+        property_item: Union[DevicePropertyEntity, ChannelPropertyEntity],
+        data: Dict,
+    ) -> None:
         """Write device or channel property value to device"""
         if self.__stopped:
             self.__logger.warning("Connector is stopped, value can't be written")
@@ -539,7 +543,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
 
     # -----------------------------------------------------------------------------
 
-    def write_control(
+    async def write_control(
         self,
         control_item: Union[ConnectorControlEntity, DeviceControlEntity, ChannelControlEntity],
         data: Optional[Dict],

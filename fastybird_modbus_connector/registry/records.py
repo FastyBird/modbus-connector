@@ -30,7 +30,7 @@ from fastybird_metadata.devices_module import ConnectionState
 from fastybird_metadata.types import ButtonPayload, DataType, SwitchPayload
 
 # Library libs
-from fastybird_modbus_connector.types import DeviceAttribute
+from fastybird_modbus_connector.types import DeviceProperty
 
 
 class DeviceRecord:  # pylint: disable=too-many-instance-attributes
@@ -571,9 +571,9 @@ class HoldingRegister(RegisterRecord):
         )
 
 
-class AttributeRecord:  # pylint: disable=too-many-public-methods,too-many-instance-attributes
+class PropertyRecord:  # pylint: disable=too-many-public-methods,too-many-instance-attributes
     """
-    Device attribute record
+    Device property record
 
     @package        FastyBird:ModbusConnector!
     @module         registry/records
@@ -584,7 +584,7 @@ class AttributeRecord:  # pylint: disable=too-many-public-methods,too-many-insta
     __device_id: uuid.UUID
 
     __id: uuid.UUID
-    __type: DeviceAttribute
+    __type: DeviceProperty
     __value: Union[int, float, str, bool, datetime, ButtonPayload, SwitchPayload, None] = None
 
     # -----------------------------------------------------------------------------
@@ -592,15 +592,15 @@ class AttributeRecord:  # pylint: disable=too-many-public-methods,too-many-insta
     def __init__(  # pylint: disable=too-many-arguments
         self,
         device_id: uuid.UUID,
-        attribute_id: uuid.UUID,
-        attribute_type: DeviceAttribute,
-        attribute_value: Union[int, float, str, bool, datetime, ButtonPayload, SwitchPayload, None] = None,
+        property_id: uuid.UUID,
+        property_type: DeviceProperty,
+        property_value: Union[int, float, str, bool, datetime, ButtonPayload, SwitchPayload, None] = None,
     ) -> None:
         self.__device_id = device_id
 
-        self.__id = attribute_id
-        self.__type = attribute_type
-        self.__value = attribute_value
+        self.__id = property_id
+        self.__type = property_type
+        self.__value = property_value
 
     # -----------------------------------------------------------------------------
 
@@ -613,39 +613,39 @@ class AttributeRecord:  # pylint: disable=too-many-public-methods,too-many-insta
 
     @property
     def id(self) -> uuid.UUID:  # pylint: disable=invalid-name
-        """Attribute unique identifier"""
+        """Property unique identifier"""
         return self.__id
 
     # -----------------------------------------------------------------------------
 
     @property
-    def type(self) -> DeviceAttribute:
-        """Attribute type"""
+    def type(self) -> DeviceProperty:
+        """Property type"""
         return self.__type
 
     # -----------------------------------------------------------------------------
 
     @property
     def actual_value(self) -> Union[int, float, str, bool, datetime, ButtonPayload, SwitchPayload, None]:
-        """Attribute actual value"""
+        """Property actual value"""
         return self.__value
 
     # -----------------------------------------------------------------------------
 
     @actual_value.setter
     def actual_value(self, value: Union[int, float, str, bool, datetime, ButtonPayload, SwitchPayload, None]) -> None:
-        """Set attribute actual value"""
+        """Set property actual value"""
         self.__value = value
 
     # -----------------------------------------------------------------------------
 
     @property
     def data_type(self) -> Optional[DataType]:
-        """Attribute data type"""
-        if self.type == DeviceAttribute.STATE:
+        """Property data type"""
+        if self.type == DeviceProperty.STATE:
             return DataType.ENUM
 
-        if self.type == DeviceAttribute.ADDRESS:
+        if self.type == DeviceProperty.ADDRESS:
             return DataType.BOOLEAN
 
         return DataType.STRING
@@ -656,8 +656,8 @@ class AttributeRecord:  # pylint: disable=too-many-public-methods,too-many-insta
     def format(
         self,
     ) -> Union[List[str], Tuple[Optional[int], Optional[int]], Tuple[Optional[float], Optional[float]], None]:
-        """Attribute format"""
-        if self.type == DeviceAttribute.STATE:
+        """Property format"""
+        if self.type == DeviceProperty.STATE:
             return [
                 ConnectionState.CONNECTED.value,
                 ConnectionState.DISCONNECTED.value,
@@ -670,7 +670,7 @@ class AttributeRecord:  # pylint: disable=too-many-public-methods,too-many-insta
     # -----------------------------------------------------------------------------
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, AttributeRecord):
+        if not isinstance(other, PropertyRecord):
             return False
 
         return (

@@ -109,9 +109,9 @@ class ModbusCommand(Enum):
 
 
 @unique
-class DeviceAttribute(ExtendedEnum):
+class DeviceProperty(ExtendedEnum):
     """
-    Device attribute name
+    Device property name
 
     @package        FastyBird:ModbusConnector!
     @module         types

@@ -39,20 +39,20 @@ from whistle import EventDispatcher
 
 # Library libs
 from fastybird_modbus_connector.events.events import (
-    AttributeActualValueEvent,
+    PropertyActualValueEvent,
     RegisterActualValueEvent,
 )
 from fastybird_modbus_connector.exceptions import InvalidStateException
 from fastybird_modbus_connector.registry.records import (
-    AttributeRecord,
     CoilRegister,
     DeviceRecord,
     DiscreteRegister,
     HoldingRegister,
     InputRegister,
+    PropertyRecord,
     RegisterRecord,
 )
-from fastybird_modbus_connector.types import DeviceAttribute, RegisterType
+from fastybird_modbus_connector.types import DeviceProperty, RegisterType
 
 
 class DevicesRegistry:
@@ -69,19 +69,19 @@ class DevicesRegistry:
 
     __iterator_index = 0
 
-    __attributes_registry: "AttributesRegistry"
+    __properties_registry: "PropertiesRegistry"
     __registers_registry: "RegistersRegistry"
 
     # -----------------------------------------------------------------------------
 
     def __init__(
         self,
-        attributes_registry: "AttributesRegistry",
+        properties_registry: "PropertiesRegistry",
         registers_registry: "RegistersRegistry",
     ) -> None:
         self.__items = {}
 
-        self.__attributes_registry = attributes_registry
+        self.__properties_registry = properties_registry
         self.__registers_registry = registers_registry
 
     # -----------------------------------------------------------------------------
@@ -123,7 +123,7 @@ class DevicesRegistry:
                 try:
                     del self.__items[record.id.__str__()]
 
-                    self.__attributes_registry.reset(device_id=record.id)
+                    self.__properties_registry.reset(device_id=record.id)
                     self.__registers_registry.reset(device_id=record.id)
 
                 except KeyError:
@@ -138,7 +138,7 @@ class DevicesRegistry:
         items = self.__items.copy()
 
         for record in items.values():
-            self.__attributes_registry.reset(device_id=record.id)
+            self.__properties_registry.reset(device_id=record.id)
             self.__registers_registry.reset(device_id=record.id)
 
         self.__items = {}
@@ -177,17 +177,17 @@ class DevicesRegistry:
 
     def set_state(self, device: DeviceRecord, state: ConnectionState) -> DeviceRecord:
         """Set device actual state"""
-        actual_state = self.__attributes_registry.get_by_attribute(
+        actual_state = self.__properties_registry.get_by_property(
             device_id=device.id,
-            attribute_type=DeviceAttribute.STATE,
+            property_type=DeviceProperty.STATE,
         )
 
         if actual_state is None:
             raise InvalidStateException(
-                "Device state could not be updated. Attribute register was not found in registry",
+                "Device state could not be updated. Property was not found in registry",
             )
 
-        self.__attributes_registry.set_value(attribute=actual_state, value=state.value)
+        self.__properties_registry.set_value(item=actual_state, value=state.value)
 
         if actual_state.actual_value != state.value:
             # Reset pointers & counters
@@ -215,9 +215,9 @@ class DevicesRegistry:
 
     def get_state(self, device: DeviceRecord) -> ConnectionState:
         """Set device actual state"""
-        actual_state = self.__attributes_registry.get_by_attribute(
+        actual_state = self.__properties_registry.get_by_property(
             device_id=device.id,
-            attribute_type=DeviceAttribute.STATE,
+            property_type=DeviceProperty.STATE,
         )
 
         if actual_state is not None and ConnectionState.has_value(str(actual_state.actual_value)):
@@ -261,9 +261,9 @@ class DevicesRegistry:
 
     def get_address(self, device: DeviceRecord) -> Optional[int]:
         """Get device actual state"""
-        actual_address = self.__attributes_registry.get_by_attribute(
+        actual_address = self.__properties_registry.get_by_property(
             device_id=device.id,
-            attribute_type=DeviceAttribute.ADDRESS,
+            property_type=DeviceProperty.ADDRESS,
         )
 
         if actual_address is None or not isinstance(actual_address.actual_value, int):
@@ -822,9 +822,9 @@ class RegistersRegistry:
 
 
 @inject
-class AttributesRegistry:
+class PropertiesRegistry:
     """
-    Attributes registry
+    Properties registry
 
     @package        FastyBird:ModbusConnector!
     @module         registry/model
@@ -832,7 +832,7 @@ class AttributesRegistry:
     @author         Adam Kadlec <adam.kadlec@fastybird.com>
     """
 
-    __items: Dict[str, AttributeRecord] = {}
+    __items: Dict[str, PropertyRecord] = {}
 
     __event_dispatcher: EventDispatcher
 
@@ -852,19 +852,19 @@ class AttributesRegistry:
 
     # -----------------------------------------------------------------------------
 
-    def get_by_id(self, attribute_id: uuid.UUID) -> Optional[AttributeRecord]:
-        """Find attribute in registry by given unique identifier"""
+    def get_by_id(self, property_id: uuid.UUID) -> Optional[PropertyRecord]:
+        """Find property in registry by given unique identifier"""
         items = self.__items.copy()
 
         return next(
-            iter([record for record in items.values() if attribute_id.__eq__(record.id)]),
+            iter([record for record in items.values() if property_id.__eq__(record.id)]),
             None,
         )
 
     # -----------------------------------------------------------------------------
 
-    def get_by_attribute(self, device_id: uuid.UUID, attribute_type: DeviceAttribute) -> Optional[AttributeRecord]:
-        """Find device attribute in registry by given unique type in given device"""
+    def get_by_property(self, device_id: uuid.UUID, property_type: DeviceProperty) -> Optional[PropertyRecord]:
+        """Find device property in registry by given unique type in given device"""
         items = self.__items.copy()
 
         return next(
@@ -872,7 +872,7 @@ class AttributesRegistry:
                 [
                     record
                     for record in items.values()
-                    if device_id.__eq__(record.device_id) and record.type == attribute_type
+                    if device_id.__eq__(record.device_id) and record.type == property_type
                 ]
             ),
             None,
@@ -880,75 +880,75 @@ class AttributesRegistry:
 
     # -----------------------------------------------------------------------------
 
-    def get_all_by_device(self, device_id: uuid.UUID) -> List[AttributeRecord]:
-        """Get all device attributes"""
+    def get_all_by_device(self, device_id: uuid.UUID) -> List[PropertyRecord]:
+        """Get all device properties"""
         items = self.__items.copy()
 
         return list(iter([record for record in items.values() if device_id.__eq__(record.device_id)]))
 
     # -----------------------------------------------------------------------------
 
-    def get_all_by_type(self, attribute_type: DeviceAttribute) -> List[AttributeRecord]:
-        """Get all attributes by given type"""
+    def get_all_by_type(self, property_type: DeviceProperty) -> List[PropertyRecord]:
+        """Get all properties by given type"""
         items = self.__items.copy()
 
-        return list(iter([record for record in items.values() if record.type == attribute_type]))
+        return list(iter([record for record in items.values() if record.type == property_type]))
 
     # -----------------------------------------------------------------------------
 
     def append(  # pylint: disable=too-many-arguments
         self,
         device_id: uuid.UUID,
-        attribute_id: uuid.UUID,
-        attribute_type: DeviceAttribute,
-        attribute_value: Union[int, float, str, bool, datetime, ButtonPayload, SwitchPayload, None] = None,
-    ) -> AttributeRecord:
+        property_id: uuid.UUID,
+        property_type: DeviceProperty,
+        property_value: Union[int, float, str, bool, datetime, ButtonPayload, SwitchPayload, None] = None,
+    ) -> PropertyRecord:
         """Append new device record"""
-        existing_attribute = self.get_by_id(attribute_id=attribute_id)
+        existing_property = self.get_by_id(property_id=property_id)
 
-        attribute_record = AttributeRecord(
+        property_record = PropertyRecord(
             device_id=device_id,
-            attribute_id=attribute_id,
-            attribute_type=attribute_type,
-            attribute_value=attribute_value,
+            property_id=property_id,
+            property_type=property_type,
+            property_value=property_value,
         )
 
-        if existing_attribute is None:
-            if attribute_value is None:
+        if existing_property is None:
+            if property_value is None:
                 try:
-                    stored_state = self.__device_property_state_repository.get_by_id(property_id=attribute_id)
+                    stored_state = self.__device_property_state_repository.get_by_id(property_id=property_id)
 
                     if stored_state is not None:
-                        attribute_record.actual_value = stored_state.actual_value
+                        property_record.actual_value = stored_state.actual_value
 
                     else:
-                        attribute_record.actual_value = None
+                        property_record.actual_value = None
 
                 except (NotImplementedError, AttributeError):
                     pass
 
             else:
-                attribute_record.actual_value = attribute_value
+                property_record.actual_value = property_value
 
         else:
-            if attribute_value is None:
-                attribute_record.actual_value = existing_attribute.actual_value
+            if property_value is None:
+                property_record.actual_value = existing_property.actual_value
 
             else:
-                attribute_record.actual_value = attribute_value
+                property_record.actual_value = property_value
 
-        self.__items[attribute_record.id.__str__()] = attribute_record
+        self.__items[property_record.id.__str__()] = property_record
 
-        return attribute_record
+        return property_record
 
     # -----------------------------------------------------------------------------
 
-    def remove(self, attribute_id: uuid.UUID) -> None:
-        """Remove device attribute from registry"""
+    def remove(self, property_id: uuid.UUID) -> None:
+        """Remove device property from registry"""
         items = self.__items.copy()
 
         for record in items.values():
-            if attribute_id.__eq__(record.id):
+            if property_id.__eq__(record.id):
                 try:
                     del self.__items[record.id.__str__()]
 
@@ -960,14 +960,14 @@ class AttributesRegistry:
     # -----------------------------------------------------------------------------
 
     def reset(self, device_id: Optional[uuid.UUID] = None) -> None:
-        """Reset devices attributes registry to initial state"""
+        """Reset devices properties registry to initial state"""
         items = self.__items.copy()
 
         if device_id is not None:
             for record in items.values():
                 if device_id.__eq__(record.device_id):
                     try:
-                        self.remove(attribute_id=record.id)
+                        self.remove(property_id=record.id)
 
                     except KeyError:
                         pass
@@ -979,39 +979,39 @@ class AttributesRegistry:
 
     def set_value(
         self,
-        attribute: AttributeRecord,
+        item: PropertyRecord,
         value: Union[str, bool, None],
-    ) -> AttributeRecord:
-        """Set attribute value"""
-        existing_record = self.get_by_id(attribute_id=attribute.id)
+    ) -> PropertyRecord:
+        """Set property value"""
+        existing_record = self.get_by_id(property_id=item.id)
 
-        attribute.actual_value = value
+        item.actual_value = value
 
-        self.__update(attribute=attribute)
+        self.__update(item=item)
 
-        updated_attribute = self.get_by_id(attribute_id=attribute.id)
+        updated_property = self.get_by_id(property_id=item.id)
 
-        if updated_attribute is None:
-            raise InvalidStateException("Attribute record could not be re-fetched from registry after update")
+        if updated_property is None:
+            raise InvalidStateException("Property could not be re-fetched from registry after update")
 
         self.__event_dispatcher.dispatch(
-            event_id=AttributeActualValueEvent.EVENT_NAME,
-            event=AttributeActualValueEvent(
+            event_id=PropertyActualValueEvent.EVENT_NAME,
+            event=PropertyActualValueEvent(
                 original_record=existing_record,
-                updated_record=updated_attribute,
+                updated_record=updated_property,
             ),
         )
 
-        return updated_attribute
+        return updated_property
 
     # -----------------------------------------------------------------------------
 
-    def __update(self, attribute: AttributeRecord) -> bool:
+    def __update(self, item: PropertyRecord) -> bool:
         items = self.__items.copy()
 
         for record in items.values():
-            if record.id == attribute.id:
-                self.__items[attribute.id.__str__()] = attribute
+            if record.id == item.id:
+                self.__items[item.id.__str__()] = item
 
                 return True
 

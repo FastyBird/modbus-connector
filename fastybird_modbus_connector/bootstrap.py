@@ -34,8 +34,8 @@ from fastybird_modbus_connector.entities import ModbusConnectorEntity
 from fastybird_modbus_connector.events.listeners import EventsListener
 from fastybird_modbus_connector.logger import Logger
 from fastybird_modbus_connector.registry.model import (
-    AttributesRegistry,
     DevicesRegistry,
+    PropertiesRegistry,
     RegistersRegistry,
 )
 
@@ -58,12 +58,12 @@ def create_connector(
     di["modbus-connector_events-dispatcher"] = di[EventDispatcher]
 
     # Registers
-    di[AttributesRegistry] = AttributesRegistry(event_dispatcher=di[EventDispatcher])  # type: ignore[call-arg]
-    di["modbus-connector_attributes-registry"] = di[AttributesRegistry]
+    di[PropertiesRegistry] = PropertiesRegistry(event_dispatcher=di[EventDispatcher])  # type: ignore[call-arg]
+    di["modbus-connector_properties-registry"] = di[PropertiesRegistry]
     di[RegistersRegistry] = RegistersRegistry(event_dispatcher=di[EventDispatcher])  # type: ignore[call-arg]
     di["modbus-connector_registers-registry"] = di[RegistersRegistry]
     di[DevicesRegistry] = DevicesRegistry(
-        attributes_registry=di[AttributesRegistry],
+        properties_registry=di[PropertiesRegistry],
         registers_registry=di[RegistersRegistry],
     )
     di["modbus-connector_devices-registry"] = di[DevicesRegistry]
@@ -88,7 +88,7 @@ def create_connector(
     connector_service = ModbusConnector(
         connector_id=connector.id,
         devices_registry=di[DevicesRegistry],
-        attributes_registry=di[AttributesRegistry],
+        properties_registry=di[PropertiesRegistry],
         registers_registry=di[RegistersRegistry],
         client=di[SerialClient],
         events_listener=di[EventsListener],

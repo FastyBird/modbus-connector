@@ -25,7 +25,7 @@ from typing import Optional
 from whistle import Event
 
 # Library libs
-from fastybird_modbus_connector.registry.records import AttributeRecord, RegisterRecord
+from fastybird_modbus_connector.registry.records import PropertyRecord, RegisterRecord
 
 
 class RegisterActualValueEvent(Event):
@@ -64,9 +64,9 @@ class RegisterActualValueEvent(Event):
         return self.__updated_record
 
 
-class AttributeActualValueEvent(Event):
+class PropertyActualValueEvent(Event):
     """
-    Attribute record actual value was updated in registry
+    Property record actual value was updated in registry
 
     @package        FastyBird:ModbusConnector!
     @module         events/events
@@ -74,27 +74,27 @@ class AttributeActualValueEvent(Event):
     @author         Adam Kadlec <adam.kadlec@fastybird.com>
     """
 
-    __original_record: Optional[AttributeRecord]
-    __updated_record: AttributeRecord
+    __original_record: Optional[PropertyRecord]
+    __updated_record: PropertyRecord
 
-    EVENT_NAME: str = "registry.attributeRecordActualValueUpdated"
+    EVENT_NAME: str = "registry.propertyRecordActualValueUpdated"
 
     # -----------------------------------------------------------------------------
 
-    def __init__(self, original_record: Optional[AttributeRecord], updated_record: AttributeRecord) -> None:
+    def __init__(self, original_record: Optional[PropertyRecord], updated_record: PropertyRecord) -> None:
         self.__original_record = original_record
         self.__updated_record = updated_record
 
     # -----------------------------------------------------------------------------
 
     @property
-    def original_record(self) -> Optional[AttributeRecord]:
-        """Original attribute record"""
+    def original_record(self) -> Optional[PropertyRecord]:
+        """Original property record"""
         return self.__original_record
 
     # -----------------------------------------------------------------------------
 
     @property
-    def updated_record(self) -> AttributeRecord:
-        """Updated attribute record"""
+    def updated_record(self) -> PropertyRecord:
+        """Updated property record"""
         return self.__updated_record
