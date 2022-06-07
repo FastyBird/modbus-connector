@@ -270,11 +270,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
         self.__properties_registry.reset(device_id=device.id)
 
         for register in self.__registers_registry:
-            if (
-                register.device_id.__eq__(device.id)
-                and register.channel_id is not None
-                and register.channel_id.__eq__(device.id)
-            ):
+            if register.device_id == device.id and register.channel_id is not None and register.channel_id == device.id:
                 self.__registers_registry.remove(register_id=register.id)
 
     # -----------------------------------------------------------------------------
@@ -317,7 +313,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
             if (
                 isinstance(register, (DiscreteRegister, CoilRegister, InputRegister, HoldingRegister))
                 and register.channel_id is not None
-                and register.channel_id.__eq__(channel_id)
+                and register.channel_id == channel_id
             ):
                 self.__registers_registry.remove(register_id=register.id)
 
@@ -414,7 +410,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
             if (
                 isinstance(register, (DiscreteRegister, CoilRegister, InputRegister, HoldingRegister))
                 and register.channel_id is not None
-                and register.channel_id.__eq__(channel.id)
+                and register.channel_id == channel.id
             ):
                 self.__registers_registry.remove(register_id=register.id)
 
@@ -435,7 +431,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
                     "Device state could not be updated. Device is disabled and have to be updated",
                     extra={
                         "device": {
-                            "id": device.id.__str__(),
+                            "id": str(device.id),
                         },
                     },
                 )
@@ -472,7 +468,7 @@ class ModbusConnector(IConnector):  # pylint: disable=too-many-public-methods,to
                     "Device state could not be updated. Device is disabled and have to be updated",
                     extra={
                         "device": {
-                            "id": device.id.__str__(),
+                            "id": str(device.id),
                         },
                     },
                 )

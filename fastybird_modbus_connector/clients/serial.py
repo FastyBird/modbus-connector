@@ -116,7 +116,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
             if not device.enabled:
                 continue
 
-            if device.id.__str__() not in self.__processed_devices:
+            if str(device.id) not in self.__processed_devices:
                 if self.__process_device(device=device):
                     if self.__devices_registry.get_state(device=device) == ConnectionState.UNKNOWN:
                         try:
@@ -127,7 +127,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                                 "Device state could not be updated. Device is disabled and have to be updated",
                                 extra={
                                     "device": {
-                                        "id": device.id.__str__(),
+                                        "id": str(device.id),
                                     },
                                 },
                             )
@@ -136,7 +136,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
 
                             continue
 
-                self.__processed_devices.append(device.id.__str__())
+                self.__processed_devices.append(str(device.id))
 
                 return
 
@@ -153,7 +153,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                 "Device address could not be fetched from registry. Device is disabled and have to be updated",
                 extra={
                     "device": {
-                        "id": device.id.__str__(),
+                        "id": str(device.id),
                     },
                 },
             )
@@ -170,7 +170,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                     device_address,
                     extra={
                         "device": {
-                            "id": device.id.__str__(),
+                            "id": str(device.id),
                             "address": device_address,
                         },
                     },
@@ -182,7 +182,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                     device_address,
                     extra={
                         "device": {
-                            "id": device.id.__str__(),
+                            "id": str(device.id),
                             "address": device_address,
                         },
                     },
@@ -196,7 +196,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                     "Device state could not be updated. Device is disabled and have to be updated",
                     extra={
                         "device": {
-                            "id": device.id.__str__(),
+                            "id": str(device.id),
                         },
                     },
                 )
@@ -254,13 +254,13 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
             RegisterType.HOLDING,
             RegisterType.INPUT,
         ]:
-            if device.id.__str__() not in self.__processed_devices_registers:
-                self.__processed_devices_registers[device.id.__str__()] = {}
+            if str(device.id) not in self.__processed_devices_registers:
+                self.__processed_devices_registers[str(device.id)] = {}
 
-            if registers_type.value not in self.__processed_devices_registers[device.id.__str__()]:
-                self.__processed_devices_registers[device.id.__str__()][registers_type.value] = set()
+            if registers_type.value not in self.__processed_devices_registers[str(device.id)]:
+                self.__processed_devices_registers[str(device.id)][registers_type.value] = set()
 
-            processed_length = len(self.__processed_devices_registers[device.id.__str__()][registers_type.value])
+            processed_length = len(self.__processed_devices_registers[str(device.id)][registers_type.value])
 
             registers = self.__registers_registry.get_all_for_device(
                 device_id=device.id,
@@ -270,10 +270,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
             if 0 < len(registers) != processed_length:
                 # Registers have to be read one by one
                 for register in registers:
-                    if (
-                        register.id.__str__()
-                        in self.__processed_devices_registers[device.id.__str__()][registers_type.value]
-                    ):
+                    if str(register.id) in self.__processed_devices_registers[str(device.id)][registers_type.value]:
                         continue
 
                     self.__read_single_register(
@@ -284,8 +281,8 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                         register_data_type=register.data_type,
                     )
 
-                    self.__processed_devices_registers[device.id.__str__()][registers_type.value].add(
-                        register.id.__str__(),
+                    self.__processed_devices_registers[str(device.id)][registers_type.value].add(
+                        str(register.id),
                     )
 
                     return True
@@ -299,7 +296,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
             RegisterType.HOLDING,
             RegisterType.INPUT,
         ]:
-            self.__processed_devices_registers[device.id.__str__()][registers_type.value] = set()
+            self.__processed_devices_registers[str(device.id)][registers_type.value] = set()
 
         return True
 
@@ -338,10 +335,10 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                         "Register value could transformed for transfer",
                         extra={
                             "device": {
-                                "id": device.id.__str__(),
+                                "id": str(device.id),
                             },
                             "register": {
-                                "id": register.id.__str__(),
+                                "id": str(register.id),
                                 "address": register.address,
                                 "value": write_value,
                             },
@@ -384,10 +381,10 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                             "Transformed value is not in valid format for coil register",
                             extra={
                                 "device": {
-                                    "id": device.id.__str__(),
+                                    "id": str(device.id),
                                 },
                                 "register": {
-                                    "id": register.id.__str__(),
+                                    "id": str(register.id),
                                     "address": register.address,
                                     "transformed_value": transformed_value,
                                 },
@@ -434,10 +431,10 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                             "Trying to write unsupported value",
                             extra={
                                 "device": {
-                                    "id": device.id.__str__(),
+                                    "id": str(device.id),
                                 },
                                 "register": {
-                                    "id": register.id.__str__(),
+                                    "id": str(register.id),
                                     "address": register.address,
                                 },
                             },
@@ -472,10 +469,10 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                     "Trying to write to unsupported register",
                     extra={
                         "device": {
-                            "id": device.id.__str__(),
+                            "id": str(device.id),
                         },
                         "register": {
-                            "id": register.id.__str__(),
+                            "id": str(register.id),
                             "address": register.address,
                         },
                     },
@@ -499,10 +496,10 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                     "Something went wrong and register value can not be writen",
                     extra={
                         "device": {
-                            "id": device.id.__str__(),
+                            "id": str(device.id),
                         },
                         "register": {
-                            "id": register.id.__str__(),
+                            "id": str(register.id),
                             "address": register.address,
                         },
                         "exception": {
@@ -523,10 +520,10 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                 register.data_type,
                 extra={
                     "device": {
-                        "id": device.id.__str__(),
+                        "id": str(device.id),
                     },
                     "register": {
-                        "id": register.id.__str__(),
+                        "id": str(register.id),
                         "address": register.address,
                     },
                 },
@@ -618,7 +615,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                     "Trying to read from unsupported register",
                     extra={
                         "device": {
-                            "id": device.id.__str__(),
+                            "id": str(device.id),
                         },
                     },
                 )
@@ -630,7 +627,7 @@ class SerialClient(IClient):  # pylint: disable=too-few-public-methods
                 "Something went wrong and register value cannot be read",
                 extra={
                     "device": {
-                        "id": device.id.__str__(),
+                        "id": str(device.id),
                     },
                     "exception": {
                         "message": str(ex),
