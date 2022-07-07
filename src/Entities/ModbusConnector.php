@@ -93,7 +93,7 @@ class ModbusConnector extends DevicesModuleEntities\Connectors\Connector impleme
 	/**
 	 * {@inheritDoc}
 	 */
-	public function getSource()
+	public function getSource(): MetadataTypes\ModuleSourceType|MetadataTypes\PluginSourceType|MetadataTypes\ConnectorSourceType
 	{
 		return MetadataTypes\ConnectorSourceType::get(MetadataTypes\ConnectorSourceType::SOURCE_CONNECTOR_MODBUS);
 	}
