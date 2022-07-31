@@ -1,31 +1,34 @@
 <?php declare(strict_types = 1);
 
 /**
- * IModbusDevice.php
+ * IEntity.php
  *
- * @license        More in LICENSE.md
+ * @license        More in license.md
  * @copyright      https://www.fastybird.com
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Entities
- * @since          0.1.0
+ * @since          0.34.0
  *
- * @date           30.01.22
+ * @date           31.07.22
  */
 
-namespace FastyBird\ModbusConnector\Entities;
-
-use FastyBird\DevicesModule\Entities as DevicesModuleEntities;
+namespace FastyBird\ModbusConnector\Entities\Messages;
 
 /**
- * Modbus device entity interface
+ * Modbus base message data entity interface
  *
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Entities
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-interface IModbusDevice extends DevicesModuleEntities\Devices\IDevice
+interface IEntity
 {
+
+	/**
+	 * @return Array<string, mixed>
+	 */
+	public function toArray(): array;
 
 }

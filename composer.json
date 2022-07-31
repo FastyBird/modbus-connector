@@ -37,11 +37,19 @@
   "minimum-stability" : "stable",
 
   "require" : {
-    "php": ">=8.0.0|>=8.1.0",
-    "cweagans/composer-patches": "^1.7",
-    "fastybird/devices-module": "^0.72",
-    "fastybird/json-api": "^0.11",
-    "fastybird/metadata": "^0.69"
+    "php" : ">=8.0.0|>=8.1.0",
+    "ext-dio" : ">=0.2.0",
+    "clue/multicast-react" : "^1.1",
+    "cweagans/composer-patches" : "^1.7",
+    "fastybird/devices-module" : "dev-master as 0.72.0",
+    "fastybird/json-api" : "^0.11",
+    "fastybird/metadata" : "^0.69",
+    "fastybird/socket-server-factory" : "^0.5",
+    "fawno/php-serial" : "^2.0",
+    "nette/bootstrap" : "^3.1",
+    "nette/di" : "^3.0",
+    "psr/log" : "^1.1",
+    "react/http" : "^1.6"
   },
 
   "require-dev" : {
@@ -49,13 +57,13 @@
     "mockery/mockery" : "^1.4",
     "ninjify/nunjuck" : "^0.3",
     "ninjify/qa" : "^0.13",
-    "pds/skeleton": "^1.0",
+    "pds/skeleton" : "^1.0",
     "phpstan/extension-installer" : "^1.1",
     "phpstan/phpstan" : "^0.12",
     "phpstan/phpstan-deprecation-rules" : "^0.12",
     "phpstan/phpstan-doctrine" : "^0.12",
     "phpstan/phpstan-nette" : "^0.12",
-    "tracy/tracy": "^2.9"
+    "tracy/tracy" : "^2.9"
   },
 
   "autoload" : {
@@ -74,15 +82,15 @@
 
   "config" : {
     "sort-packages" : true,
-    "allow-plugins": {
-      "cweagans/composer-patches": true,
-      "dealerdirect/phpcodesniffer-composer-installer": true,
-      "phpstan/extension-installer": true
+    "allow-plugins" : {
+      "cweagans/composer-patches" : true,
+      "dealerdirect/phpcodesniffer-composer-installer" : true,
+      "phpstan/extension-installer" : true
     }
   },
 
   "extra" : {
-    "enable-patching": false,
+    "enable-patching" : false,
     "patches" : {
       "nettrine/orm" : {
         "Enable connection overrides" : "https://raw.githubusercontent.com/FastyBird/libraries-patches/master/nettrine.orm.mangerRegistry.diff"

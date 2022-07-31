@@ -1,7 +1,7 @@
 <?php declare(strict_types = 1);
 
 /**
- * ModbusConnector.php
+ * ModbusConnectorEntity.php
  *
  * @license        More in LICENSE.md
  * @copyright      https://www.fastybird.com
@@ -22,7 +22,7 @@ use FastyBird\Metadata\Types as MetadataTypes;
 /**
  * @ORM\Entity
  */
-class ModbusConnector extends DevicesModuleEntities\Connectors\Connector implements IModbusConnector
+class ModbusConnectorEntity extends DevicesModuleEntities\Connectors\Connector implements IModbusConnectorEntity
 {
 
 	public const CONNECTOR_TYPE = 'modbus';
