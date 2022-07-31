@@ -22,7 +22,7 @@ use FastyBird\Metadata\Types as MetadataTypes;
 /**
  * @ORM\Entity
  */
-class ModbusDevice extends DevicesModuleEntities\Devices\Device implements IModbusDevice
+class ModbusDeviceEntity extends DevicesModuleEntities\Devices\Device implements IModbusDeviceEntity
 {
 
 	public const DEVICE_TYPE = 'modbus';
