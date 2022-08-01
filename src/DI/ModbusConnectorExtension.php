@@ -121,7 +121,6 @@ class ModbusConnectorExtension extends DI\CompilerExtension
 		// Helpers
 		$builder->addDefinition($this->prefix('helpers.database'), new DI\Definitions\ServiceDefinition())
 			->setType(Helpers\DatabaseHelper::class);
-
 	}
 
 	/**

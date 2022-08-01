@@ -9,12 +9,6 @@
 [![PHP downloads total](https://badgen.net/packagist/dt/FastyBird/modbus-connector?cache=300&style=flat-square)](https://packagist.org/packages/FastyBird/modbus-connector)
 [![PHPStan](https://img.shields.io/badge/phpstan-enabled-brightgreen.svg?style=flat-square)](https://github.com/phpstan/phpstan)
 
-![Python](https://badgen.net/pypi/python/fastybird-modbus-connector?cache=300&style=flat-square)
-[![Python latest stable](https://badgen.net/pypi/v/fastybird-modbus-connector?cache=300&style=flat-square)](https://pypi.org/project/fastybird-modbus-connector/)
-[![Python downloads month](https://img.shields.io/pypi/dm/fastybird-modbus-connector?cache=300&style=flat-square)](https://pypi.org/project/fastybird-modbus-connector/)
-[![Black](https://img.shields.io/badge/black-enabled-brightgreen.svg?style=flat-square)](https://github.com/psf/black)
-[![MyPy](https://img.shields.io/badge/mypy-enabled-brightgreen.svg?style=flat-square)](http://mypy-lang.org)
-
 ## What is FastyBird IoT Modbus connector?
 
 Modbus connector is a combined [FastyBird IoT](https://www.fastybird.com) extension which is integrating [Modbus](https://www.modbus.org) devices into [FastyBird](https://www.fastybird.com) IoT system
@@ -29,7 +23,6 @@ in [PHP](https://www.php.net) with [Nette framework](https://nette.org) and in [
 - Modbus connector management for [FastyBird IoT](https://www.fastybird.com) [devices module](https://github.com/FastyBird/devices-module)
 - Modbus device management for [FastyBird IoT](https://www.fastybird.com) [devices module](https://github.com/FastyBird/devices-module)
 - [{JSON:API}](https://jsonapi.org/) schemas for full api access
-- Integrated connector Python worker
 
 ## Requirements
 
@@ -43,20 +36,10 @@ Python part of [FastyBird](https://www.fastybird.com) Modbus connector is tested
 
 ### Manual installation
 
-#### Application backend in PHP
-
 The best way to install **fastybird/modbus-connector** is using [Composer](http://getcomposer.org/):
 
 ```sh
 composer require fastybird/modbus-connector
-```
-
-#### Application workers in Python
-
-The best way to install **fastybird-modbus-connector** is using [Pip](https://pip.pypa.io/en/stable/):
-
-```sh
-pip install fastybird-modbus-connector
 ```
 
 ### Marketplace installation

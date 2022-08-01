@@ -1,7 +1,7 @@
 <?php declare(strict_types = 1);
 
 /**
- * ClientVersionType.php
+ * ParityType.php
  *
  * @license        More in LICENSE.md
  * @copyright      https://www.fastybird.com
@@ -18,22 +18,22 @@ namespace FastyBird\ModbusConnector\Types;
 use Consistence;
 
 /**
- * Connector client versions types
+ * Communication stop bits types
  *
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Types
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-class ClientVersionType extends Consistence\Enum\Enum
+class ParityType extends Consistence\Enum\Enum
 {
 
 	/**
 	 * Define versions
 	 */
-	public const VERSION_RTU_DIO = 'rtu_dio';
-	public const VERSION_RTU_FILE = 'rtu_file';
-	public const VERSION_TCP = 'tcp';
+	public const PARITY_NONE = 0;
+	public const PARITY_ODD = 1;
+	public const PARITY_EVEN = 2;
 
 	/**
 	 * @return string

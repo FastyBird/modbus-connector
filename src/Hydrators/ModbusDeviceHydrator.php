@@ -26,7 +26,7 @@ use FastyBird\ModbusConnector\Entities;
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  *
- * @phpstan-extends DevicesModuleHydrators\Devices\DeviceHydrator<Entities\IModbusDevice>
+ * @phpstan-extends DevicesModuleHydrators\Devices\DeviceHydrator<Entities\IModbusDeviceEntity>
  */
 final class ModbusDeviceHydrator extends DevicesModuleHydrators\Devices\DeviceHydrator
 {
@@ -36,7 +36,7 @@ final class ModbusDeviceHydrator extends DevicesModuleHydrators\Devices\DeviceHy
 	 */
 	public function getEntityName(): string
 	{
-		return Entities\ModbusDevice::class;
+		return Entities\ModbusDeviceEntity::class;
 	}
 
 }

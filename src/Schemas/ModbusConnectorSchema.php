@@ -18,7 +18,6 @@ namespace FastyBird\ModbusConnector\Schemas;
 use FastyBird\DevicesModule\Schemas as DevicesModuleSchemas;
 use FastyBird\Metadata\Types as MetadataTypes;
 use FastyBird\ModbusConnector\Entities;
-use Neomerx\JsonApi;
 
 /**
  * Modbus connector entity schema
@@ -28,7 +27,7 @@ use Neomerx\JsonApi;
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  *
- * @phpstan-extends DevicesModuleSchemas\Connectors\ConnectorSchema<Entities\IModbusConnector>
+ * @phpstan-extends DevicesModuleSchemas\Connectors\ConnectorSchema<Entities\IModbusConnectorEntity>
  */
 final class ModbusConnectorSchema extends DevicesModuleSchemas\Connectors\ConnectorSchema
 {
@@ -36,14 +35,14 @@ final class ModbusConnectorSchema extends DevicesModuleSchemas\Connectors\Connec
 	/**
 	 * Define entity schema type string
 	 */
-	public const SCHEMA_TYPE = MetadataTypes\ConnectorSourceType::SOURCE_CONNECTOR_MODBUS . '/connector/' . Entities\ModbusConnector::CONNECTOR_TYPE;
+	public const SCHEMA_TYPE = MetadataTypes\ConnectorSourceType::SOURCE_CONNECTOR_MODBUS . '/connector/' . Entities\ModbusConnectorEntity::CONNECTOR_TYPE;
 
 	/**
 	 * {@inheritDoc}
 	 */
 	public function getEntityClass(): string
 	{
-		return Entities\ModbusConnector::class;
+		return Entities\ModbusConnectorEntity::class;
 	}
 
 	/**
@@ -52,22 +51,6 @@ final class ModbusConnectorSchema extends DevicesModuleSchemas\Connectors\Connec
 	public function getType(): string
 	{
 		return self::SCHEMA_TYPE;
-	}
-
-	/**
-	 * @param Entities\IModbusConnector $connector
-	 * @param JsonApi\Contracts\Schema\ContextInterface $context
-	 *
-	 * @return iterable<string, mixed>
-	 *
-	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint
-	 */
-	public function getAttributes($connector, JsonApi\Contracts\Schema\ContextInterface $context): iterable
-	{
-		return array_merge((array) parent::getAttributes($connector, $context), [
-			'interface' => $connector->getInterface(),
-			'baud_rate' => $connector->getBaudRate(),
-		]);
 	}
 
 }
