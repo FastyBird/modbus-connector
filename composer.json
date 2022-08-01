@@ -38,7 +38,6 @@
 
   "require" : {
     "php" : ">=8.0.0|>=8.1.0",
-    "ext-dio" : ">=0.2",
     "clue/multicast-react" : "^1.1",
     "cweagans/composer-patches" : "^1.7",
     "fastybird/devices-module" : "dev-master as 0.72.0",
@@ -63,6 +62,10 @@
     "phpstan/phpstan-doctrine" : "^0.12",
     "phpstan/phpstan-nette" : "^0.12",
     "tracy/tracy" : "^2.9"
+  },
+
+  "suggest": {
+    "ext-dio": "To use integrated serial interface"
   },
 
   "autoload" : {
