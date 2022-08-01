@@ -37,7 +37,6 @@ final class SerialDio extends Serial
 
 		error_clear_last();
 
-		/** @phpstan-ignore-next-line */
 		$this->resource = @dio_serial($this->port, $mode, $this->configuration->toArray());
 
 		if (!is_resource($this->resource)) {
@@ -78,7 +77,6 @@ final class SerialDio extends Serial
 
 		error_clear_last();
 
-		/** @phpstan-ignore-next-line */
 		$this->resource = @dio_raw($this->port, $mode, $this->configuration->toArray());
 
 		if (!is_resource($this->resource)) {
