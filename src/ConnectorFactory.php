@@ -20,6 +20,7 @@ use FastyBird\DevicesModule\Exceptions as DevicesModuleExceptions;
 use FastyBird\DevicesModule\Models as DevicesModuleModels;
 use FastyBird\Metadata\Entities as MetadataEntities;
 use Nette;
+use ReflectionClass;
 
 /**
  * Connector service container factory
@@ -75,8 +76,28 @@ final class ConnectorFactory implements DevicesModuleConnectors\IConnectorFactor
 	public function create(
 		MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector
 	): DevicesModuleConnectors\IConnector {
+		$modeProperty = $this->connectorPropertiesRepository->findByIdentifier(
+			$connector->getId(),
+			Types\ConnectorPropertyIdentifierType::IDENTIFIER_CLIENT_MODE
+		);
+
+		if (
+			!$modeProperty instanceof MetadataEntities\Modules\DevicesModule\IConnectorStaticPropertyEntity
+			|| !Types\ClientModeType::isValidValue($modeProperty->getValue())
+		) {
+			throw new DevicesModuleExceptions\TerminateException('Connector client mode is not configured');
+		}
+
 		foreach ($this->clientsFactories as $clientFactory) {
-			if (method_exists($clientFactory, 'create')) {
+			$rc = new ReflectionClass($clientFactory);
+
+			$constants = $rc->getConstants();
+
+			if (
+				array_key_exists(Clients\ClientFactory::MODE_CONSTANT_NAME, $constants)
+				&& $constants[Clients\ClientFactory::MODE_CONSTANT_NAME] === $modeProperty->getValue()
+				&& method_exists($clientFactory, 'create')
+			) {
 				return $this->connectorFactory->create($connector, $clientFactory->create($connector));
 			}
 		}

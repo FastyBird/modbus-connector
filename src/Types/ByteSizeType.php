@@ -1,7 +1,7 @@
 <?php declare(strict_types = 1);
 
 /**
- * DataBitsType.php
+ * ByteSizeType.php
  *
  * @license        More in LICENSE.md
  * @copyright      https://www.fastybird.com
@@ -25,17 +25,17 @@ use Consistence;
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-class DataBitsType extends Consistence\Enum\Enum
+class ByteSizeType extends Consistence\Enum\Enum
 {
 
 	/**
 	 * Define versions
 	 */
-	//public const DATA_BIT_4 = 4; // win
-	public const DATA_BIT_5 = 5;
-	public const DATA_BIT_6 = 6;
-	public const DATA_BIT_7 = 7;
-	public const DATA_BIT_8 = 8;
+	//public const SIZE_4 = 4; // win
+	public const SIZE_5 = 5;
+	public const SIZE_6 = 6;
+	public const SIZE_7 = 7;
+	public const SIZE_8 = 8;
 
 	/**
 	 * @return string

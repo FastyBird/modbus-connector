@@ -19,6 +19,7 @@ use Exception;
 use FastyBird\Metadata\Entities as MetadataEntities;
 use FastyBird\ModbusConnector\Clients;
 use FastyBird\ModbusConnector\Exceptions;
+use FastyBird\ModbusConnector\Helpers;
 use FastyBird\ModbusConnector\Types;
 use Nette\Utils;
 use Psr\Log;
@@ -41,8 +42,8 @@ class RtuClient extends Client
 	/** @var MetadataEntities\Modules\DevicesModule\IConnectorEntity */
 	private MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector;
 
-	/** @var Interfaces\ISerial */
-	private Clients\Interfaces\ISerial $interface;
+	/** @var Interfaces\ISerial|null  */
+	private ?Clients\Interfaces\ISerial $interface;
 
 	/** @var EventLoop\LoopInterface */
 	private EventLoop\LoopInterface $eventLoop;
@@ -50,43 +51,23 @@ class RtuClient extends Client
 	/** @var Log\LoggerInterface */
 	private Log\LoggerInterface $logger;
 
+	/** @var Helpers\ConnectorHelper */
+	private Helpers\ConnectorHelper $connectorHelper;
+
 	/**
 	 * @param MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector
+	 * @param Helpers\ConnectorHelper $connectorHelper
 	 * @param EventLoop\LoopInterface $eventLoop
 	 * @param Log\LoggerInterface|null $logger
 	 */
 	public function __construct(
 		MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector,
+		Helpers\ConnectorHelper $connectorHelper,
 		EventLoop\LoopInterface $eventLoop,
 		?Log\LoggerInterface $logger = null
 	) {
 		$this->connector = $connector;
-
-		$configuration = new Clients\Interfaces\Configuration(
-			Types\BaudRateType::get(Types\BaudRateType::BAUD_RATE_9600),
-			Types\DataBitsType::get(Types\DataBitsType::DATA_BIT_8),
-			Types\StopBitsType::get(Types\StopBitsType::STOP_BIT_ONE),
-			Types\ParityType::get(Types\ParityType::PARITY_NONE),
-			false,
-			false
-		);
-
-		$useDio = false;
-
-		foreach (get_loaded_extensions() as $extension) {
-			if (Utils\Strings::contains('dio', $extension)) {
-				$useDio = true;
-
-				break;
-			}
-		}
-
-		if ($useDio) {
-			$this->interface = new Clients\Interfaces\SerialDio('/dev/ttyUSB0', $configuration);
-
-		} else {
-			$this->interface = new Clients\Interfaces\SerialFile('/dev/ttyUSB0', $configuration);
-		}
+		$this->connectorHelper = $connectorHelper;
 
 		$this->eventLoop = $eventLoop;
 
@@ -106,7 +87,69 @@ class RtuClient extends Client
 	 */
 	public function connect(): void
 	{
-		$this->interface->open('r+b');
+		$configuration = new Clients\Interfaces\Configuration(
+			Types\BaudRateType::get($this->connectorHelper->getConfiguration(
+				$this->connector->getId(),
+				Types\ConnectorPropertyIdentifierType::get(
+					Types\ConnectorPropertyIdentifierType::IDENTIFIER_RTU_BAUD_RATE
+				)
+			)),
+			Types\ByteSizeType::get($this->connectorHelper->getConfiguration(
+				$this->connector->getId(),
+				Types\ConnectorPropertyIdentifierType::get(
+					Types\ConnectorPropertyIdentifierType::IDENTIFIER_RTU_BYTE_SIZE
+				)
+			)),
+			Types\StopBitsType::get($this->connectorHelper->getConfiguration(
+				$this->connector->getId(),
+				Types\ConnectorPropertyIdentifierType::get(
+					Types\ConnectorPropertyIdentifierType::IDENTIFIER_RTU_STOP_BITS
+				)
+			)),
+			Types\ParityType::get($this->connectorHelper->getConfiguration(
+				$this->connector->getId(),
+				Types\ConnectorPropertyIdentifierType::get(
+					Types\ConnectorPropertyIdentifierType::IDENTIFIER_RTU_PARITY
+				)
+			)),
+			false,
+			false
+		);
+
+		$useDio = false;
+
+		foreach (get_loaded_extensions() as $extension) {
+			if (Utils\Strings::contains('dio', $extension)) {
+				$useDio = true;
+
+				break;
+			}
+		}
+
+		if ($useDio) {
+			$this->interface = new Clients\Interfaces\SerialDio(
+				(string) $this->connectorHelper->getConfiguration(
+					$this->connector->getId(),
+					Types\ConnectorPropertyIdentifierType::get(
+						Types\ConnectorPropertyIdentifierType::IDENTIFIER_RTU_INTERFACE
+					)
+				),
+				$configuration
+			);
+
+		} else {
+			$this->interface = new Clients\Interfaces\SerialFile(
+				(string) $this->connectorHelper->getConfiguration(
+					$this->connector->getId(),
+					Types\ConnectorPropertyIdentifierType::get(
+						Types\ConnectorPropertyIdentifierType::IDENTIFIER_RTU_INTERFACE
+					)
+				),
+				$configuration
+			);
+		}
+
+		$this->interface->open();
 
 		$this->eventLoop->addPeriodicTimer(
 			3,
@@ -126,7 +169,7 @@ class RtuClient extends Client
 	 */
 	public function disconnect(): void
 	{
-		$this->interface->close();
+		$this->interface?->close();
 	}
 
 	/**
@@ -721,6 +764,10 @@ class RtuClient extends Client
 	private function sendRequest(
 		string $request
 	): string|false {
+		if ($this->interface === null) {
+			throw new Exceptions\RuntimeException('Connection is not established');
+		}
+
 		$this->interface->send($request);
 
 		usleep((int) (0.1 * 1000000));

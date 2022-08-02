@@ -1,7 +1,7 @@
 <?php declare(strict_types = 1);
 
 /**
- * ClientVersionType.php
+ * ConnectorPropertyIdentifierType.php
  *
  * @license        More in LICENSE.md
  * @copyright      https://www.fastybird.com
@@ -10,7 +10,7 @@
  * @subpackage     Types
  * @since          0.34.0
  *
- * @date           31.07.22
+ * @date           01.08.22
  */
 
 namespace FastyBird\ModbusConnector\Types;
@@ -18,22 +18,25 @@ namespace FastyBird\ModbusConnector\Types;
 use Consistence;
 
 /**
- * Connector client versions types
+ * Connector property identifier types
  *
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Types
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-class ClientVersionType extends Consistence\Enum\Enum
+class ConnectorPropertyIdentifierType extends Consistence\Enum\Enum
 {
 
 	/**
-	 * Define versions
+	 * Define device states
 	 */
-	public const VERSION_RTU_DIO = 'rtu_dio';
-	public const VERSION_RTU_FILE = 'rtu_file';
-	public const VERSION_TCP = 'tcp';
+	public const IDENTIFIER_CLIENT_MODE = 'mode';
+	public const IDENTIFIER_RTU_INTERFACE = 'rtu-interface';
+	public const IDENTIFIER_RTU_BYTE_SIZE = 'rtu-byte-size';
+	public const IDENTIFIER_RTU_BAUD_RATE = 'rtu-baud-rate';
+	public const IDENTIFIER_RTU_PARITY = 'rtu-parity';
+	public const IDENTIFIER_RTU_STOP_BITS = 'rtu-stop-bits';
 
 	/**
 	 * @return string

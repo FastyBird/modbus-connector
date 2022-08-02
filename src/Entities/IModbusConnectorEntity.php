@@ -28,14 +28,4 @@ use FastyBird\DevicesModule\Entities as DevicesModuleEntities;
 interface IModbusConnectorEntity extends DevicesModuleEntities\Connectors\IConnector
 {
 
-	/**
-	 * @return string|null
-	 */
-	public function getInterface(): ?string;
-
-	/**
-	 * @return int|null
-	 */
-	public function getBaudRate(): ?int;
-
 }

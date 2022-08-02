@@ -34,8 +34,8 @@ final class Configuration
 	/** @var Types\BaudRateType */
 	private Types\BaudRateType $baudRate;
 
-	/** @var Types\DataBitsType */
-	private Types\DataBitsType $dataBits;
+	/** @var Types\ByteSizeType */
+	private Types\ByteSizeType $dataBits;
 
 	/** @var Types\StopBitsType */
 	private Types\StopBitsType $stopBits;
@@ -51,7 +51,7 @@ final class Configuration
 
 	/**
 	 * @param Types\BaudRateType|null $baudRate
-	 * @param Types\DataBitsType|null $dataBits
+	 * @param Types\ByteSizeType|null $dataBits
 	 * @param Types\StopBitsType|null $stopBits
 	 * @param Types\ParityType|null $parity
 	 * @param bool $flowControl
@@ -59,15 +59,14 @@ final class Configuration
 	 */
 	public function __construct(
 		?Types\BaudRateType $baudRate = null,
-		?Types\DataBitsType $dataBits = null,
+		?Types\ByteSizeType $dataBits = null,
 		?Types\StopBitsType $stopBits = null,
 		?Types\ParityType $parity = null,
 		bool $flowControl = true,
 		bool $isCanonical = true,
-	)
-	{
+	) {
 		$this->baudRate = $baudRate ?? Types\BaudRateType::get(Types\BaudRateType::BAUD_RATE_9600);
-		$this->dataBits = $dataBits ?? Types\DataBitsType::get(Types\DataBitsType::DATA_BIT_8);
+		$this->dataBits = $dataBits ?? Types\ByteSizeType::get(Types\ByteSizeType::SIZE_8);
 		$this->stopBits = $stopBits ?? Types\StopBitsType::get(Types\StopBitsType::STOP_BIT_ONE);
 		$this->parity = $parity ?? Types\ParityType::get(Types\ParityType::PARITY_NONE);
 
@@ -90,11 +89,11 @@ final class Configuration
 	/**
 	 * Sets the number of data bits
 	 *
-	 * @param Types\DataBitsType $dataBits
+	 * @param Types\ByteSizeType $dataBits
 	 *
 	 * @return void
 	 */
-	public function setDataBits(Types\DataBitsType $dataBits): void
+	public function setDataBits(Types\ByteSizeType $dataBits): void
 	{
 		$this->dataBits = $dataBits;
 	}

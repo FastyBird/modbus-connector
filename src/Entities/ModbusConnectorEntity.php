@@ -35,52 +35,6 @@ class ModbusConnectorEntity extends DevicesModuleEntities\Connectors\Connector i
 		return self::CONNECTOR_TYPE;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	public function getInterface(): string
-	{
-		$property = $this->findProperty(MetadataTypes\ConnectorPropertyNameType::NAME_INTERFACE);
-
-		if (
-			$property === null
-			|| !$property instanceof DevicesModuleEntities\Connectors\Properties\IStaticProperty
-			|| !is_string($property->getValue())
-		) {
-			return '/dev/ttyAMA0';
-		}
-
-		return $property->getValue();
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public function getBaudRate(): int
-	{
-		$property = $this->findProperty(MetadataTypes\ConnectorPropertyNameType::NAME_BAUD_RATE);
-
-		if (
-			$property === null
-			|| !$property instanceof DevicesModuleEntities\Connectors\Properties\IStaticProperty
-			|| !is_int($property->getValue())
-		) {
-			return 9600;
-		}
-
-		return $property->getValue();
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public function toArray(): array
-	{
-		return array_merge(parent::toArray(), [
-			'interface' => $this->getInterface(),
-			'baud_rate' => $this->getBaudRate(),
-		]);
-	}
 
 	/**
 	 * {@inheritDoc}

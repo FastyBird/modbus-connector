@@ -26,6 +26,6 @@ namespace FastyBird\ModbusConnector\Clients;
 interface ClientFactory
 {
 
-	public const VERSION_CONSTANT_NAME = 'VERSION';
+	public const MODE_CONSTANT_NAME = 'MODE';
 
 }

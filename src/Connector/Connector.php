@@ -21,7 +21,9 @@ use FastyBird\Metadata\Entities as MetadataEntities;
 use FastyBird\Metadata\Types as MetadataTypes;
 use FastyBird\ModbusConnector\Clients;
 use FastyBird\ModbusConnector\Consumers;
+use FastyBird\ModbusConnector\Helpers;
 use Nette;
+use Nette\Utils;
 use React\EventLoop;
 
 /**
@@ -51,8 +53,20 @@ final class Connector implements DevicesModuleConnectors\IConnector
 	/** @var Consumers\Consumer */
 	private Consumers\Consumer $consumer;
 
+	/** @var Helpers\PropertyStateHelper */
+	private Helpers\PropertyStateHelper $propertyStateHelper;
+
 	/** @var DevicesModuleModels\DataStorage\IDevicesRepository */
 	private DevicesModuleModels\DataStorage\IDevicesRepository $devicesRepository;
+
+	/** @var DevicesModuleModels\DataStorage\IDevicePropertiesRepository */
+	private DevicesModuleModels\DataStorage\IDevicePropertiesRepository $devicePropertiesRepository;
+
+	/** @var DevicesModuleModels\DataStorage\IChannelsRepository */
+	private DevicesModuleModels\DataStorage\IChannelsRepository $channelsRepository;
+
+	/** @var DevicesModuleModels\DataStorage\IChannelPropertiesRepository */
+	private DevicesModuleModels\DataStorage\IChannelPropertiesRepository $channelPropertiesRepository;
 
 	/** @var DevicesModuleModels\States\DeviceConnectionStateManager */
 	private DevicesModuleModels\States\DeviceConnectionStateManager $deviceConnectionStateManager;
@@ -64,7 +78,11 @@ final class Connector implements DevicesModuleConnectors\IConnector
 	 * @param MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector
 	 * @param Clients\IClient $client
 	 * @param Consumers\Consumer $consumer
+	 * @param Helpers\PropertyStateHelper $propertyStateHelper
 	 * @param DevicesModuleModels\DataStorage\IDevicesRepository $devicesRepository
+	 * @param DevicesModuleModels\DataStorage\IDevicePropertiesRepository $devicePropertiesRepository
+	 * @param DevicesModuleModels\DataStorage\IChannelsRepository $channelsRepository
+	 * @param DevicesModuleModels\DataStorage\IChannelPropertiesRepository $channelPropertiesRepository
 	 * @param DevicesModuleModels\States\DeviceConnectionStateManager $deviceConnectionStateManager
 	 * @param EventLoop\LoopInterface $eventLoop
 	 */
@@ -72,7 +90,11 @@ final class Connector implements DevicesModuleConnectors\IConnector
 		MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector,
 		Clients\IClient $client,
 		Consumers\Consumer $consumer,
+		Helpers\PropertyStateHelper $propertyStateHelper,
 		DevicesModuleModels\DataStorage\IDevicesRepository $devicesRepository,
+		DevicesModuleModels\DataStorage\IDevicePropertiesRepository $devicePropertiesRepository,
+		DevicesModuleModels\DataStorage\IChannelsRepository $channelsRepository,
+		DevicesModuleModels\DataStorage\IChannelPropertiesRepository $channelPropertiesRepository,
 		DevicesModuleModels\States\DeviceConnectionStateManager $deviceConnectionStateManager,
 		EventLoop\LoopInterface $eventLoop
 	) {
@@ -81,8 +103,13 @@ final class Connector implements DevicesModuleConnectors\IConnector
 		$this->client = $client;
 
 		$this->consumer = $consumer;
+		$this->propertyStateHelper = $propertyStateHelper;
 
 		$this->devicesRepository = $devicesRepository;
+		$this->devicePropertiesRepository = $devicePropertiesRepository;
+		$this->channelsRepository = $channelsRepository;
+		$this->channelPropertiesRepository = $channelPropertiesRepository;
+
 		$this->deviceConnectionStateManager = $deviceConnectionStateManager;
 
 		$this->eventLoop = $eventLoop;
@@ -98,6 +125,8 @@ final class Connector implements DevicesModuleConnectors\IConnector
 				$device,
 				MetadataTypes\ConnectionStateType::get(MetadataTypes\ConnectionStateType::STATE_UNKNOWN)
 			);
+
+			$this->setPropertiesValuesInvalid($device);
 		}
 
 		$this->client->connect();
@@ -119,6 +148,8 @@ final class Connector implements DevicesModuleConnectors\IConnector
 				$device,
 				MetadataTypes\ConnectionStateType::get(MetadataTypes\ConnectionStateType::STATE_DISCONNECTED)
 			);
+
+			$this->setPropertiesValuesInvalid($device);
 		}
 
 		if ($this->consumerTimer !== null) {
@@ -160,6 +191,37 @@ final class Connector implements DevicesModuleConnectors\IConnector
 		}
 
 		$this->client->writeChannelControl($action);
+	}
+
+	/**
+	 * @param MetadataEntities\Modules\DevicesModule\IDeviceEntity $device
+	 *
+	 * @return void
+	 */
+	private function setPropertiesValuesInvalid(
+		MetadataEntities\Modules\DevicesModule\IDeviceEntity $device
+	): void {
+		foreach ($this->devicePropertiesRepository->findAllByDevice($device->getId()) as $property) {
+			if (!$property instanceof MetadataEntities\Modules\DevicesModule\IDeviceDynamicPropertyEntity) {
+				continue;
+			}
+
+			$this->propertyStateHelper->setValue($property, Utils\ArrayHash::from([
+				'valid' => false,
+			]));
+		}
+
+		foreach ($this->channelsRepository->findAllByDevice($device->getId()) as $channel) {
+			foreach ($this->channelPropertiesRepository->findAllByChannel($channel->getId()) as $property) {
+				if (!$property instanceof MetadataEntities\Modules\DevicesModule\IChannelDynamicPropertyEntity) {
+					continue;
+				}
+
+				$this->propertyStateHelper->setValue($property, Utils\ArrayHash::from([
+					'valid' => false,
+				]));
+			}
+		}
 	}
 
 }

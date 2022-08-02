@@ -29,7 +29,7 @@ use FastyBird\ModbusConnector\Types;
 interface RtuClientFactory extends ClientFactory
 {
 
-	public const VERSION = Types\ClientVersionType::VERSION_RTU_DIO;
+	public const MODE = Types\ClientModeType::MODE_RTU;
 
 	/**
 	 * @param MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector
