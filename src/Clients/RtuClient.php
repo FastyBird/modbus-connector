@@ -15,8 +15,15 @@
 
 namespace FastyBird\ModbusConnector\Clients;
 
-use Exception;
+use DateTimeInterface;
+use FastyBird\DateTimeFactory;
+use FastyBird\DevicesModule\Models as DevicesModuleModels;
+use FastyBird\Metadata;
 use FastyBird\Metadata\Entities as MetadataEntities;
+use FastyBird\Metadata\Entities\Modules\DevicesModule\IPropertyEntity;
+use FastyBird\Metadata\Types as MetadataTypes;
+use FastyBird\ModbusConnector;
+use FastyBird\ModbusConnector\API;
 use FastyBird\ModbusConnector\Clients;
 use FastyBird\ModbusConnector\Exceptions;
 use FastyBird\ModbusConnector\Helpers;
@@ -39,11 +46,68 @@ class RtuClient extends Client
 	private const MODBUS_ADU = 'C1station/C1function/C*data/';
 	private const MODBUS_ERROR = 'C1station/C1error/C1exception/';
 
+	private const WRITE_DEBOUNCE_DELAY = 500; // in ms
+	private const WRITE_PENDING_DELAY = 2000; // in ms
+	private const WRITE_MAX_ATTEMPTS = 5;
+
+	private const READ_DELAY = 10; // in s
+	private const READ_MAX_ATTEMPTS = 5;
+
+	private const LOST_DELAY = 5; // in s - Waiting delay before another communication with device after device was lost
+
+	private const HANDLER_START_DELAY = 2;
+	private const HANDLER_PROCESSING_INTERVAL = 0.01;
+
+	/** @var string[] */
+	private array $processedDevices = [];
+
+	/** @var Array<string, DateTimeInterface> */
+	private array $lostDevices = [];
+
+	/** @var Array<string, DateTimeInterface|int> */
+	private array $processedWrittenProperties = [];
+
+	/** @var Array<string, DateTimeInterface|int> */
+	private array $processedReadProperties = [];
+
+	/** @var EventLoop\TimerInterface|null */
+	private ?EventLoop\TimerInterface $handlerTimer;
+
 	/** @var MetadataEntities\Modules\DevicesModule\IConnectorEntity */
 	private MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector;
 
-	/** @var Interfaces\ISerial|null  */
+	/** @var Interfaces\ISerial|null */
 	private ?Clients\Interfaces\ISerial $interface;
+
+	/** @var Helpers\ConnectorHelper */
+	private Helpers\ConnectorHelper $connectorHelper;
+
+	/** @var Helpers\DeviceHelper */
+	private Helpers\DeviceHelper $deviceHelper;
+
+	/** @var Helpers\PropertyHelper */
+	private Helpers\PropertyHelper $propertyStateHelper;
+
+	/** @var API\Transformer */
+	private ModbusConnector\API\Transformer $transformer;
+
+	/** @var DevicesModuleModels\DataStorage\IDevicesRepository */
+	private DevicesModuleModels\DataStorage\IDevicesRepository $devicesRepository;
+
+	/** @var DevicesModuleModels\DataStorage\IDevicePropertiesRepository */
+	private DevicesModuleModels\DataStorage\IDevicePropertiesRepository $devicePropertiesRepository;
+
+	/** @var DevicesModuleModels\DataStorage\IChannelsRepository */
+	private DevicesModuleModels\DataStorage\IChannelsRepository $channelsRepository;
+
+	/** @var DevicesModuleModels\DataStorage\IChannelPropertiesRepository */
+	private DevicesModuleModels\DataStorage\IChannelPropertiesRepository $channelPropertiesRepository;
+
+	/** @var DevicesModuleModels\States\DeviceConnectionStateManager */
+	private DevicesModuleModels\States\DeviceConnectionStateManager $deviceConnectionStateManager;
+
+	/** @var DateTimeFactory\DateTimeFactory */
+	private DateTimeFactory\DateTimeFactory $dateTimeFactory;
 
 	/** @var EventLoop\LoopInterface */
 	private EventLoop\LoopInterface $eventLoop;
@@ -51,24 +115,49 @@ class RtuClient extends Client
 	/** @var Log\LoggerInterface */
 	private Log\LoggerInterface $logger;
 
-	/** @var Helpers\ConnectorHelper */
-	private Helpers\ConnectorHelper $connectorHelper;
-
 	/**
 	 * @param MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector
 	 * @param Helpers\ConnectorHelper $connectorHelper
+	 * @param Helpers\DeviceHelper $deviceHelper
+	 * @param Helpers\PropertyHelper $propertyStateHelper
+	 * @param API\Transformer $transformer
+	 * @param DevicesModuleModels\DataStorage\IDevicesRepository $devicesRepository
+	 * @param DevicesModuleModels\DataStorage\IDevicePropertiesRepository $devicePropertiesRepository
+	 * @param DevicesModuleModels\DataStorage\IChannelsRepository $channelsRepository
+	 * @param DevicesModuleModels\DataStorage\IChannelPropertiesRepository $channelPropertiesRepository
+	 * @param DevicesModuleModels\States\DeviceConnectionStateManager $deviceConnectionStateManager
+	 * @param DateTimeFactory\DateTimeFactory $dateTimeFactory
 	 * @param EventLoop\LoopInterface $eventLoop
 	 * @param Log\LoggerInterface|null $logger
 	 */
 	public function __construct(
 		MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector,
 		Helpers\ConnectorHelper $connectorHelper,
+		Helpers\DeviceHelper $deviceHelper,
+		Helpers\PropertyHelper $propertyStateHelper,
+		API\Transformer $transformer,
+		DevicesModuleModels\DataStorage\IDevicesRepository $devicesRepository,
+		DevicesModuleModels\DataStorage\IDevicePropertiesRepository $devicePropertiesRepository,
+		DevicesModuleModels\DataStorage\IChannelsRepository $channelsRepository,
+		DevicesModuleModels\DataStorage\IChannelPropertiesRepository $channelPropertiesRepository,
+		DevicesModuleModels\States\DeviceConnectionStateManager $deviceConnectionStateManager,
+		DateTimeFactory\DateTimeFactory $dateTimeFactory,
 		EventLoop\LoopInterface $eventLoop,
 		?Log\LoggerInterface $logger = null
 	) {
 		$this->connector = $connector;
 		$this->connectorHelper = $connectorHelper;
+		$this->deviceHelper = $deviceHelper;
+		$this->propertyStateHelper = $propertyStateHelper;
+		$this->transformer = $transformer;
 
+		$this->devicesRepository = $devicesRepository;
+		$this->devicePropertiesRepository = $devicePropertiesRepository;
+		$this->channelsRepository = $channelsRepository;
+		$this->channelPropertiesRepository = $channelPropertiesRepository;
+		$this->deviceConnectionStateManager = $deviceConnectionStateManager;
+
+		$this->dateTimeFactory = $dateTimeFactory;
 		$this->eventLoop = $eventLoop;
 
 		$this->logger = $logger ?? new Log\NullLogger();
@@ -119,7 +208,7 @@ class RtuClient extends Client
 		$useDio = false;
 
 		foreach (get_loaded_extensions() as $extension) {
-			if (Utils\Strings::contains('dio', $extension)) {
+			if (Utils\Strings::contains('dio', Utils\Strings::lower($extension))) {
 				$useDio = true;
 
 				break;
@@ -151,15 +240,15 @@ class RtuClient extends Client
 
 		$this->interface->open();
 
-		$this->eventLoop->addPeriodicTimer(
-			3,
+		$this->eventLoop->addTimer(
+			self::HANDLER_START_DELAY,
 			function (): void {
-				try {
-					var_dump('READING...');
-					var_dump($this->readHoldingRegisters(2, 1, 5));
-				} catch (Exceptions\ModbusRtuException $ex) {
-					var_dump($ex->getMessage());
-				}
+				$this->handlerTimer = $this->eventLoop->addPeriodicTimer(
+					self::HANDLER_PROCESSING_INTERVAL,
+					function (): void {
+						$this->handleCommunication();
+					}
+				);
 			}
 		);
 	}
@@ -169,6 +258,10 @@ class RtuClient extends Client
 	 */
 	public function disconnect(): void
 	{
+		if ($this->handlerTimer !== null) {
+			$this->eventLoop->cancelTimer($this->handlerTimer);
+		}
+
 		$this->interface?->close();
 	}
 
@@ -186,6 +279,928 @@ class RtuClient extends Client
 	public function writeDeviceControl(MetadataEntities\Actions\IActionDeviceControlEntity $action): void
 	{
 		// TODO: Implement writeDeviceControl() method.
+	}
+
+	/**
+	 * @return void
+	 */
+	private function handleCommunication(): void
+	{
+		foreach ($this->processedWrittenProperties as $index => $processedProperty) {
+			if (
+				$processedProperty instanceof DateTimeInterface
+				&& ((float) $this->dateTimeFactory->getNow()->format('Uv') - (float) $processedProperty->format('Uv')) >= self::WRITE_DEBOUNCE_DELAY
+			) {
+				unset($this->processedWrittenProperties[$index]);
+			}
+		}
+
+		foreach ($this->devicesRepository->findAllByConnector($this->connector->getId()) as $device) {
+			if (
+				!in_array($device->getId()->toString(), $this->processedDevices, true)
+				&& !$this->deviceConnectionStateManager->getState($device)->equalsValue(MetadataTypes\ConnectionStateType::STATE_STOPPED)
+			) {
+				$deviceAddress = $this->deviceHelper->getConfiguration(
+					$device->getId(),
+					Types\DevicePropertyIdentifierType::get(
+						Types\DevicePropertyIdentifierType::IDENTIFIER_ADDRESS
+					)
+				);
+
+				if (!is_int($deviceAddress)) {
+					$this->deviceConnectionStateManager->setState(
+						$device,
+						MetadataTypes\ConnectionStateType::get(MetadataTypes\ConnectionStateType::STATE_STOPPED)
+					);
+
+					continue;
+				}
+
+				// Check if device is lost or not
+				if (array_key_exists($device->getId()->toString(), $this->lostDevices)) {
+					if ($this->deviceConnectionStateManager->getState($device)->equalsValue(MetadataTypes\ConnectionStateType::STATE_LOST)) {
+						$this->logger->debug('Device is still lost', [
+							'source'    => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
+							'type'      => 'rtu-client',
+							'device'    => [
+								'id' => $device->getId()->toString(),
+							],
+						]);
+
+					} else {
+						$this->logger->debug('Device is lost', [
+							'source'    => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
+							'type'      => 'rtu-client',
+							'device'    => [
+								'id' => $device->getId()->toString(),
+							],
+						]);
+
+						$this->deviceConnectionStateManager->setState(
+							$device,
+							MetadataTypes\ConnectionStateType::get(MetadataTypes\ConnectionStateType::STATE_LOST)
+						);
+					}
+
+					if ($this->dateTimeFactory->getNow()->getTimestamp() - $this->lostDevices[$device->getId()->toString()]->getTimestamp() < self::LOST_DELAY) {
+						continue;
+					}
+				}
+
+				$this->processedDevices[] = $device->getId()->toString();
+
+				if ($this->processDevice($device)) {
+					return;
+				}
+			}
+		}
+
+		$this->processedDevices = [];
+	}
+
+	/**
+	 * @param MetadataEntities\Modules\DevicesModule\IDeviceEntity $device
+	 *
+	 * @return bool
+	 */
+	private function processDevice(MetadataEntities\Modules\DevicesModule\IDeviceEntity $device): bool
+	{
+		$station = (int) $this->deviceHelper->getConfiguration(
+			$device->getId(),
+			Types\DevicePropertyIdentifierType::get(
+				Types\DevicePropertyIdentifierType::IDENTIFIER_ADDRESS
+			)
+		);
+
+		foreach ($this->devicePropertiesRepository->findAllByDevice($device->getId()) as $property) {
+			if (!$property instanceof MetadataEntities\Modules\DevicesModule\IDeviceDynamicPropertyEntity) {
+				continue;
+			}
+
+			$logContext = [
+				'source'    => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
+				'type'      => 'rtu-client',
+				'device'    => [
+					'id' => $device->getId()->toString(),
+				],
+				'property'  => [
+					'id' => $property->getId()->toString(),
+				],
+			];
+
+			/**
+			 * Device property writing
+			 */
+
+			try {
+				$result = $this->writeProperty($station, $device, $property);
+
+				if ($result) {
+					return true;
+				}
+			} catch (Exceptions\InvalidArgumentException $ex) {
+				$this->logger->warning('Device property value could not be written', array_merge($logContext, [
+					'exception' => [
+						'message' => $ex->getMessage(),
+						'code'    => $ex->getCode(),
+					],
+				]));
+			} catch (Exceptions\NotSupportedException $ex) {
+				$this->logger->warning('Device property value is not supported for now', array_merge($logContext, [
+					'exception' => [
+						'message' => $ex->getMessage(),
+						'code'    => $ex->getCode(),
+					],
+				]));
+			} catch (Exceptions\ModbusRtuException $ex) {
+				$this->logger->error('Modbus communication with device failed', array_merge($logContext, [
+					'exception' => [
+						'message' => $ex->getMessage(),
+						'code'    => $ex->getCode(),
+					],
+				]));
+
+				// Something wrong during communication
+				return true;
+			} catch (Exceptions\NotReachableException $ex) {
+				$this->logger->error('Maximum device property write attempts reached', array_merge($logContext, [
+					'exception' => [
+						'message' => $ex->getMessage(),
+						'code'    => $ex->getCode(),
+					],
+				]));
+
+				// Device is probably offline
+				return true;
+			}
+
+			/**
+			 * Device property reading
+			 */
+
+			try {
+				$result = $this->readProperty($station, $device, $property);
+
+				if ($result) {
+					return true;
+				}
+			} catch (Exceptions\InvalidArgumentException $ex) {
+				$this->logger->warning('Device property value could not be read', array_merge($logContext, [
+					'exception' => [
+						'message' => $ex->getMessage(),
+						'code'    => $ex->getCode(),
+					],
+				]));
+			} catch (Exceptions\NotSupportedException $ex) {
+				$this->logger->warning('Device property data type is not supported for now', array_merge($logContext, [
+					'exception' => [
+						'message' => $ex->getMessage(),
+						'code'    => $ex->getCode(),
+					],
+				]));
+			} catch (Exceptions\ModbusRtuException $ex) {
+				$this->logger->error('Modbus communication with device failed', array_merge($logContext, [
+					'exception' => [
+						'message' => $ex->getMessage(),
+						'code'    => $ex->getCode(),
+					],
+				]));
+
+				// Something wrong during communication
+				return true;
+			} catch (Exceptions\NotReachableException $ex) {
+				$this->logger->error('Maximum device property read attempts reached', array_merge($logContext, [
+					'exception' => [
+						'message' => $ex->getMessage(),
+						'code'    => $ex->getCode(),
+					],
+				]));
+
+				// Device is probably offline
+				return true;
+			}
+		}
+
+		foreach ($this->channelsRepository->findAllByDevice($device->getId()) as $channel) {
+			foreach ($this->channelPropertiesRepository->findAllByChannel($channel->getId()) as $property) {
+				if (!$property instanceof MetadataEntities\Modules\DevicesModule\IChannelDynamicPropertyEntity) {
+					continue;
+				}
+
+				$logContext = [
+					'source'    => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
+					'type'      => 'rtu-client',
+					'device'    => [
+						'id' => $device->getId()->toString(),
+					],
+					'channel'   => [
+						'id' => $channel->getId()->toString(),
+					],
+					'property'  => [
+						'id' => $property->getId()->toString(),
+					],
+				];
+
+				/**
+				 * Channel property writing
+				 */
+
+				try {
+					$result = $this->writeProperty($station, $device, $property);
+
+					if ($result) {
+						return true;
+					}
+				} catch (Exceptions\InvalidArgumentException $ex) {
+					$this->logger->warning('Channel property value could not be written', array_merge($logContext, [
+						'exception' => [
+							'message' => $ex->getMessage(),
+							'code'    => $ex->getCode(),
+						],
+					]));
+				} catch (Exceptions\NotSupportedException $ex) {
+					$this->logger->warning('Channel property value is not supported for now', array_merge($logContext, [
+						'exception' => [
+							'message' => $ex->getMessage(),
+							'code'    => $ex->getCode(),
+						],
+					]));
+				} catch (Exceptions\ModbusRtuException $ex) {
+					$this->logger->error('Modbus communication with device failed', array_merge($logContext, [
+						'exception' => [
+							'message' => $ex->getMessage(),
+							'code'    => $ex->getCode(),
+						],
+					]));
+
+					// Something wrong during communication
+					return true;
+				} catch (Exceptions\NotReachableException $ex) {
+					$this->logger->error('Maximum channel property write attempts reached', array_merge($logContext, [
+						'exception' => [
+							'message' => $ex->getMessage(),
+							'code'    => $ex->getCode(),
+						],
+					]));
+
+					// Device is probably offline
+					return true;
+				}
+
+				/**
+				 * Channel property reading
+				 */
+
+				try {
+					$result = $this->readProperty($station, $device, $property);
+
+					if ($result) {
+						return true;
+					}
+				} catch (Exceptions\InvalidArgumentException $ex) {
+					$this->logger->warning('Channel property value could not be read', array_merge($logContext, [
+						'exception' => [
+							'message' => $ex->getMessage(),
+							'code'    => $ex->getCode(),
+						],
+					]));
+				} catch (Exceptions\NotSupportedException $ex) {
+					$this->logger->warning('Channel property data type is not supported for now', array_merge($logContext, [
+						'exception' => [
+							'message' => $ex->getMessage(),
+							'code'    => $ex->getCode(),
+						],
+					]));
+				} catch (Exceptions\ModbusRtuException $ex) {
+					$this->logger->error('Modbus communication with device failed', array_merge($logContext, [
+						'exception' => [
+							'message' => $ex->getMessage(),
+							'code'    => $ex->getCode(),
+						],
+					]));
+
+					// Something wrong during communication
+					return true;
+				} catch (Exceptions\NotReachableException $ex) {
+					$this->logger->error('Maximum channel property read attempts reached', array_merge($logContext, [
+						'exception' => [
+							'message' => $ex->getMessage(),
+							'code'    => $ex->getCode(),
+						],
+					]));
+
+					// Device is probably offline
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * @param int $station
+	 * @param MetadataEntities\Modules\DevicesModule\IDeviceEntity $device
+	 * @param IPropertyEntity $property
+	 *
+	 * @return bool
+	 *
+	 * @throws Exceptions\ModbusRtuException
+	 */
+	private function writeProperty(
+		int $station,
+		MetadataEntities\Modules\DevicesModule\IDeviceEntity $device,
+		MetadataEntities\Modules\DevicesModule\IPropertyEntity $property
+	): bool {
+		$now = $this->dateTimeFactory->getNow();
+
+		$propertyUuid = $property->getId()->toString();
+
+		if (
+			(
+				// Only dynamic properties could be processed
+				$property instanceof MetadataEntities\Modules\DevicesModule\IDeviceDynamicPropertyEntity
+				|| $property instanceof MetadataEntities\Modules\DevicesModule\IChannelDynamicPropertyEntity
+			)
+			// Property identifier have to have valid identifier format
+			&& preg_match(ModbusConnector\Constants::PROPERTY_REGISTER, $property->getIdentifier(), $propertyMatches) === 1
+			// Property have to be writable
+			&& $property->isSettable()
+			&& $property->getExpectedValue() !== null
+			&& $property->isPending()
+		) {
+			if (
+				!array_key_exists('name', $propertyMatches)
+				|| !array_key_exists('address', $propertyMatches)
+			) {
+				unset($this->processedWrittenProperties[$propertyUuid]);
+
+				$this->propertyStateHelper->setValue(
+					$property,
+					Utils\ArrayHash::from([
+						'expectedValue' => null,
+						'pending'       => false,
+					])
+				);
+
+				throw new Exceptions\InvalidArgumentException('Property identifier has invalid format');
+			}
+
+			if (!in_array($property->getDataType()->getValue(), [
+				MetadataTypes\DataTypeType::DATA_TYPE_CHAR,
+				MetadataTypes\DataTypeType::DATA_TYPE_SHORT,
+				MetadataTypes\DataTypeType::DATA_TYPE_INT,
+				MetadataTypes\DataTypeType::DATA_TYPE_UCHAR,
+				MetadataTypes\DataTypeType::DATA_TYPE_USHORT,
+				MetadataTypes\DataTypeType::DATA_TYPE_UINT,
+				MetadataTypes\DataTypeType::DATA_TYPE_FLOAT,
+				MetadataTypes\DataTypeType::DATA_TYPE_BOOLEAN,
+				MetadataTypes\DataTypeType::DATA_TYPE_ENUM,
+				MetadataTypes\DataTypeType::DATA_TYPE_SWITCH,
+			])) {
+				unset($this->processedWrittenProperties[$propertyUuid]);
+
+				$this->propertyStateHelper->setValue(
+					$property,
+					Utils\ArrayHash::from([
+						'expectedValue' => null,
+						'pending'       => false,
+					])
+				);
+
+				throw new Exceptions\InvalidArgumentException(
+					sprintf(
+						'Trying to write property with unsupported data type: %s for channel property',
+						$property->getDataType()->getValue()
+					)
+				);
+			}
+
+			if (
+				isset($this->processedWrittenProperties[$propertyUuid])
+				&& is_int($this->processedWrittenProperties[$propertyUuid])
+				&& $this->processedWrittenProperties[$propertyUuid] > self::WRITE_MAX_ATTEMPTS
+			) {
+				unset($this->processedWrittenProperties[$propertyUuid]);
+
+				$this->lostDevices[$device->getId()->toString()] = $now;
+
+				$this->propertyStateHelper->setValue(
+					$property,
+					Utils\ArrayHash::from([
+						'expectedValue' => null,
+						'pending'       => false,
+					])
+				);
+
+				throw new Exceptions\NotReachableException('Maximum writing attempts reached');
+			}
+
+			if (
+				array_key_exists($propertyUuid, $this->processedWrittenProperties)
+				&& $this->processedWrittenProperties[$propertyUuid] instanceof DateTimeInterface
+				&& (float) $now->format('Uv') - (float) $this->processedWrittenProperties[$propertyUuid]->format('Uv') < self::WRITE_DEBOUNCE_DELAY
+			) {
+				return false;
+			}
+
+			$pending = is_string($property->getPending()) ? Utils\DateTime::createFromFormat(DateTimeInterface::ATOM, $property->getPending()) : true;
+
+			if (
+				$pending === true
+				|| (
+					$pending !== false
+					&& (float) $now->format('Uv') - (float) $pending->format('Uv') > self::WRITE_PENDING_DELAY
+				)
+			) {
+				$valueToWrite = $this->transformer->transformValueToDevice(
+					$property->getDataType(),
+					$property->getFormat(),
+					$property->getExpectedValue()
+				);
+
+				if ($valueToWrite === null) {
+					return false;
+				}
+
+				try {
+					if ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_BOOLEAN)) {
+						if (in_array($valueToWrite, [0, 1], true)) {
+							$result = $this->writeSingleCoil(
+								$station,
+								(int) $propertyMatches['address'],
+								$valueToWrite
+							);
+
+						} else {
+							unset($this->processedWrittenProperties[$propertyUuid]);
+
+							$this->propertyStateHelper->setValue(
+								$property,
+								Utils\ArrayHash::from([
+									'expectedValue' => null,
+									'pending'       => false,
+								])
+							);
+
+							throw new Exceptions\InvalidStateException('Value for boolean property have to be 1 or 0');
+						}
+					} elseif ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_FLOAT)) {
+						unset($this->processedWrittenProperties[$propertyUuid]);
+
+						$this->propertyStateHelper->setValue(
+							$property,
+							Utils\ArrayHash::from([
+								'expectedValue' => null,
+								'pending'       => false,
+							])
+						);
+
+						throw new Exceptions\NotSupportedException('Float value is not supported for now');
+
+					} elseif (
+						$property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_INT)
+						|| $property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_UINT)
+					) {
+						unset($this->processedWrittenProperties[$propertyUuid]);
+
+						$this->propertyStateHelper->setValue(
+							$property,
+							Utils\ArrayHash::from([
+								'expectedValue' => null,
+								'pending'       => false,
+							])
+						);
+
+						throw new Exceptions\NotSupportedException('Long integer value is not supported for now');
+
+					} elseif (
+						$property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SHORT)
+						|| $property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_USHORT)
+					) {
+						unset($this->processedWrittenProperties[$propertyUuid]);
+
+						$this->propertyStateHelper->setValue(
+							$property,
+							Utils\ArrayHash::from([
+								'expectedValue' => null,
+								'pending'       => false,
+							])
+						);
+
+						throw new Exceptions\NotSupportedException('Short integer value is not supported for now');
+
+					} elseif (
+						$property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_CHAR)
+						|| $property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_UCHAR)
+					) {
+						$result = $this->writeSingleRegister(
+							$station,
+							(int) $propertyMatches['address'],
+							(int) $valueToWrite
+						);
+
+					} elseif ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_STRING)) {
+						unset($this->processedWrittenProperties[$propertyUuid]);
+
+						$this->propertyStateHelper->setValue(
+							$property,
+							Utils\ArrayHash::from([
+								'expectedValue' => null,
+								'pending'       => false,
+							])
+						);
+
+						throw new Exceptions\NotSupportedException('String value is not supported for now');
+
+					} elseif ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SWITCH)) {
+						if (is_int($valueToWrite)) {
+							$result = $this->writeSingleRegister(
+								$station,
+								(int) $propertyMatches['address'],
+								$valueToWrite
+							);
+
+						} else {
+							unset($this->processedWrittenProperties[$propertyUuid]);
+
+							$this->propertyStateHelper->setValue(
+								$property,
+								Utils\ArrayHash::from([
+									'expectedValue' => null,
+									'pending'       => false,
+								])
+							);
+
+							throw new Exceptions\InvalidStateException('Value for switch property have to be number');
+						}
+					} elseif ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_ENUM)) {
+						unset($this->processedWrittenProperties[$propertyUuid]);
+
+						$this->propertyStateHelper->setValue(
+							$property,
+							Utils\ArrayHash::from([
+								'expectedValue' => null,
+								'pending'       => false,
+							])
+						);
+
+						throw new Exceptions\NotSupportedException('Enum value is not supported for now');
+
+					} else {
+						unset($this->processedWrittenProperties[$propertyUuid]);
+
+						$this->propertyStateHelper->setValue(
+							$property,
+							Utils\ArrayHash::from([
+								'expectedValue' => null,
+								'pending'       => false,
+							])
+						);
+
+						throw new Exceptions\InvalidStateException('Unsupported value data type');
+					}
+				} catch (Exceptions\ModbusRtuException $ex) {
+					unset($this->processedWrittenProperties[$propertyUuid]);
+
+					$this->propertyStateHelper->setValue(
+						$property,
+						Utils\ArrayHash::from([
+							'expectedValue' => null,
+							'pending'       => false,
+						])
+					);
+
+					throw $ex;
+				}
+
+				// Register writing failed
+				if ($result === false) {
+					// Increment failed attempts counter
+					if (!array_key_exists($propertyUuid, $this->processedWrittenProperties)) {
+						$this->processedWrittenProperties[$propertyUuid] = 1;
+					} else {
+						$this->processedWrittenProperties[$propertyUuid] = is_int($this->processedWrittenProperties[$propertyUuid]) ? $this->processedWrittenProperties[$propertyUuid] + 1 : 1;
+					}
+				} else {
+					$this->processedWrittenProperties[$propertyUuid] = $now;
+
+					$this->propertyStateHelper->setValue(
+						$property,
+						Utils\ArrayHash::from([
+							'pending' => $this->dateTimeFactory->getNow()->format(DateTimeInterface::ATOM),
+						])
+					);
+				}
+
+				return $result !== false;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * @param int $station
+	 * @param MetadataEntities\Modules\DevicesModule\IDeviceEntity $device
+	 * @param IPropertyEntity $property
+	 *
+	 * @return bool
+	 *
+	 * @throws Exceptions\ModbusRtuException
+	 */
+	private function readProperty(
+		int $station,
+		MetadataEntities\Modules\DevicesModule\IDeviceEntity $device,
+		MetadataEntities\Modules\DevicesModule\IPropertyEntity $property
+	): bool
+	{
+		$now = $this->dateTimeFactory->getNow();
+
+		$propertyUuid = $property->getId()->toString();
+
+		if (
+			(
+				// Only dynamic properties could be processed
+				$property instanceof MetadataEntities\Modules\DevicesModule\IDeviceDynamicPropertyEntity
+				|| $property instanceof MetadataEntities\Modules\DevicesModule\IChannelDynamicPropertyEntity
+			)
+			// Property identifier have to have valid identifier format
+			&& preg_match(ModbusConnector\Constants::PROPERTY_REGISTER, $property->getIdentifier(), $propertyMatches) === 1
+			// Property have to be readable
+			&& $property->isQueryable()
+		) {
+			if (
+				!array_key_exists('name', $propertyMatches)
+				|| !array_key_exists('address', $propertyMatches)
+			) {
+				unset($this->processedReadProperties[$propertyUuid]);
+
+				$this->propertyStateHelper->setValue(
+					$property,
+					Utils\ArrayHash::from([
+						'valid' => false,
+					])
+				);
+
+				throw new Exceptions\InvalidArgumentException('Property identifier has invalid format');
+			}
+
+			if (!in_array($property->getDataType()->getValue(), [
+				MetadataTypes\DataTypeType::DATA_TYPE_CHAR,
+				MetadataTypes\DataTypeType::DATA_TYPE_SHORT,
+				MetadataTypes\DataTypeType::DATA_TYPE_INT,
+				MetadataTypes\DataTypeType::DATA_TYPE_UCHAR,
+				MetadataTypes\DataTypeType::DATA_TYPE_USHORT,
+				MetadataTypes\DataTypeType::DATA_TYPE_UINT,
+				MetadataTypes\DataTypeType::DATA_TYPE_FLOAT,
+				MetadataTypes\DataTypeType::DATA_TYPE_BOOLEAN,
+				MetadataTypes\DataTypeType::DATA_TYPE_ENUM,
+				MetadataTypes\DataTypeType::DATA_TYPE_SWITCH,
+			])) {
+				unset($this->processedReadProperties[$propertyUuid]);
+
+				$this->propertyStateHelper->setValue(
+					$property,
+					Utils\ArrayHash::from([
+						'valid' => false,
+					])
+				);
+
+				throw new Exceptions\InvalidArgumentException(
+					sprintf(
+						'Trying to write property with unsupported data type: %s for channel property',
+						$property->getDataType()->getValue()
+					)
+				);
+			}
+
+			if (
+				isset($this->processedReadProperties[$propertyUuid])
+				&& is_int($this->processedReadProperties[$propertyUuid])
+				&& $this->processedReadProperties[$propertyUuid] > self::READ_MAX_ATTEMPTS
+			) {
+				unset($this->processedReadProperties[$propertyUuid]);
+
+				$this->lostDevices[$device->getId()->toString()] = $now;
+
+				$this->propertyStateHelper->setValue(
+					$property,
+					Utils\ArrayHash::from([
+						'valid' => false,
+					])
+				);
+
+				throw new Exceptions\NotReachableException('Maximum writing attempts reached');
+			}
+
+			if (
+				array_key_exists($propertyUuid, $this->processedReadProperties)
+				&& $this->processedReadProperties[$propertyUuid] instanceof DateTimeInterface
+				&& $now->getTimestamp() - $this->processedReadProperties[$propertyUuid]->getTimestamp() < self::READ_DELAY
+			) {
+				return false;
+			}
+
+			try {
+				if ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_BOOLEAN)) {
+					if ($property->isSettable()) {
+						$result = $this->readCoils(
+							$station,
+							(int) $propertyMatches['address'],
+							1
+						);
+					} else {
+						$result = $this->readDiscreteInputs(
+							$station,
+							(int) $propertyMatches['address'],
+							1
+						);
+					}
+
+					if (
+						!is_array($result)
+						|| !array_key_exists('registers', $result)
+						|| !is_array($result['registers'])
+					) {
+						$value = false;
+					} else {
+						// Extract value from response
+						$value = (int) $result['registers'][0];
+					}
+				} elseif ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_FLOAT)) {
+					unset($this->processedReadProperties[$propertyUuid]);
+
+					$this->propertyStateHelper->setValue(
+						$property,
+						Utils\ArrayHash::from([
+							'valid' => false,
+						])
+					);
+
+					throw new Exceptions\NotSupportedException('Float data type is not supported for now');
+
+				} elseif (
+					$property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_INT)
+					|| $property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_UINT)
+				) {
+					unset($this->processedReadProperties[$propertyUuid]);
+
+					$this->propertyStateHelper->setValue(
+						$property,
+						Utils\ArrayHash::from([
+							'valid' => false,
+						])
+					);
+
+					throw new Exceptions\NotSupportedException('Long integer data type is not supported for now');
+
+				} elseif (
+					$property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SHORT)
+					|| $property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_USHORT)
+				) {
+					unset($this->processedReadProperties[$propertyUuid]);
+
+					$this->propertyStateHelper->setValue(
+						$property,
+						Utils\ArrayHash::from([
+							'valid' => false,
+						])
+					);
+
+					throw new Exceptions\NotSupportedException('Short integer data type is not supported for now');
+
+				} elseif (
+					$property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_CHAR)
+					|| $property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_UCHAR)
+				) {
+					if ($property->isSettable()) {
+						$result = $this->readHoldingRegisters(
+							$station,
+							(int) $propertyMatches['address'],
+							1
+						);
+					} else {
+						$result = $this->readInputRegisters(
+							$station,
+							(int) $propertyMatches['address'],
+							1
+						);
+					}
+
+					if (
+						!is_array($result)
+						|| !array_key_exists('registers', $result)
+						|| !is_array($result['registers'])
+					) {
+						$value = false;
+					} else {
+						// Extract value from response
+						$value = (int) $result['registers'][0];
+					}
+				} elseif ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_STRING)) {
+					unset($this->processedReadProperties[$propertyUuid]);
+
+					$this->propertyStateHelper->setValue(
+						$property,
+						Utils\ArrayHash::from([
+							'valid' => false,
+						])
+					);
+
+					throw new Exceptions\NotSupportedException('String data type is not supported for now');
+
+				} elseif ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SWITCH)) {
+					$result = $this->readHoldingRegisters(
+						$station,
+						(int) $propertyMatches['address'],
+						1
+					);
+
+					if (
+						!is_array($result)
+						|| !array_key_exists('registers', $result)
+						|| !is_array($result['registers'])
+					) {
+						$value = false;
+					} else {
+						// Extract value from response
+						$value = (int) $result['registers'][0];
+					}
+				} elseif ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_ENUM)) {
+					unset($this->processedReadProperties[$propertyUuid]);
+
+					$this->propertyStateHelper->setValue(
+						$property,
+						Utils\ArrayHash::from([
+							'valid' => false,
+						])
+					);
+
+					throw new Exceptions\NotSupportedException('Enum data type is not supported for now');
+
+				} else {
+					unset($this->processedReadProperties[$propertyUuid]);
+
+					$this->propertyStateHelper->setValue(
+						$property,
+						Utils\ArrayHash::from([
+							'valid' => false,
+						])
+					);
+
+					throw new Exceptions\InvalidStateException('Unsupported data type');
+				}
+			} catch (Exceptions\ModbusRtuException $ex) {
+				unset($this->processedReadProperties[$propertyUuid]);
+
+				$this->propertyStateHelper->setValue(
+					$property,
+					Utils\ArrayHash::from([
+						'valid' => false,
+					])
+				);
+
+				throw $ex;
+			}
+
+			// Register reading failed
+			if ($value === false) {
+				// Increment failed attempts counter
+				if (!array_key_exists($propertyUuid, $this->processedReadProperties)) {
+					$this->processedReadProperties[$propertyUuid] = 1;
+				} else {
+					$this->processedReadProperties[$propertyUuid] = is_int($this->processedReadProperties[$propertyUuid]) ? $this->processedReadProperties[$propertyUuid] + 1 : 1;
+				}
+
+				// Mark value as invalid
+				$this->propertyStateHelper->setValue(
+					$property,
+					Utils\ArrayHash::from([
+						'valid' => false,
+					])
+				);
+
+			} else {
+				$this->processedReadProperties[$propertyUuid] = $now;
+
+				$this->propertyStateHelper->setValue(
+					$property,
+					Utils\ArrayHash::from([
+						'actualValue' => $this->transformer->transformValueFromDevice(
+							$property->getDataType(),
+							$property->getFormat(),
+							$value
+						),
+						'valid'       => true,
+					])
+				);
+			}
+
+			return $value !== false;
+		}
+
+		return false;
 	}
 
 	/**
@@ -218,7 +1233,7 @@ class RtuClient extends Client
 	 *    'status'   => [],
 	 * ]
 	 *
-	 * @throws Exception
+	 * @throws Exceptions\ModbusRtuException
 	 */
 	private function readCoils(
 		int $station,
@@ -277,7 +1292,7 @@ class RtuClient extends Client
 	 *    'status'   => [],
 	 * ]
 	 *
-	 * @throws Exception
+	 * @throws Exceptions\ModbusRtuException
 	 */
 	private function readDiscreteInputs(
 		int $station,
@@ -336,7 +1351,7 @@ class RtuClient extends Client
 	 *    'registers' => [],
 	 * ]
 	 *
-	 * @throws Exception
+	 * @throws Exceptions\ModbusRtuException
 	 */
 	private function readHoldingRegisters(
 		int $station,
@@ -389,7 +1404,7 @@ class RtuClient extends Client
 	 *
 	 * @return Array<string, string|int|array>|string|false
 	 *
-	 * @throws Exception
+	 * @throws Exceptions\ModbusRtuException
 	 */
 	private function readInputRegisters(
 		int $station,
@@ -442,7 +1457,7 @@ class RtuClient extends Client
 	 *
 	 * @return Array<string, string|int|float>|string|false
 	 *
-	 * @throws Exception
+	 * @throws Exceptions\ModbusRtuException
 	 */
 	private function writeSingleCoil(
 		int $station,
@@ -483,7 +1498,7 @@ class RtuClient extends Client
 	 *
 	 * @return Array<string, string|int|float>|string|false
 	 *
-	 * @throws Exception
+	 * @throws Exceptions\ModbusRtuException
 	 */
 	private function writeSingleRegister(
 		int $station,
@@ -509,157 +1524,6 @@ class RtuClient extends Client
 
 		if ($raw === false) {
 			$response = unpack('C1station/C1function/n1address/n1value', $response);
-		}
-
-		return $response;
-	}
-
-	/**
-	 * (0x07) Read Exception Status (Serial Line only)
-	 *
-	 * @param int $station Station Address (C1)
-	 * @param bool $raw
-	 *
-	 * @return Array<string, string|int>|string|false
-	 *
-	 * @throws Exception
-	 */
-	private function readExceptionStatus(
-		int $station,
-		bool $raw = false
-	): string|array|false {
-		$request = pack('C2', $station, 0x07);
-
-		$crc = $this->crc16($request);
-
-		if ($crc === false) {
-			return false;
-		}
-
-		$request .= $crc;
-
-		$response = $this->sendRequest($request);
-
-		if ($response === false) {
-			return false;
-		}
-
-		if ($raw === false) {
-			$response = unpack('C1station/C1function/C1data', $response);
-		}
-
-		return $response;
-	}
-
-	/**
-	 * (0x08) Diagnostics (Serial Line only)
-	 *
-	 * @param int $station Station Address (C1)
-	 * @param int $subFunction Sub-function (n1)
-	 *
-	 * @return string|false
-	 *
-	 * @throws Exceptions\ModbusRtuException
-	 */
-	private function diagnostics(
-		int $station,
-		int $subFunction
-	): string|false {
-		if (func_num_args() < 3) {
-			throw new Exceptions\ModbusRtuException('Incorrect number of arguments', -4);
-		}
-
-		$request = pack('C2n1', $station, 0x08, $subFunction);
-		$request .= pack('n*', ...array_slice(func_get_args(), 2));
-
-		$crc = $this->crc16($request);
-
-		if ($crc === false) {
-			return false;
-		}
-
-		$request .= $crc;
-
-		return $this->sendRequest($request);
-	}
-
-	/**
-	 * (0x0B) Get Comm Event Counter (Serial Line only)
-	 *
-	 * @param int $station Station Address (C1)
-	 * @param bool $raw
-	 *
-	 * @return Array<string, string|int>|string|false
-	 *
-	 * @throws Exception
-	 */
-	private function getCommEventCounter(
-		int $station,
-		bool $raw = false
-	): string|array|false {
-		$request = pack('C2', $station, 0x0B);
-
-		$crc = $this->crc16($request);
-
-		if ($crc === false) {
-			return false;
-		}
-
-		$response = $this->sendRequest($request);
-
-		if ($response === false) {
-			return false;
-		}
-
-		if ($raw === false) {
-			$response = unpack('C1station/C1function/n1status/n1eventcount', $response);
-		}
-
-		return $response;
-	}
-
-	/**
-	 * (0x0C) Get Comm Event Log (Serial Line only)
-	 *
-	 * @param int $station Station Address (C1)
-	 * @param bool $raw
-	 *
-	 * @return Array<string, string|int>|string|false
-	 *
-	 * @throws Exception
-	 */
-	private function getCommEventLog(
-		int $station,
-		bool $raw = false
-	): string|array|false {
-		$request = pack('C2', $station, 0x0C);
-
-		$crc = $this->crc16($request);
-
-		if ($crc === false) {
-			return false;
-		}
-
-		$response = $this->sendRequest($request);
-
-		if ($response === false) {
-			return false;
-		}
-
-		if ($raw === false) {
-			$unpacked = unpack('C1station/C1function/C1count/n1status/n1eventcount/n1messagecount', $response);
-
-			if ($unpacked === false) {
-				return false;
-			}
-
-			$eventsUnpacked = unpack('C*', substr($response, 9, -2));
-
-			if ($eventsUnpacked === false) {
-				return false;
-			}
-
-			$response = $unpacked + ['events' => array_values($eventsUnpacked)];
 		}
 
 		return $response;
@@ -732,13 +1596,164 @@ class RtuClient extends Client
 	}
 
 	/**
+	 * (0x07) Read Exception Status (Serial Line only)
+	 *
+	 * @param int $station Station Address (C1)
+	 * @param bool $raw
+	 *
+	 * @return Array<string, string|int>|string|false
+	 *
+	 * @throws Exceptions\ModbusRtuException
+	 */
+	private function readExceptionStatus(
+		int $station,
+		bool $raw = false
+	): string|array|false {
+		$request = pack('C2', $station, 0x07);
+
+		$crc = $this->crc16($request);
+
+		if ($crc === false) {
+			return false;
+		}
+
+		$request .= $crc;
+
+		$response = $this->sendRequest($request);
+
+		if ($response === false) {
+			return false;
+		}
+
+		if ($raw === false) {
+			$response = unpack('C1station/C1function/C1data', $response);
+		}
+
+		return $response;
+	}
+
+	/**
+	 * (0x08) Diagnostics (Serial Line only)
+	 *
+	 * @param int $station Station Address (C1)
+	 * @param int $subFunction Sub-function (n1)
+	 *
+	 * @return string|false
+	 *
+	 * @throws Exceptions\ModbusRtuException
+	 */
+	private function diagnostics(
+		int $station,
+		int $subFunction
+	): string|false {
+		if (func_num_args() < 3) {
+			throw new Exceptions\ModbusRtuException('Incorrect number of arguments', -4);
+		}
+
+		$request = pack('C2n1', $station, 0x08, $subFunction);
+		$request .= pack('n*', ...array_slice(func_get_args(), 2));
+
+		$crc = $this->crc16($request);
+
+		if ($crc === false) {
+			return false;
+		}
+
+		$request .= $crc;
+
+		return $this->sendRequest($request);
+	}
+
+	/**
+	 * (0x0B) Get Comm Event Counter (Serial Line only)
+	 *
+	 * @param int $station Station Address (C1)
+	 * @param bool $raw
+	 *
+	 * @return Array<string, string|int>|string|false
+	 *
+	 * @throws Exceptions\ModbusRtuException
+	 */
+	private function getCommEventCounter(
+		int $station,
+		bool $raw = false
+	): string|array|false {
+		$request = pack('C2', $station, 0x0B);
+
+		$crc = $this->crc16($request);
+
+		if ($crc === false) {
+			return false;
+		}
+
+		$response = $this->sendRequest($request);
+
+		if ($response === false) {
+			return false;
+		}
+
+		if ($raw === false) {
+			$response = unpack('C1station/C1function/n1status/n1eventcount', $response);
+		}
+
+		return $response;
+	}
+
+	/**
+	 * (0x0C) Get Comm Event Log (Serial Line only)
+	 *
+	 * @param int $station Station Address (C1)
+	 * @param bool $raw
+	 *
+	 * @return Array<string, string|int>|string|false
+	 *
+	 * @throws Exceptions\ModbusRtuException
+	 */
+	private function getCommEventLog(
+		int $station,
+		bool $raw = false
+	): string|array|false {
+		$request = pack('C2', $station, 0x0C);
+
+		$crc = $this->crc16($request);
+
+		if ($crc === false) {
+			return false;
+		}
+
+		$response = $this->sendRequest($request);
+
+		if ($response === false) {
+			return false;
+		}
+
+		if ($raw === false) {
+			$unpacked = unpack('C1station/C1function/C1count/n1status/n1eventcount/n1messagecount', $response);
+
+			if ($unpacked === false) {
+				return false;
+			}
+
+			$eventsUnpacked = unpack('C*', substr($response, 9, -2));
+
+			if ($eventsUnpacked === false) {
+				return false;
+			}
+
+			$response = $unpacked + ['events' => array_values($eventsUnpacked)];
+		}
+
+		return $response;
+	}
+
+	/**
 	 * (0x11) Report Server ID (Serial Line only)
 	 *
 	 * @param int $station Station Address (C1)
 	 *
 	 * @return string|false
 	 *
-	 * @throws Exception
+	 * @throws Exceptions\ModbusRtuException
 	 */
 	private function reportServerId(
 		int $station = 0x00

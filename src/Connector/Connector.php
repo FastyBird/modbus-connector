@@ -20,7 +20,6 @@ use FastyBird\DevicesModule\Models as DevicesModuleModels;
 use FastyBird\Metadata\Entities as MetadataEntities;
 use FastyBird\Metadata\Types as MetadataTypes;
 use FastyBird\ModbusConnector\Clients;
-use FastyBird\ModbusConnector\Consumers;
 use FastyBird\ModbusConnector\Helpers;
 use Nette;
 use Nette\Utils;
@@ -41,20 +40,14 @@ final class Connector implements DevicesModuleConnectors\IConnector
 
 	private const QUEUE_PROCESSING_INTERVAL = 0.01;
 
-	/** @var EventLoop\TimerInterface|null */
-	private ?EventLoop\TimerInterface $consumerTimer;
-
 	/** @var Clients\IClient */
 	private Clients\IClient $client;
 
 	/** @var MetadataEntities\Modules\DevicesModule\IConnectorEntity */
 	private MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector;
 
-	/** @var Consumers\Consumer */
-	private Consumers\Consumer $consumer;
-
-	/** @var Helpers\PropertyStateHelper */
-	private Helpers\PropertyStateHelper $propertyStateHelper;
+	/** @var Helpers\PropertyHelper */
+	private Helpers\PropertyHelper $propertyStateHelper;
 
 	/** @var DevicesModuleModels\DataStorage\IDevicesRepository */
 	private DevicesModuleModels\DataStorage\IDevicesRepository $devicesRepository;
@@ -77,8 +70,7 @@ final class Connector implements DevicesModuleConnectors\IConnector
 	/**
 	 * @param MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector
 	 * @param Clients\IClient $client
-	 * @param Consumers\Consumer $consumer
-	 * @param Helpers\PropertyStateHelper $propertyStateHelper
+	 * @param Helpers\PropertyHelper $propertyStateHelper
 	 * @param DevicesModuleModels\DataStorage\IDevicesRepository $devicesRepository
 	 * @param DevicesModuleModels\DataStorage\IDevicePropertiesRepository $devicePropertiesRepository
 	 * @param DevicesModuleModels\DataStorage\IChannelsRepository $channelsRepository
@@ -89,8 +81,7 @@ final class Connector implements DevicesModuleConnectors\IConnector
 	public function __construct(
 		MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector,
 		Clients\IClient $client,
-		Consumers\Consumer $consumer,
-		Helpers\PropertyStateHelper $propertyStateHelper,
+		Helpers\PropertyHelper $propertyStateHelper,
 		DevicesModuleModels\DataStorage\IDevicesRepository $devicesRepository,
 		DevicesModuleModels\DataStorage\IDevicePropertiesRepository $devicePropertiesRepository,
 		DevicesModuleModels\DataStorage\IChannelsRepository $channelsRepository,
@@ -102,7 +93,6 @@ final class Connector implements DevicesModuleConnectors\IConnector
 
 		$this->client = $client;
 
-		$this->consumer = $consumer;
 		$this->propertyStateHelper = $propertyStateHelper;
 
 		$this->devicesRepository = $devicesRepository;
@@ -130,10 +120,6 @@ final class Connector implements DevicesModuleConnectors\IConnector
 		}
 
 		$this->client->connect();
-
-		$this->consumerTimer = $this->eventLoop->addPeriodicTimer(self::QUEUE_PROCESSING_INTERVAL, function (): void {
-			$this->consumer->consume();
-		});
 	}
 
 	/**
@@ -151,10 +137,6 @@ final class Connector implements DevicesModuleConnectors\IConnector
 
 			$this->setPropertiesValuesInvalid($device);
 		}
-
-		if ($this->consumerTimer !== null) {
-			$this->eventLoop->cancelTimer($this->consumerTimer);
-		}
 	}
 
 	/**
@@ -162,7 +144,7 @@ final class Connector implements DevicesModuleConnectors\IConnector
 	 */
 	public function hasUnfinishedTasks(): bool
 	{
-		return !$this->consumer->isEmpty() && $this->consumerTimer !== null;
+		return false;
 	}
 
 	/**

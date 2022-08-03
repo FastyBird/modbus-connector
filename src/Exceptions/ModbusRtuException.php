@@ -69,8 +69,8 @@ class ModbusRtuException extends Exception implements IException
 		$this->request = $request !== null ? bin2hex($request) : null;
 		$this->response = $response !== null ? bin2hex($response) : null;
 
-		if (($message === null || $message === '') && $code !== 0) {
-			$message = empty(self::EXCEPTION_CODES[$code]) ? self::EXCEPTION_CODES[0x00] : self::EXCEPTION_CODES[$code];
+		if ($message === null && $code !== 0) {
+			$message = array_key_exists($code, self::EXCEPTION_CODES) ? self::EXCEPTION_CODES[$code] : self::EXCEPTION_CODES[0x00];
 		}
 
 		parent::__construct($message ?? '', $code, $previous);

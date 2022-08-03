@@ -17,9 +17,9 @@ namespace FastyBird\ModbusConnector\DI;
 
 use Doctrine\Persistence;
 use FastyBird\ModbusConnector;
+use FastyBird\ModbusConnector\API;
 use FastyBird\ModbusConnector\Clients;
 use FastyBird\ModbusConnector\Connector;
-use FastyBird\ModbusConnector\Consumers;
 use FastyBird\ModbusConnector\Helpers;
 use FastyBird\ModbusConnector\Hydrators;
 use FastyBird\ModbusConnector\Schemas;
@@ -100,9 +100,9 @@ class ModbusConnectorExtension extends DI\CompilerExtension
 			->getResultDefinition()
 			->setType(Clients\RtuClient::class);
 
-		// Consumers
-		$builder->addDefinition($this->prefix('consumer.proxy'), new DI\Definitions\ServiceDefinition())
-			->setType(Consumers\Consumer::class);
+		// Messages API
+		$builder->addDefinition($this->prefix('api.transformer'), new DI\Definitions\ServiceDefinition())
+			->setType(API\Transformer::class);
 
 		// API schemas
 		$builder->addDefinition($this->prefix('schemas.connector.modbus'), new DI\Definitions\ServiceDefinition())
@@ -125,8 +125,11 @@ class ModbusConnectorExtension extends DI\CompilerExtension
 		$builder->addDefinition($this->prefix('helpers.connector'), new DI\Definitions\ServiceDefinition())
 			->setType(Helpers\ConnectorHelper::class);
 
-		$builder->addDefinition($this->prefix('helpers.properties'), new DI\Definitions\ServiceDefinition())
-			->setType(Helpers\PropertyStateHelper::class);
+		$builder->addDefinition($this->prefix('helpers.device'), new DI\Definitions\ServiceDefinition())
+			->setType(Helpers\DeviceHelper::class);
+
+		$builder->addDefinition($this->prefix('helpers.property'), new DI\Definitions\ServiceDefinition())
+			->setType(Helpers\PropertyHelper::class);
 	}
 
 	/**

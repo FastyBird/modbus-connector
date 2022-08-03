@@ -88,7 +88,7 @@ final class SerialDarwin extends Serial
 		$message = exec($command, $output, $resultCode);
 
 		if ($resultCode) {
-			throw new Exceptions\InvalidStateException(utf8_encode(strval($message)), $resultCode);
+			throw new Exceptions\InvalidStateException(utf8_encode((string) $message), $resultCode);
 		}
 	}
 
