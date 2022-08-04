@@ -372,11 +372,7 @@ class RtuClient extends Client
 			)
 		);
 
-		foreach ($this->devicePropertiesRepository->findAllByDevice($device->getId()) as $property) {
-			if (!$property instanceof MetadataEntities\Modules\DevicesModule\IDeviceDynamicPropertyEntity) {
-				continue;
-			}
-
+		foreach ($this->devicePropertiesRepository->findAllByDevice($device->getId(), MetadataEntities\Modules\DevicesModule\DeviceDynamicPropertyEntity::class) as $property) {
 			$logContext = [
 				'source'    => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
 				'type'      => 'rtu-client',
@@ -482,11 +478,7 @@ class RtuClient extends Client
 		}
 
 		foreach ($this->channelsRepository->findAllByDevice($device->getId()) as $channel) {
-			foreach ($this->channelPropertiesRepository->findAllByChannel($channel->getId()) as $property) {
-				if (!$property instanceof MetadataEntities\Modules\DevicesModule\IChannelDynamicPropertyEntity) {
-					continue;
-				}
-
+			foreach ($this->channelPropertiesRepository->findAllByChannel($channel->getId(), MetadataEntities\Modules\DevicesModule\ChannelDynamicPropertyEntity::class) as $property) {
 				$logContext = [
 					'source'    => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
 					'type'      => 'rtu-client',
@@ -605,7 +597,10 @@ class RtuClient extends Client
 	 *
 	 * @return bool
 	 *
+	 * @throws Exceptions\InvalidArgumentException
 	 * @throws Exceptions\ModbusRtuException
+	 * @throws Exceptions\NotReachableException
+	 * @throws Exceptions\NotSupportedException
 	 */
 	private function writeProperty(
 		int $station,
@@ -671,7 +666,7 @@ class RtuClient extends Client
 				throw new Exceptions\InvalidArgumentException(
 					sprintf(
 						'Trying to write property with unsupported data type: %s for channel property',
-						$property->getDataType()->getValue()
+						strval($property->getDataType()->getValue())
 					)
 				);
 			}
@@ -814,6 +809,8 @@ class RtuClient extends Client
 						throw new Exceptions\NotSupportedException('String value is not supported for now');
 
 					} elseif ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SWITCH)) {
+						// TODO: Fix handling for different value data types
+
 						if (is_int($valueToWrite)) {
 							$result = $this->writeSingleRegister(
 								$station,
@@ -907,7 +904,10 @@ class RtuClient extends Client
 	 *
 	 * @return bool
 	 *
+	 * @throws Exceptions\InvalidArgumentException
 	 * @throws Exceptions\ModbusRtuException
+	 * @throws Exceptions\NotReachableException
+	 * @throws Exceptions\NotSupportedException
 	 */
 	private function readProperty(
 		int $station,
@@ -970,7 +970,7 @@ class RtuClient extends Client
 				throw new Exceptions\InvalidArgumentException(
 					sprintf(
 						'Trying to write property with unsupported data type: %s for channel property',
-						$property->getDataType()->getValue()
+						strval($property->getDataType()->getValue())
 					)
 				);
 			}
@@ -1026,7 +1026,7 @@ class RtuClient extends Client
 						$value = false;
 					} else {
 						// Extract value from response
-						$value = (int) $result['registers'][0];
+						$value = intval($result['registers'][0]);
 					}
 				} elseif ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_FLOAT)) {
 					unset($this->processedReadProperties[$propertyUuid]);
@@ -1096,7 +1096,7 @@ class RtuClient extends Client
 						$value = false;
 					} else {
 						// Extract value from response
-						$value = (int) $result['registers'][0];
+						$value = intval($result['registers'][0]);
 					}
 				} elseif ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_STRING)) {
 					unset($this->processedReadProperties[$propertyUuid]);
@@ -1125,7 +1125,7 @@ class RtuClient extends Client
 						$value = false;
 					} else {
 						// Extract value from response
-						$value = (int) $result['registers'][0];
+						$value = intval($result['registers'][0]);
 					}
 				} elseif ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_ENUM)) {
 					unset($this->processedReadProperties[$propertyUuid]);
@@ -1225,7 +1225,7 @@ class RtuClient extends Client
 	 * @param int $quantity Quantity of coils (n1)
 	 * @param bool $raw
 	 *
-	 * @return Array<string, string|int|array>|string|false
+	 * @return Array<string, string|int|mixed[]>|string|false
 	 * [
 	 *    'station'  => $station,
 	 *    'function' => 0x01,
@@ -1284,7 +1284,7 @@ class RtuClient extends Client
 	 * @param int $quantity Quantity of Inputs (n1)
 	 * @param bool $raw
 	 *
-	 * @return Array<string, string|int|array>|string|false
+	 * @return Array<string, string|int|mixed[]>|string|false
 	 * [
 	 *    'station'  => $station,
 	 *    'function' => 0x02,
@@ -1343,7 +1343,7 @@ class RtuClient extends Client
 	 * @param int $quantity Quantity of Registers (n1)
 	 * @param bool $raw
 	 *
-	 * @return Array<string, string|int|array>|string|false
+	 * @return Array<string, string|int|mixed[]>|string|false
 	 * [
 	 *    'station'   => $station,
 	 *    'function'  => 0x01,
@@ -1402,7 +1402,7 @@ class RtuClient extends Client
 	 * @param int $quantity Quantity of Input Registers
 	 * @param bool $raw
 	 *
-	 * @return Array<string, string|int|array>|string|false
+	 * @return Array<string, string|int|mixed[]>|string|false
 	 *
 	 * @throws Exceptions\ModbusRtuException
 	 */

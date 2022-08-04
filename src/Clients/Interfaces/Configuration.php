@@ -152,10 +152,10 @@ final class Configuration
 	public function toArray(): array
 	{
 		return [
-			'data_rate'    => $this->baudRate->getValue(),
-			'data_bits'    => $this->dataBits->getValue(),
-			'stop_bits'    => $this->stopBits->getValue(),
-			'parity'       => $this->parity->getValue(),
+			'data_rate'    => intval($this->baudRate->getValue()),
+			'data_bits'    => intval($this->dataBits->getValue()),
+			'stop_bits'    => intval($this->stopBits->getValue()),
+			'parity'       => intval($this->parity->getValue()),
 			'flow_control' => $this->flowControl,
 			'is_canonical' => $this->isCanonical,
 		];

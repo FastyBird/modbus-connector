@@ -220,14 +220,17 @@ final class Transformer
 					&& count($filteredFormat[0]) === 3
 					&& Utils\Strings::lower(strval($filteredFormat[0][0])) === Utils\Strings::lower(strval($value))
 				) {
+					// TODO: Fix data type. Default should be string, any other should be specified eg. [on:u16|1:u8|100]
+					// TODO: Proposed data type abbr U|I 8|16|32 for signed or unsigned int, F for float
 					return (int) $filteredFormat[0][2];
 
 				} elseif (
 					count($filteredFormat) === 1
 					&& !is_array($filteredFormat[0])
 				) {
+					// TODO: Fix data type. Default should be string, any other should be specified eg. [on:u16|1:u8|100]
+					// TODO: Proposed data type abbr U|I 8|16|32 for signed or unsigned int, F for float
 					return (int) $filteredFormat[0];
-
 				}
 
 				return null;
@@ -262,14 +265,6 @@ final class Transformer
 
 				} else {
 					return null;
-				}
-
-				if (is_numeric($enumValue)) {
-					if ((string) (float) $enumValue === (string) $enumValue) {
-						return (float) $enumValue;
-					}
-
-					return (int) $enumValue;
 				}
 
 				return (string) $enumValue;

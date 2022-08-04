@@ -225,4 +225,27 @@ final class PropertyHelper
 		}
 	}
 
+	/**
+	 * @param Metadata\Entities\Modules\DevicesModule\IDeviceDynamicPropertyEntity|Metadata\Entities\Modules\DevicesModule\IDeviceDynamicPropertyEntity[]|Metadata\Entities\Modules\DevicesModule\IChannelDynamicPropertyEntity|Metadata\Entities\Modules\DevicesModule\IChannelDynamicPropertyEntity[] $property
+	 * @param bool $state
+	 *
+	 * @return void
+	 */
+	public function setValidState(
+		Metadata\Entities\Modules\DevicesModule\IDeviceDynamicPropertyEntity|Metadata\Entities\Modules\DevicesModule\IChannelDynamicPropertyEntity|array $property,
+		bool $state
+	): void {
+		if (is_array($property)) {
+			foreach ($property as $item) {
+				$this->setValue($item, Utils\ArrayHash::from([
+					'valid' => $state,
+				]));
+			}
+		} else {
+			$this->setValue($property, Utils\ArrayHash::from([
+				'valid' => $state,
+			]));
+		}
+	}
+
 }

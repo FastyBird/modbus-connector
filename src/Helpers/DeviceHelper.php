@@ -56,7 +56,7 @@ final class DeviceHelper
 		Uuid\UuidInterface $connectorId,
 		Types\DevicePropertyIdentifierType $type
 	): float|bool|int|string|null {
-		$configuration = $this->propertiesRepository->findByIdentifier($connectorId, $type->getValue());
+		$configuration = $this->propertiesRepository->findByIdentifier($connectorId, strval($type->getValue()));
 
 		if ($configuration instanceof MetadataEntities\Modules\DevicesModule\IDeviceStaticPropertyEntity) {
 			if (
