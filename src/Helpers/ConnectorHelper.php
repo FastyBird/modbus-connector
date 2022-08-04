@@ -88,6 +88,10 @@ final class ConnectorHelper
 				return Types\StopBitsType::STOP_BIT_ONE;
 			}
 
+			if ($type->getValue() === Types\ConnectorPropertyIdentifierType::IDENTIFIER_CLIENT_MODE) {
+				return Types\ClientModeType::isValidValue($type->getValue()) ? $configuration->getValue() : null;
+			}
+
 			return $configuration->getValue();
 		}
 

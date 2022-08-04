@@ -17,7 +17,6 @@ namespace FastyBird\ModbusConnector;
 
 use FastyBird\DevicesModule\Connectors as DevicesModuleConnectors;
 use FastyBird\DevicesModule\Exceptions as DevicesModuleExceptions;
-use FastyBird\DevicesModule\Models as DevicesModuleModels;
 use FastyBird\Metadata\Entities as MetadataEntities;
 use Nette;
 use ReflectionClass;
@@ -38,26 +37,25 @@ final class ConnectorFactory implements DevicesModuleConnectors\IConnectorFactor
 	/** @var Clients\ClientFactory[] */
 	private array $clientsFactories;
 
-	/** @var DevicesModuleModels\DataStorage\IConnectorPropertiesRepository */
-	private DevicesModuleModels\DataStorage\IConnectorPropertiesRepository $connectorPropertiesRepository;
-
 	/** @var Connector\ConnectorFactory */
 	private Connector\ConnectorFactory $connectorFactory;
+
+	/** @var Helpers\ConnectorHelper */
+	private Helpers\ConnectorHelper $connectorHelper;
 
 	/**
 	 * @param Clients\ClientFactory[] $clientsFactories
 	 * @param Connector\ConnectorFactory $connectorFactory
-	 * @param DevicesModuleModels\DataStorage\IConnectorPropertiesRepository $connectorPropertiesRepository;
+	 * @param Helpers\ConnectorHelper $connectorHelper
 	 */
 	public function __construct(
 		array $clientsFactories,
 		Connector\ConnectorFactory $connectorFactory,
-		DevicesModuleModels\DataStorage\IConnectorPropertiesRepository $connectorPropertiesRepository
+		Helpers\ConnectorHelper $connectorHelper
 	) {
 		$this->clientsFactories = $clientsFactories;
 		$this->connectorFactory = $connectorFactory;
-
-		$this->connectorPropertiesRepository = $connectorPropertiesRepository;
+		$this->connectorHelper = $connectorHelper;
 	}
 
 	/**
@@ -76,15 +74,12 @@ final class ConnectorFactory implements DevicesModuleConnectors\IConnectorFactor
 	public function create(
 		MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector
 	): DevicesModuleConnectors\IConnector {
-		$modeProperty = $this->connectorPropertiesRepository->findByIdentifier(
+		$mode = $this->connectorHelper->getConfiguration(
 			$connector->getId(),
-			Types\ConnectorPropertyIdentifierType::IDENTIFIER_CLIENT_MODE
+			Types\ConnectorPropertyIdentifierType::get(Types\ConnectorPropertyIdentifierType::IDENTIFIER_CLIENT_MODE)
 		);
 
-		if (
-			!$modeProperty instanceof MetadataEntities\Modules\DevicesModule\IConnectorStaticPropertyEntity
-			|| !Types\ClientModeType::isValidValue($modeProperty->getValue())
-		) {
+		if ($mode === null) {
 			throw new DevicesModuleExceptions\TerminateException('Connector client mode is not configured');
 		}
 
@@ -95,7 +90,7 @@ final class ConnectorFactory implements DevicesModuleConnectors\IConnectorFactor
 
 			if (
 				array_key_exists(Clients\ClientFactory::MODE_CONSTANT_NAME, $constants)
-				&& $constants[Clients\ClientFactory::MODE_CONSTANT_NAME] === $modeProperty->getValue()
+				&& $constants[Clients\ClientFactory::MODE_CONSTANT_NAME] === $mode
 				&& method_exists($clientFactory, 'create')
 			) {
 				return $this->connectorFactory->create($connector, $clientFactory->create($connector));
