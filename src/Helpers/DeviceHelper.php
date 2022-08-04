@@ -47,22 +47,20 @@ final class DeviceHelper
 	}
 
 	/**
-	 * @param Uuid\UuidInterface $connectorId
+	 * @param Uuid\UuidInterface $deviceId
 	 * @param Types\DevicePropertyIdentifierType $type
 	 *
 	 * @return float|bool|int|string|null
 	 */
 	public function getConfiguration(
-		Uuid\UuidInterface $connectorId,
+		Uuid\UuidInterface $deviceId,
 		Types\DevicePropertyIdentifierType $type
 	): float|bool|int|string|null {
-		$configuration = $this->propertiesRepository->findByIdentifier($connectorId, strval($type->getValue()));
+		$configuration = $this->propertiesRepository->findByIdentifier($deviceId, strval($type->getValue()));
 
 		if ($configuration instanceof MetadataEntities\Modules\DevicesModule\IDeviceStaticPropertyEntity) {
-			if (
-				$type->getValue() === Types\DevicePropertyIdentifierType::IDENTIFIER_ADDRESS
-			) {
-				return is_int($type->getValue()) ? $type->getValue() : null;
+			if ($type->getValue() === Types\DevicePropertyIdentifierType::IDENTIFIER_ADDRESS) {
+				return is_int($configuration->getValue()) ? $configuration->getValue() : null;
 			}
 
 			return $configuration->getValue();
