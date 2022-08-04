@@ -19,6 +19,7 @@ use Doctrine\Persistence;
 use FastyBird\ModbusConnector;
 use FastyBird\ModbusConnector\API;
 use FastyBird\ModbusConnector\Clients;
+use FastyBird\ModbusConnector\Commands;
 use FastyBird\ModbusConnector\Connector;
 use FastyBird\ModbusConnector\Helpers;
 use FastyBird\ModbusConnector\Hydrators;
@@ -135,6 +136,13 @@ class ModbusConnectorExtension extends DI\CompilerExtension
 
 		$builder->addDefinition($this->prefix('helpers.property'), new DI\Definitions\ServiceDefinition())
 			->setType(Helpers\PropertyHelper::class);
+
+		// Console commands
+		$builder->addDefinition($this->prefix('commands.initialize'), new DI\Definitions\ServiceDefinition())
+			->setType(Commands\InitializeCommand::class);
+
+		$builder->addDefinition($this->prefix('commands.execute'), new DI\Definitions\ServiceDefinition())
+			->setType(Commands\ExecuteCommand::class);
 	}
 
 	/**
