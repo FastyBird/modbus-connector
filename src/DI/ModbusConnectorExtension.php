@@ -23,6 +23,7 @@ use FastyBird\ModbusConnector\Connector;
 use FastyBird\ModbusConnector\Helpers;
 use FastyBird\ModbusConnector\Hydrators;
 use FastyBird\ModbusConnector\Schemas;
+use FastyBird\ModbusConnector\Subscribers;
 use Nette;
 use Nette\DI;
 use Nette\Schema;
@@ -103,6 +104,10 @@ class ModbusConnectorExtension extends DI\CompilerExtension
 		// Messages API
 		$builder->addDefinition($this->prefix('api.transformer'), new DI\Definitions\ServiceDefinition())
 			->setType(API\Transformer::class);
+
+		// Events subscribers
+		$builder->addDefinition($this->prefix('subscribers.entities'), new DI\Definitions\ServiceDefinition())
+			->setType(Subscribers\EntitiesSubscriber::class);
 
 		// API schemas
 		$builder->addDefinition($this->prefix('schemas.connector.modbus'), new DI\Definitions\ServiceDefinition())

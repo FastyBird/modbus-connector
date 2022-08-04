@@ -347,6 +347,17 @@ class RtuClient extends Client
 					}
 				}
 
+				// Check device state...
+				if (
+					!$this->deviceConnectionStateManager->getState($device)->equalsValue(Metadata\Types\ConnectionStateType::STATE_CONNECTED)
+				) {
+					// ... and if it is not ready, set it to ready
+					$this->deviceConnectionStateManager->setState(
+						$device,
+						Metadata\Types\ConnectionStateType::get(Metadata\Types\ConnectionStateType::STATE_CONNECTED)
+					);
+				}
+
 				$this->processedDevices[] = $device->getId()->toString();
 
 				if ($this->processDevice($device)) {
