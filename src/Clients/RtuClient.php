@@ -731,11 +731,11 @@ class RtuClient extends Client
 
 				try {
 					if ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_BOOLEAN)) {
-						if (in_array($valueToWrite, [0, 1], true)) {
+						if (in_array($valueToWrite, [0, 1], true) || is_bool($valueToWrite)) {
 							$result = $this->writeSingleCoil(
 								$station,
 								(int) $propertyMatches['address'],
-								$valueToWrite
+								is_bool($valueToWrite) ? ($valueToWrite ? 1 : 0) : $valueToWrite
 							);
 
 						} else {

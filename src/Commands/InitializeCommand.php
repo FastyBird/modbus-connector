@@ -474,6 +474,12 @@ class InitializeCommand extends Console\Command\Command
 			$connectors[$connector->getIdentifier()] = $connector->getIdentifier() . ($connector->getName() ? ' [' . $connector->getName() . ']' : '');
 		}
 
+		if (count($connectors) === 0) {
+			$io->info('No Modbus connectors registered in system');
+
+			return;
+		}
+
 		$question = new Console\Question\ChoiceQuestion(
 			'Please select connector to remove',
 			array_values($connectors)

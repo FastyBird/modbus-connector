@@ -17,6 +17,7 @@ namespace FastyBird\ModbusConnector\API;
 
 use DateTimeInterface;
 use FastyBird\Metadata\Types as MetadataTypes;
+use FastyBird\Metadata\ValueObjects as MetadataValueObjects;
 use Nette;
 use Nette\Utils;
 
@@ -35,14 +36,14 @@ final class Transformer
 
 	/**
 	 * @param MetadataTypes\DataTypeType $dataType
-	 * @param string[]|int[]|float[]|Array<int, Array<int, string|null>>|Array<int, int|null>|Array<int, float|null>|Array<int, MetadataTypes\SwitchPayloadType|string|null>|null $format
+	 * @param MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|null $format
 	 * @param string|int|float|bool|null $value
 	 *
 	 * @return float|int|string|bool|MetadataTypes\SwitchPayloadType|null
 	 */
 	public function transformValueFromDevice(
 		MetadataTypes\DataTypeType $dataType,
-		?array $format,
+		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|null $format,
 		string|int|float|bool|null $value
 	): float|int|string|bool|MetadataTypes\SwitchPayloadType|null {
 		if ($value === null) {
@@ -56,14 +57,12 @@ final class Transformer
 		if ($dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_FLOAT)) {
 			$floatValue = floatval($value);
 
-			if (is_array($format) && count($format) === 2) {
-				[$minValue, $maxValue] = $format + [null, null];
-
-				if ($minValue !== null && floatval($minValue) >= $floatValue) {
+			if ($format instanceof MetadataValueObjects\NumberRangeFormat) {
+				if ($format->getMin() !== null && $format->getMin() >= $floatValue) {
 					return null;
 				}
 
-				if ($maxValue !== null && floatval($maxValue) <= $floatValue) {
+				if ($format->getMax() !== null && $format->getMax() <= $floatValue) {
 					return null;
 				}
 			}
@@ -81,14 +80,12 @@ final class Transformer
 		) {
 			$intValue = intval($value);
 
-			if (is_array($format) && count($format) === 2) {
-				[$minValue, $maxValue] = $format + [null, null];
-
-				if ($minValue !== null && intval($minValue) >= $intValue) {
+			if ($format instanceof MetadataValueObjects\NumberRangeFormat) {
+				if ($format->getMin() !== null && $format->getMin() >= $intValue) {
 					return null;
 				}
 
-				if ($maxValue !== null && intval($maxValue) <= $intValue) {
+				if ($format->getMax() !== null && $format->getMax() <= $intValue) {
 					return null;
 				}
 			}
@@ -101,24 +98,31 @@ final class Transformer
 		}
 
 		if ($dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SWITCH)) {
-			if (is_array($format)) {
-				$filteredFormat = array_values(array_filter($format, function ($item) use ($value): bool {
-					return ((is_array($item) || is_string($item))) && $this->filterEnumFormat($item, $value);
-				}));
+			if ($format instanceof MetadataValueObjects\StringEnumFormat) {
+				$filtered = array_filter($format->getItems(), function (string $item) use ($value): bool {
+					return Utils\Strings::lower(strval($value)) === $item;
+				});
+
+				if (count($filtered) === 1) {
+					return MetadataTypes\SwitchPayloadType::isValidValue(strval($value)) ? MetadataTypes\SwitchPayloadType::get(strval($value)) : null;
+				}
+
+				return null;
+
+			} elseif ($format instanceof MetadataValueObjects\CombinedEnumFormat) {
+				$filtered = array_filter(
+					$format->getItems(),
+					function (array $item) use ($value): bool {
+						return $item[1] !== null
+							&& Utils\Strings::lower(strval($item[1]->getValue())) === Utils\Strings::lower(strval($value));
+					}
+				);
 
 				if (
-					count($filteredFormat) === 1
-					&& is_array($filteredFormat[0])
-					&& count($filteredFormat[0]) === 3
-					&& Utils\Strings::lower(strval($filteredFormat[0][1])) === Utils\Strings::lower(strval($value))
+					count($filtered) === 1
+					&& $filtered[0][0] instanceof MetadataValueObjects\CombinedEnumFormatItem
 				) {
-					return MetadataTypes\SwitchPayloadType::isValidValue(strval($filteredFormat[0][0])) ? MetadataTypes\SwitchPayloadType::get(strval($filteredFormat[0][0])) : null;
-
-				} elseif (
-					count($filteredFormat) === 1
-					&& !is_array($filteredFormat[0])
-				) {
-					return MetadataTypes\SwitchPayloadType::isValidValue(strval($filteredFormat[0])) ? MetadataTypes\SwitchPayloadType::get(strval($filteredFormat[0])) : null;
+					return MetadataTypes\SwitchPayloadType::isValidValue(strval($filtered[0][0]->getValue())) ? MetadataTypes\SwitchPayloadType::get(strval($filtered[0][0]->getValue())) : null;
 				}
 
 				return null;
@@ -126,24 +130,31 @@ final class Transformer
 		}
 
 		if ($dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_ENUM)) {
-			if (is_array($format)) {
-				$filteredFormat = array_values(array_filter($format, function ($item) use ($value): bool {
-					return ((is_array($item) || is_string($item))) && $this->filterEnumFormat($item, $value);
-				}));
+			if ($format instanceof MetadataValueObjects\StringEnumFormat) {
+				$filtered = array_filter($format->getItems(), function (string $item) use ($value): bool {
+					return Utils\Strings::lower(strval($value)) === $item;
+				});
+
+				if (count($filtered) === 1) {
+					return strval($value);
+				}
+
+				return null;
+
+			} elseif ($format instanceof MetadataValueObjects\CombinedEnumFormat) {
+				$filtered = array_filter(
+					$format->getItems(),
+					function (array $item) use ($value): bool {
+						return $item[1] !== null
+							&& Utils\Strings::lower(strval($item[1]->getValue())) === Utils\Strings::lower(strval($value));
+					}
+				);
 
 				if (
-					count($filteredFormat) === 1
-					&& is_array($filteredFormat[0])
-					&& count($filteredFormat[0]) === 3
-					&& Utils\Strings::lower(strval($filteredFormat[0][1])) === Utils\Strings::lower(strval($value))
+					count($filtered) === 1
+					&& $filtered[0][0] instanceof MetadataValueObjects\CombinedEnumFormatItem
 				) {
-					return strval($filteredFormat[0][0]);
-
-				} elseif (
-					count($filteredFormat) === 1
-					&& !is_array($filteredFormat[0])
-				) {
-					return strval($filteredFormat[0]);
+					return strval($filtered[0][0]->getValue());
 				}
 
 				return null;
@@ -155,16 +166,16 @@ final class Transformer
 
 	/**
 	 * @param MetadataTypes\DataTypeType $dataType
-	 * @param Array<int, string>|Array<int, Array<int, string|null>>|Array<int, int|null>|Array<int, float|null>|null $format
+	 * @param MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|null $format
 	 * @param bool|float|int|string|DateTimeInterface|MetadataTypes\ButtonPayloadType|MetadataTypes\SwitchPayloadType|null $value
 	 *
-	 * @return string|int|float|null
+	 * @return string|int|float|bool|null
 	 */
 	public function transformValueToDevice(
 		MetadataTypes\DataTypeType $dataType,
-		?array $format,
+		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|null $format,
 		bool|float|int|string|DateTimeInterface|MetadataTypes\ButtonPayloadType|MetadataTypes\SwitchPayloadType|null $value
-	): string|int|float|null {
+	): string|int|float|bool|null {
 		if ($value === null) {
 			return null;
 		}
@@ -209,28 +220,33 @@ final class Transformer
 		}
 
 		if ($dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SWITCH)) {
-			if (is_array($format)) {
-				$filteredFormat = array_values(array_filter($format, function ($item) use ($value): bool {
-					return ((is_array($item) || is_string($item))) && $this->filterEnumFormat($item, $value);
-				}));
+			if ($format instanceof MetadataValueObjects\StringEnumFormat) {
+				$filtered = array_filter($format->getItems(), function (string $item) use ($value): bool {
+					return Utils\Strings::lower(strval($value)) === $item;
+				});
+
+				if (count($filtered) === 1) {
+					return strval($value);
+				}
+
+				return null;
+
+			} elseif ($format instanceof MetadataValueObjects\CombinedEnumFormat) {
+				$filtered = array_filter(
+					$format->getItems(),
+					function (array $item) use ($value): bool {
+						return $item[0] !== null
+							&& Utils\Strings::lower(strval($item[0]->getValue())) === Utils\Strings::lower(strval($value));
+					}
+				);
 
 				if (
-					count($filteredFormat) === 1
-					&& is_array($filteredFormat[0])
-					&& count($filteredFormat[0]) === 3
-					&& Utils\Strings::lower(strval($filteredFormat[0][0])) === Utils\Strings::lower(strval($value))
+					count($filtered) === 1
+					&& $filtered[0][2] instanceof MetadataValueObjects\CombinedEnumFormatItem
 				) {
 					// TODO: Fix data type. Default should be string, any other should be specified eg. [on:u16|1:u8|100]
 					// TODO: Proposed data type abbr U|I 8|16|32 for signed or unsigned int, F for float
-					return (int) $filteredFormat[0][2];
-
-				} elseif (
-					count($filteredFormat) === 1
-					&& !is_array($filteredFormat[0])
-				) {
-					// TODO: Fix data type. Default should be string, any other should be specified eg. [on:u16|1:u8|100]
-					// TODO: Proposed data type abbr U|I 8|16|32 for signed or unsigned int, F for float
-					return (int) $filteredFormat[0];
+					return is_scalar($filtered[0][2]->getValue()) ? $filtered[0][2]->getValue() : strval($filtered[0][2]->getValue());
 				}
 
 				return null;
@@ -244,57 +260,40 @@ final class Transformer
 		}
 
 		if ($dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_ENUM)) {
-			if (is_array($format)) {
-				$filteredFormat = array_values(array_filter($format, function ($item) use ($value): bool {
-					return ((is_array($item) || is_string($item))) && $this->filterEnumFormat($item, $value);
-				}));
+			if ($format instanceof MetadataValueObjects\StringEnumFormat) {
+				$filtered = array_filter($format->getItems(), function (string $item) use ($value): bool {
+					return Utils\Strings::lower(strval($value)) === $item;
+				});
 
-				if (
-					count($filteredFormat) === 1
-					&& is_array($filteredFormat[0])
-					&& count($filteredFormat[0]) === 3
-					&& Utils\Strings::lower(strval($filteredFormat[0][0])) === Utils\Strings::lower(strval($value))
-				) {
-					$enumValue = $filteredFormat[0][2];
-
-				} elseif (
-					count($filteredFormat) === 1
-					&& !is_array($filteredFormat[0])
-				) {
-					$enumValue = $filteredFormat[0];
-
-				} else {
-					return null;
+				if (count($filtered) === 1) {
+					return strval($value);
 				}
 
-				return (string) $enumValue;
+				return null;
+
+			} elseif ($format instanceof MetadataValueObjects\CombinedEnumFormat) {
+				$filtered = array_filter(
+					$format->getItems(),
+					function (array $item) use ($value): bool {
+						return $item[0] !== null
+							&& Utils\Strings::lower(strval($item[0]->getValue())) === Utils\Strings::lower(strval($value));
+					}
+				);
+
+				if (
+					count($filtered) === 1
+					&& $filtered[0][2] instanceof MetadataValueObjects\CombinedEnumFormatItem
+				) {
+					// TODO: Fix data type. Default should be string, any other should be specified eg. [on:u16|1:u8|100]
+					// TODO: Proposed data type abbr U|I 8|16|32 for signed or unsigned int, F for float
+					return is_scalar($filtered[0][2]->getValue()) ? $filtered[0][2]->getValue() : strval($filtered[0][2]->getValue());
+				}
+
+				return null;
 			}
 		}
 
 		return null;
-	}
-
-	/**
-	 * @param string|Array<int, string|null> $item
-	 * @param int|float|string|bool|DateTimeInterface|MetadataTypes\ButtonPayloadType|MetadataTypes\SwitchPayloadType $value
-	 *
-	 * @return bool
-	 */
-	private function filterEnumFormat(
-		string|array $item,
-		int|float|string|bool|DateTimeInterface|MetadataTypes\ButtonPayloadType|MetadataTypes\SwitchPayloadType $value
-	): bool {
-		if (is_array($item)) {
-			if (count($item) !== 3) {
-				return false;
-			}
-
-			return Utils\Strings::lower(strval($value)) === Utils\Strings::lower(strval($item[0]))
-				|| Utils\Strings::lower(strval($value)) === Utils\Strings::lower(strval($item[1]))
-				|| Utils\Strings::lower(strval($value)) === Utils\Strings::lower(strval($item[2]));
-		}
-
-		return Utils\Strings::lower(strval($value)) === Utils\Strings::lower($item);
 	}
 
 }
