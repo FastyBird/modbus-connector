@@ -730,12 +730,12 @@ class RtuClient extends Client
 				}
 
 				try {
-					if ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_BOOLEAN)) {
-						if (in_array($valueToWrite, [0, 1], true) || is_bool($valueToWrite)) {
+					if ($valueToWrite->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_BOOLEAN)) {
+						if (in_array($valueToWrite->getValue(), [0, 1], true) || is_bool($valueToWrite->getValue())) {
 							$result = $this->writeSingleCoil(
 								$station,
 								(int) $propertyMatches['address'],
-								is_bool($valueToWrite) ? ($valueToWrite ? 1 : 0) : $valueToWrite
+								is_bool($valueToWrite->getValue()) ? ($valueToWrite->getValue() ? 1 : 0) : $valueToWrite->getValue()
 							);
 
 						} else {
@@ -751,7 +751,7 @@ class RtuClient extends Client
 
 							throw new Exceptions\InvalidStateException('Value for boolean property have to be 1 or 0');
 						}
-					} elseif ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_FLOAT)) {
+					} elseif ($valueToWrite->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_FLOAT)) {
 						unset($this->processedWrittenProperties[$propertyUuid]);
 
 						$this->propertyStateHelper->setValue(
@@ -765,8 +765,8 @@ class RtuClient extends Client
 						throw new Exceptions\NotSupportedException('Float value is not supported for now');
 
 					} elseif (
-						$property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_INT)
-						|| $property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_UINT)
+						$valueToWrite->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_INT)
+						|| $valueToWrite->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_UINT)
 					) {
 						unset($this->processedWrittenProperties[$propertyUuid]);
 
@@ -781,8 +781,8 @@ class RtuClient extends Client
 						throw new Exceptions\NotSupportedException('Long integer value is not supported for now');
 
 					} elseif (
-						$property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SHORT)
-						|| $property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_USHORT)
+						$valueToWrite->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SHORT)
+						|| $valueToWrite->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_USHORT)
 					) {
 						unset($this->processedWrittenProperties[$propertyUuid]);
 
@@ -797,16 +797,16 @@ class RtuClient extends Client
 						throw new Exceptions\NotSupportedException('Short integer value is not supported for now');
 
 					} elseif (
-						$property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_CHAR)
-						|| $property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_UCHAR)
+						$valueToWrite->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_CHAR)
+						|| $valueToWrite->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_UCHAR)
 					) {
 						$result = $this->writeSingleRegister(
 							$station,
 							(int) $propertyMatches['address'],
-							(int) $valueToWrite
+							(int) $valueToWrite->getValue()
 						);
 
-					} elseif ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_STRING)) {
+					} elseif ($valueToWrite->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_STRING)) {
 						unset($this->processedWrittenProperties[$propertyUuid]);
 
 						$this->propertyStateHelper->setValue(
@@ -819,42 +819,6 @@ class RtuClient extends Client
 
 						throw new Exceptions\NotSupportedException('String value is not supported for now');
 
-					} elseif ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SWITCH)) {
-						// TODO: Fix handling for different value data types
-
-						if (is_int($valueToWrite)) {
-							$result = $this->writeSingleRegister(
-								$station,
-								(int) $propertyMatches['address'],
-								$valueToWrite
-							);
-
-						} else {
-							unset($this->processedWrittenProperties[$propertyUuid]);
-
-							$this->propertyStateHelper->setValue(
-								$property,
-								Utils\ArrayHash::from([
-									'expectedValue' => null,
-									'pending'       => false,
-								])
-							);
-
-							throw new Exceptions\InvalidStateException('Value for switch property have to be number');
-						}
-					} elseif ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_ENUM)) {
-						unset($this->processedWrittenProperties[$propertyUuid]);
-
-						$this->propertyStateHelper->setValue(
-							$property,
-							Utils\ArrayHash::from([
-								'expectedValue' => null,
-								'pending'       => false,
-							])
-						);
-
-						throw new Exceptions\NotSupportedException('Enum value is not supported for now');
-
 					} else {
 						unset($this->processedWrittenProperties[$propertyUuid]);
 
@@ -866,7 +830,10 @@ class RtuClient extends Client
 							])
 						);
 
-						throw new Exceptions\InvalidStateException('Unsupported value data type');
+						throw new Exceptions\InvalidStateException(sprintf(
+							'Unsupported value data type: %s',
+							strval($valueToWrite->getDataType()->getValue())
+						));
 					}
 				} catch (Exceptions\ModbusRtuException $ex) {
 					unset($this->processedWrittenProperties[$propertyUuid]);
