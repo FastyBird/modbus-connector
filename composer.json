@@ -37,18 +37,19 @@
   "minimum-stability" : "stable",
 
   "require" : {
-    "php" : ">=8.0.0|>=8.1.0",
+    "php": ">=8.0.0|>=8.1.0",
     "ext-pcntl": "*",
-    "clue/multicast-react" : "^1.1",
-    "cweagans/composer-patches" : "^1.7",
-    "fastybird/devices-module" : "dev-master as 0.74.0",
-    "fastybird/json-api" : "^0.11",
-    "fastybird/metadata" : "^0.74",
-    "fastybird/socket-server-factory" : "^0.5",
-    "nette/bootstrap" : "^3.1",
-    "nette/di" : "^3.0",
-    "psr/log" : "^1.1",
-    "react/http" : "^1.6"
+    "clue/multicast-react": "^1.1",
+    "cweagans/composer-patches": "^1.7",
+    "fastybird/devices-module": "dev-master as 0.74.0",
+    "fastybird/json-api": "^0.11",
+    "fastybird/metadata": "^0.74",
+    "fastybird/socket-server-factory": "^0.5",
+    "nette/bootstrap": "^3.1",
+    "nette/di": "^3.0",
+    "nettrine/fixtures": "^0.6.3",
+    "psr/log": "^1.1",
+    "react/http": "^1.6"
   },
 
   "require-dev" : {

@@ -21,6 +21,7 @@ use FastyBird\ModbusConnector\API;
 use FastyBird\ModbusConnector\Clients;
 use FastyBird\ModbusConnector\Commands;
 use FastyBird\ModbusConnector\Connector;
+use FastyBird\ModbusConnector\Fixtures;
 use FastyBird\ModbusConnector\Helpers;
 use FastyBird\ModbusConnector\Hydrators;
 use FastyBird\ModbusConnector\Schemas;
@@ -28,6 +29,7 @@ use FastyBird\ModbusConnector\Subscribers;
 use Nette;
 use Nette\DI;
 use Nette\Schema;
+use Nettrine\Fixtures as NettrineFixtures;
 use React\EventLoop;
 use stdClass;
 
@@ -174,6 +176,21 @@ class ModbusConnectorExtension extends DI\CompilerExtension
 				$ormAnnotationDriverService,
 				'FastyBird\ModbusConnector\Entities',
 			]);
+		}
+
+		/**
+		 * Database fixtures
+		 */
+
+		$fixturesLoaderService = $builder->getDefinitionByType(NettrineFixtures\Loader\FixturesLoader::class);
+
+		if ($fixturesLoaderService instanceof DI\Definitions\ServiceDefinition) {
+			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\ConnectorFixture()]);
+			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\ConnectorPropertiesFixture()]);
+			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\DevicesFixture()]);
+			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\DevicesPropertiesFixture()]);
+			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\ChannelsFixture()]);
+			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\ChannelsPropertiesFixture()]);
 		}
 	}
 

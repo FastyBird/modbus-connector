@@ -23,6 +23,7 @@ extensions:
     nettrineOrmAnnotations              : Nettrine\ORM\DI\OrmAnnotationsExtension
     nettrineOrmConsole                  : Nettrine\ORM\DI\OrmConsoleExtension
     nettrineOrmCache                    : Nettrine\ORM\DI\OrmCacheExtension
+    nettrineFixtures                    : Nettrine\Fixtures\DI\FixturesExtension
     ipubDoctrineConsistence             : IPub\DoctrineConsistence\DI\DoctrineConsistenceExtension
     ipubDoctrineCrud                    : IPub\DoctrineCrud\DI\DoctrineCrudExtension
     ipubDoctrineDynamicDiscriminatorMap : IPub\DoctrineDynamicDiscriminatorMap\DI\DoctrineDynamicDiscriminatorMapExtension
@@ -99,6 +100,10 @@ nettrineOrm:
 
 nettrineOrmAnnotations:
     mapping: []
+
+nettrineFixtures:
+    paths:
+        - %appDir%/Fixtures
 
 fbSimpleAuth:
     token:
