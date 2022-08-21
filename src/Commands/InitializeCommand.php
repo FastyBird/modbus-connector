@@ -516,6 +516,17 @@ class InitializeCommand extends Console\Command\Command
 			return;
 		}
 
+		$question = new Console\Question\ConfirmationQuestion(
+			'Would you like to continue?',
+			false
+		);
+
+		$continue = $io->askQuestion($question);
+
+		if (!$continue) {
+			return;
+		}
+
 		try {
 			// Start transaction connection to the database
 			$this->getOrmConnection()->beginTransaction();

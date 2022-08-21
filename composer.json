@@ -38,6 +38,7 @@
 
   "require" : {
     "php" : ">=8.0.0|>=8.1.0",
+    "ext-pcntl": "*",
     "clue/multicast-react" : "^1.1",
     "cweagans/composer-patches" : "^1.7",
     "fastybird/devices-module" : "dev-master as 0.74.0",
