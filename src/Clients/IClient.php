@@ -61,11 +61,4 @@ interface IClient
 	 */
 	public function disconnect(): void;
 
-	/**
-	 * Discover new devices
-	 *
-	 * @return void
-	 */
-	public function discover(): void;
-
 }

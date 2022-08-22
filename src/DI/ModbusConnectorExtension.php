@@ -145,9 +145,6 @@ class ModbusConnectorExtension extends DI\CompilerExtension
 
 		$builder->addDefinition($this->prefix('commands.execute'), new DI\Definitions\ServiceDefinition())
 			->setType(Commands\ExecuteCommand::class);
-
-		$builder->addDefinition($this->prefix('commands.discovery'), new DI\Definitions\ServiceDefinition())
-			->setType(Commands\DiscoveryCommand::class);
 	}
 
 	/**

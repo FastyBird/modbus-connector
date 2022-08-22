@@ -268,14 +268,6 @@ class RtuClient extends Client
 	/**
 	 * {@inheritDoc}
 	 */
-	public function discover(): void
-	{
-		// TODO: Implement discover() method.
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
 	public function writeChannelControl(MetadataEntities\Actions\IActionChannelControlEntity $action): void
 	{
 		// TODO: Implement writeChannelControl() method.
