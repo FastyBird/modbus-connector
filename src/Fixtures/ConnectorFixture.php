@@ -27,7 +27,7 @@ use FastyBird\ModbusConnector\Entities;
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-final class ConnectorFixture extends DataFixtures\AbstractFixture implements DataFixtures\DependentFixtureInterface
+final class ConnectorFixture extends DataFixtures\AbstractFixture implements DataFixtures\FixtureInterface
 {
 
 	/**
@@ -43,14 +43,6 @@ final class ConnectorFixture extends DataFixtures\AbstractFixture implements Dat
         $manager->flush();
 
 		$this->addReference('modbus-rtu-connector', $connector);
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public function getDependencies(): array
-	{
-		return [];
 	}
 
 }
