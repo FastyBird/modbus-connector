@@ -32,6 +32,7 @@ class ConnectorPropertyIdentifierType extends Consistence\Enum\Enum
 	 * Define device states
 	 */
 	public const IDENTIFIER_CLIENT_MODE = 'mode';
+
 	public const IDENTIFIER_RTU_INTERFACE = 'rtu-interface';
 	public const IDENTIFIER_RTU_BYTE_SIZE = 'rtu-byte-size';
 	public const IDENTIFIER_RTU_BAUD_RATE = 'rtu-baud-rate';

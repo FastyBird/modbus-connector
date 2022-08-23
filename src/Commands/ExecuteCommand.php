@@ -215,11 +215,9 @@ class ExecuteCommand extends Console\Command\Command
 
 		if ($result !== Console\Command\Command::SUCCESS) {
 			$io->error('Something went wrong, service could not be processed.');
-
-			return Console\Command\Command::FAILURE;
 		}
 
-		return Console\Command\Command::SUCCESS;
+		return $result;
 	}
 
 }

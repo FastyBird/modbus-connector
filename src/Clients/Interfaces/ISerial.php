@@ -52,7 +52,7 @@ interface ISerial
 	/**
 	 * Reads remainder of the serial stream into a string
 	 *
-	 * @param int $length The maximum bytes to read. Defaults to -1 (read all the remainingbuffer)
+	 * @param int $length The maximum bytes to read. Defaults to -1 (read all the remaining buffer)
 	 * @param int $offset Seek to the specified offset before reading. If this number is negative,no seeking will occur and reading will start from the current position
 	 *
 	 * @return false|string Returns a received data or `false` on failure

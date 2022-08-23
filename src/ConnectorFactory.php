@@ -91,13 +91,12 @@ final class ConnectorFactory implements DevicesModuleConnectors\IConnectorFactor
 			if (
 				array_key_exists(Clients\ClientFactory::MODE_CONSTANT_NAME, $constants)
 				&& $constants[Clients\ClientFactory::MODE_CONSTANT_NAME] === $mode
-				&& method_exists($clientFactory, 'create')
 			) {
-				return $this->connectorFactory->create($connector, $clientFactory->create($connector));
+				return $this->connectorFactory->create($clientFactory->create($connector));
 			}
 		}
 
-		throw new DevicesModuleExceptions\TerminateException('Connector client is not configured');
+		throw new DevicesModuleExceptions\TerminateException('Connector is not configured');
 	}
 
 }

@@ -60,11 +60,8 @@ final class ConnectorHelper
 		$configuration = $this->propertiesRepository->findByIdentifier($connectorId, strval($type->getValue()));
 
 		if ($configuration instanceof MetadataEntities\Modules\DevicesModule\IConnectorStaticPropertyEntity) {
-			if (
-				$type->getValue() === Types\ConnectorPropertyIdentifierType::IDENTIFIER_RTU_BAUD_RATE
-				&& !Types\BaudRateType::isValidValue($configuration->getValue())
-			) {
-				return ModbusConnector\Constants::DEFAULT_RTU_BAUD_RATE;
+			if ($type->getValue() === Types\ConnectorPropertyIdentifierType::IDENTIFIER_CLIENT_MODE) {
+				return Types\ClientModeType::isValidValue($configuration->getValue()) ? $configuration->getValue() : null;
 			}
 
 			if (
@@ -72,6 +69,13 @@ final class ConnectorHelper
 				&& !Types\ByteSizeType::isValidValue($configuration->getValue())
 			) {
 				return Types\ByteSizeType::SIZE_8;
+			}
+
+			if (
+				$type->getValue() === Types\ConnectorPropertyIdentifierType::IDENTIFIER_RTU_BAUD_RATE
+				&& !Types\BaudRateType::isValidValue($configuration->getValue())
+			) {
+				return ModbusConnector\Constants::DEFAULT_RTU_BAUD_RATE;
 			}
 
 			if (
@@ -88,19 +92,19 @@ final class ConnectorHelper
 				return Types\StopBitsType::STOP_BIT_ONE;
 			}
 
-			if ($type->getValue() === Types\ConnectorPropertyIdentifierType::IDENTIFIER_CLIENT_MODE) {
-				return Types\ClientModeType::isValidValue($configuration->getValue()) ? $configuration->getValue() : null;
-			}
-
 			return $configuration->getValue();
 		}
 
-		if ($type->getValue() === Types\ConnectorPropertyIdentifierType::IDENTIFIER_RTU_BAUD_RATE) {
-			return ModbusConnector\Constants::DEFAULT_RTU_BAUD_RATE;
+		if ($type->getValue() === Types\ConnectorPropertyIdentifierType::IDENTIFIER_RTU_INTERFACE) {
+			return ModbusConnector\Constants::DEFAULT_RTU_SERIAL_INTERFACE;
 		}
 
 		if ($type->getValue() === Types\ConnectorPropertyIdentifierType::IDENTIFIER_RTU_BYTE_SIZE) {
 			return Types\ByteSizeType::SIZE_8;
+		}
+
+		if ($type->getValue() === Types\ConnectorPropertyIdentifierType::IDENTIFIER_RTU_BAUD_RATE) {
+			return ModbusConnector\Constants::DEFAULT_RTU_BAUD_RATE;
 		}
 
 		if ($type->getValue() === Types\ConnectorPropertyIdentifierType::IDENTIFIER_RTU_PARITY) {
@@ -109,10 +113,6 @@ final class ConnectorHelper
 
 		if ($type->getValue() === Types\ConnectorPropertyIdentifierType::IDENTIFIER_RTU_STOP_BITS) {
 			return Types\StopBitsType::STOP_BIT_ONE;
-		}
-
-		if ($type->getValue() === Types\ConnectorPropertyIdentifierType::IDENTIFIER_RTU_INTERFACE) {
-			return ModbusConnector\Constants::DEFAULT_RTU_SERIAL_INTERFACE;
 		}
 
 		return null;

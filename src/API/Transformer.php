@@ -98,7 +98,11 @@ final class Transformer
 			return strval($value);
 		}
 
-		if ($dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_ENUM)) {
+		if (
+			$dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_ENUM)
+			|| $dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SWITCH)
+			|| $dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_BUTTON)
+		) {
 			if ($format instanceof MetadataValueObjects\StringEnumFormat) {
 				$filtered = array_values(array_filter(
 					$format->getItems(),
@@ -108,7 +112,15 @@ final class Transformer
 				));
 
 				if (count($filtered) === 1) {
-					return strval($value);
+					if ($dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SWITCH)) {
+						return MetadataTypes\SwitchPayloadType::isValidValue(strval($value)) ? MetadataTypes\SwitchPayloadType::get(strval($value)) : null;
+
+					} elseif ($dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_BUTTON)) {
+						return MetadataTypes\ButtonPayloadType::isValidValue(strval($value)) ? MetadataTypes\ButtonPayloadType::get(strval($value)) : null;
+
+					} else {
+						return strval($value);
+					}
 				}
 
 				return null;
@@ -126,77 +138,15 @@ final class Transformer
 					count($filtered) === 1
 					&& $filtered[0][0] instanceof MetadataValueObjects\CombinedEnumFormatItem
 				) {
-					return strval($filtered[0][0]->getValue());
-				}
+					if ($dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SWITCH)) {
+						return MetadataTypes\SwitchPayloadType::isValidValue(strval($filtered[0][0]->getValue())) ? MetadataTypes\SwitchPayloadType::get(strval($filtered[0][0]->getValue())) : null;
 
-				return null;
-			}
-		}
+					} elseif ($dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_BUTTON)) {
+						return MetadataTypes\ButtonPayloadType::isValidValue(strval($filtered[0][0]->getValue())) ? MetadataTypes\ButtonPayloadType::get(strval($filtered[0][0]->getValue())) : null;
 
-		if ($dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SWITCH)) {
-			if ($format instanceof MetadataValueObjects\StringEnumFormat) {
-				$filtered = array_values(array_filter(
-					$format->getItems(),
-					function (string $item) use ($value): bool {
-						return Utils\Strings::lower(strval($value)) === $item;
+					} else {
+						return strval($filtered[0][0]->getValue());
 					}
-				));
-
-				if (count($filtered) === 1) {
-					return MetadataTypes\SwitchPayloadType::isValidValue(strval($value)) ? MetadataTypes\SwitchPayloadType::get(strval($value)) : null;
-				}
-
-				return null;
-
-			} elseif ($format instanceof MetadataValueObjects\CombinedEnumFormat) {
-				$filtered = array_values(array_filter(
-					$format->getItems(),
-					function (array $item) use ($value): bool {
-						return $item[1] !== null
-							&& Utils\Strings::lower(strval($item[1]->getValue())) === Utils\Strings::lower(strval($value));
-					}
-				));
-
-				if (
-					count($filtered) === 1
-					&& $filtered[0][0] instanceof MetadataValueObjects\CombinedEnumFormatItem
-				) {
-					return MetadataTypes\SwitchPayloadType::isValidValue(strval($filtered[0][0]->getValue())) ? MetadataTypes\SwitchPayloadType::get(strval($filtered[0][0]->getValue())) : null;
-				}
-
-				return null;
-			}
-		}
-
-		if ($dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_BUTTON)) {
-			if ($format instanceof MetadataValueObjects\StringEnumFormat) {
-				$filtered = array_values(array_filter(
-					$format->getItems(),
-					function (string $item) use ($value): bool {
-						return Utils\Strings::lower(strval($value)) === $item;
-					}
-				));
-
-				if (count($filtered) === 1) {
-					return MetadataTypes\ButtonPayloadType::isValidValue(strval($value)) ? MetadataTypes\ButtonPayloadType::get(strval($value)) : null;
-				}
-
-				return null;
-
-			} elseif ($format instanceof MetadataValueObjects\CombinedEnumFormat) {
-				$filtered = array_values(array_filter(
-					$format->getItems(),
-					function (array $item) use ($value): bool {
-						return $item[1] !== null
-							&& Utils\Strings::lower(strval($item[1]->getValue())) === Utils\Strings::lower(strval($value));
-					}
-				));
-
-				if (
-					count($filtered) === 1
-					&& $filtered[0][0] instanceof MetadataValueObjects\CombinedEnumFormatItem
-				) {
-					return MetadataTypes\ButtonPayloadType::isValidValue(strval($filtered[0][0]->getValue())) ? MetadataTypes\ButtonPayloadType::get(strval($filtered[0][0]->getValue())) : null;
 				}
 
 				return null;
@@ -276,49 +226,9 @@ final class Transformer
 			);
 		}
 
-		if ($dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_ENUM)) {
-			if ($format instanceof MetadataValueObjects\StringEnumFormat) {
-				$filtered = array_values(array_filter(
-					$format->getItems(),
-					function (string $item) use ($value): bool {
-						return Utils\Strings::lower(strval($value)) === $item;
-					}
-				));
-
-				if (count($filtered) === 1) {
-					return new ValueObjects\DeviceDataValueObject(
-						strval($value),
-						MetadataTypes\DataTypeType::get(MetadataTypes\DataTypeType::DATA_TYPE_STRING)
-					);
-				}
-
-				return null;
-
-			} elseif ($format instanceof MetadataValueObjects\CombinedEnumFormat) {
-				$filtered = array_values(array_filter(
-					$format->getItems(),
-					function (array $item) use ($value): bool {
-						return $item[0] !== null
-							&& Utils\Strings::lower(strval($item[0]->getValue())) === Utils\Strings::lower(strval($value));
-					}
-				));
-
-				if (
-					count($filtered) === 1
-					&& $filtered[0][2] instanceof MetadataValueObjects\CombinedEnumFormatItem
-				) {
-					return new ValueObjects\DeviceDataValueObject(
-						is_scalar($filtered[0][2]->getValue()) ? $filtered[0][2]->getValue() : strval($filtered[0][2]->getValue()),
-						$this->shortDataTypeToLong($filtered[0][2]->getDataType())
-					);
-				}
-
-				return null;
-			}
-		}
-
 		if (
-			$dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SWITCH)
+			$dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_ENUM)
+			|| $dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SWITCH)
 			|| $dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_BUTTON)
 		) {
 			if ($format instanceof MetadataValueObjects\StringEnumFormat) {
@@ -361,16 +271,19 @@ final class Transformer
 			}
 
 			if (
-				$value instanceof MetadataTypes\SwitchPayloadType
-				|| $value instanceof MetadataTypes\ButtonPayloadType
+				(
+					$dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SWITCH)
+					&& $value instanceof MetadataTypes\SwitchPayloadType
+				) || (
+					$dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_BUTTON)
+					&& $value instanceof MetadataTypes\ButtonPayloadType
+				)
 			) {
 				return new ValueObjects\DeviceDataValueObject(
 					strval($value->getValue()),
 					MetadataTypes\DataTypeType::get(MetadataTypes\DataTypeType::DATA_TYPE_STRING)
 				);
 			}
-
-			return null;
 		}
 
 		return null;

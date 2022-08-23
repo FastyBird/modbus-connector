@@ -19,7 +19,7 @@ use FastyBird\Metadata\Entities as MetadataEntities;
 use FastyBird\ModbusConnector\Types;
 
 /**
- * Generation 1 devices client factory
+ * Modbus RTU devices client factory
  *
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Clients
