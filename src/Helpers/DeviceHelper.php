@@ -63,7 +63,18 @@ final class DeviceHelper
 				return is_int($configuration->getValue()) ? $configuration->getValue() : null;
 			}
 
+			if (
+				$type->getValue() === Types\DevicePropertyIdentifierType::IDENTIFIER_BYTE_ORDER
+				&& !Types\ByteOrderType::isValidValue($configuration->getValue())
+			) {
+				return Types\ByteOrderType::BYTE_ORDER_BIG;
+			}
+
 			return $configuration->getValue();
+		}
+
+		if ($type->getValue() === Types\DevicePropertyIdentifierType::IDENTIFIER_BYTE_ORDER) {
+			return Types\ByteOrderType::BYTE_ORDER_BIG;
 		}
 
 		return null;
