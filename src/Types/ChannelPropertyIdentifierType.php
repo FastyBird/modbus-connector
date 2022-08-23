@@ -1,7 +1,7 @@
 <?php declare(strict_types = 1);
 
 /**
- * ByteOrderType.php
+ * ChannelPropertyIdentifierType.php
  *
  * @license        More in LICENSE.md
  * @copyright      https://www.fastybird.com
@@ -10,31 +10,29 @@
  * @subpackage     Types
  * @since          0.34.0
  *
- * @date           21.08.22
+ * @date           01.08.22
  */
 
 namespace FastyBird\ModbusConnector\Types;
 
 use Consistence;
+use FastyBird\Metadata\Types as MetadataTypes;
 
 /**
- * Communication byte order types
+ * Device property identifier types
  *
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Types
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-class ByteOrderType extends Consistence\Enum\Enum
+class ChannelPropertyIdentifierType extends Consistence\Enum\Enum
 {
 
 	/**
-	 * Define versions
+	 * Define device states
 	 */
-	public const BYTE_ORDER_BIG = 'big';
-	public const BYTE_ORDER_BIG_SWAP = 'big_swap';
-	public const BYTE_ORDER_LITTLE = 'little';
-	public const BYTE_ORDER_LITTLE_SWAP = 'little_swap';
+	public const IDENTIFIER_STATE = MetadataTypes\ChannelPropertyIdentifierType::IDENTIFIER_ADDRESS;
 
 	/**
 	 * @return string

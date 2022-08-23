@@ -32,9 +32,9 @@ class DevicePropertyIdentifierType extends Consistence\Enum\Enum
 	/**
 	 * Define device states
 	 */
-	public const IDENTIFIER_STATE = MetadataTypes\DevicePropertyNameType::NAME_STATE;
-	public const IDENTIFIER_ADDRESS = MetadataTypes\DevicePropertyNameType::NAME_ADDRESS;
-	public const IDENTIFIER_BYTE_ORDER = 'byte-order';
+	public const IDENTIFIER_STATE = MetadataTypes\DevicePropertyIdentifierType::IDENTIFIER_STATE;
+	public const IDENTIFIER_ADDRESS = MetadataTypes\DevicePropertyIdentifierType::IDENTIFIER_ADDRESS;
+	public const IDENTIFIER_BYTE_ORDER = 'byte_order';
 
 	/**
 	 * @return string
