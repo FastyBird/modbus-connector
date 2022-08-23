@@ -136,6 +136,9 @@ class ModbusConnectorExtension extends DI\CompilerExtension
 		$builder->addDefinition($this->prefix('helpers.device'), new DI\Definitions\ServiceDefinition())
 			->setType(Helpers\DeviceHelper::class);
 
+		$builder->addDefinition($this->prefix('helpers.channel'), new DI\Definitions\ServiceDefinition())
+			->setType(Helpers\ChannelHelper::class);
+
 		$builder->addDefinition($this->prefix('helpers.property'), new DI\Definitions\ServiceDefinition())
 			->setType(Helpers\PropertyHelper::class);
 

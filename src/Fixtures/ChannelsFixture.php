@@ -48,15 +48,18 @@ final class ChannelsFixture extends DataFixtures\AbstractFixture implements Data
 			throw new Exceptions\InvalidStateException('Device reference could not be loaded');
 		}
 
-		$channel = new DevicesModuleEntities\Channels\Channel(
-			$device,
-			'channel-1'
-		);
+		for ($i = 1; $i <= 4; $i++) {
+			$channel = new DevicesModuleEntities\Channels\Channel(
+				$device,
+				'channel-' . $i
+			);
 
-		$manager->persist($channel);
+			$manager->persist($channel);
+
+			$this->setReference('modbus-rtu-channel-' . $i, $channel);
+		}
+
 		$manager->flush();
-
-		$this->setReference('modbus-rtu-channel-1', $channel);
 	}
 
 	/**

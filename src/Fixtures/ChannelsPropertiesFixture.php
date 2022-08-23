@@ -20,6 +20,7 @@ use Doctrine\Persistence;
 use FastyBird\DevicesModule\Entities as DevicesModuleEntities;
 use FastyBird\Metadata\Types as MetadataTypes;
 use FastyBird\ModbusConnector\Exceptions;
+use FastyBird\ModbusConnector\Types\ChannelPropertyIdentifierType;
 use Throwable;
 
 /**
@@ -42,22 +43,30 @@ final class ChannelsPropertiesFixture extends DataFixtures\AbstractFixture imple
 	 */
 	public function load(Persistence\ObjectManager $manager): void
 	{
-		$channel = $this->getReference('modbus-rtu-channel-1');
-
-		if (!$channel instanceof DevicesModuleEntities\Channels\IChannel) {
-			throw new Exceptions\InvalidStateException('Channel reference could not be loaded');
-		}
-
 		for ($i = 1; $i <= 4; $i++) {
+			$channel = $this->getReference('modbus-rtu-channel-' . $i);
+
+			if (!$channel instanceof DevicesModuleEntities\Channels\IChannel) {
+				throw new Exceptions\InvalidStateException('Channel reference could not be loaded');
+			}
+
+			$addressProperty = new DevicesModuleEntities\Channels\Properties\StaticProperty(
+				$channel,
+				ChannelPropertyIdentifierType::IDENTIFIER_ADDRESS
+			);
+			$addressProperty->setDataType(MetadataTypes\DataTypeType::get(MetadataTypes\DataTypeType::DATA_TYPE_UINT));
+			$addressProperty->setValue(strval($i));
+
 			$switchProperty = new DevicesModuleEntities\Channels\Properties\DynamicProperty(
 				$channel,
-				'switch_' . $i
+				'switch'
 			);
 			$switchProperty->setDataType(MetadataTypes\DataTypeType::get(MetadataTypes\DataTypeType::DATA_TYPE_SWITCH));
 			$switchProperty->setSettable(true);
 			$switchProperty->setQueryable(true);
 			$switchProperty->setFormat('sw|switch-on:u8|1:u16|1000,sw|switch-off:u8|0:u16|2000,sw|switch-toggle::u16|3000');
 
+			$manager->persist($addressProperty);
 			$manager->persist($switchProperty);
 		}
 

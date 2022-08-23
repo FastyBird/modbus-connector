@@ -32,7 +32,7 @@ class ChannelPropertyIdentifierType extends Consistence\Enum\Enum
 	/**
 	 * Define device states
 	 */
-	public const IDENTIFIER_STATE = MetadataTypes\ChannelPropertyIdentifierType::IDENTIFIER_ADDRESS;
+	public const IDENTIFIER_ADDRESS = MetadataTypes\ChannelPropertyIdentifierType::IDENTIFIER_ADDRESS;
 
 	/**
 	 * @return string

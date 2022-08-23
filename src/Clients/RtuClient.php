@@ -100,6 +100,9 @@ class RtuClient extends Client
 	/** @var Helpers\DeviceHelper */
 	private Helpers\DeviceHelper $deviceHelper;
 
+	/** @var Helpers\ChannelHelper */
+	private Helpers\ChannelHelper $channelHelper;
+
 	/** @var Helpers\PropertyHelper */
 	private Helpers\PropertyHelper $propertyStateHelper;
 
@@ -108,9 +111,6 @@ class RtuClient extends Client
 
 	/** @var DevicesModuleModels\DataStorage\IDevicesRepository */
 	private DevicesModuleModels\DataStorage\IDevicesRepository $devicesRepository;
-
-	/** @var DevicesModuleModels\DataStorage\IDevicePropertiesRepository */
-	private DevicesModuleModels\DataStorage\IDevicePropertiesRepository $devicePropertiesRepository;
 
 	/** @var DevicesModuleModels\DataStorage\IChannelsRepository */
 	private DevicesModuleModels\DataStorage\IChannelsRepository $channelsRepository;
@@ -134,10 +134,10 @@ class RtuClient extends Client
 	 * @param MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector
 	 * @param Helpers\ConnectorHelper $connectorHelper
 	 * @param Helpers\DeviceHelper $deviceHelper
+	 * @param Helpers\ChannelHelper $channelHelper
 	 * @param Helpers\PropertyHelper $propertyStateHelper
 	 * @param API\Transformer $transformer
 	 * @param DevicesModuleModels\DataStorage\IDevicesRepository $devicesRepository
-	 * @param DevicesModuleModels\DataStorage\IDevicePropertiesRepository $devicePropertiesRepository
 	 * @param DevicesModuleModels\DataStorage\IChannelsRepository $channelsRepository
 	 * @param DevicesModuleModels\DataStorage\IChannelPropertiesRepository $channelPropertiesRepository
 	 * @param DevicesModuleModels\States\DeviceConnectionStateManager $deviceConnectionStateManager
@@ -149,10 +149,10 @@ class RtuClient extends Client
 		MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector,
 		Helpers\ConnectorHelper $connectorHelper,
 		Helpers\DeviceHelper $deviceHelper,
+		Helpers\ChannelHelper $channelHelper,
 		Helpers\PropertyHelper $propertyStateHelper,
 		API\Transformer $transformer,
 		DevicesModuleModels\DataStorage\IDevicesRepository $devicesRepository,
-		DevicesModuleModels\DataStorage\IDevicePropertiesRepository $devicePropertiesRepository,
 		DevicesModuleModels\DataStorage\IChannelsRepository $channelsRepository,
 		DevicesModuleModels\DataStorage\IChannelPropertiesRepository $channelPropertiesRepository,
 		DevicesModuleModels\States\DeviceConnectionStateManager $deviceConnectionStateManager,
@@ -163,11 +163,11 @@ class RtuClient extends Client
 		$this->connector = $connector;
 		$this->connectorHelper = $connectorHelper;
 		$this->deviceHelper = $deviceHelper;
+		$this->channelHelper = $channelHelper;
 		$this->propertyStateHelper = $propertyStateHelper;
 		$this->transformer = $transformer;
 
 		$this->devicesRepository = $devicesRepository;
-		$this->devicePropertiesRepository = $devicePropertiesRepository;
 		$this->channelsRepository = $channelsRepository;
 		$this->channelPropertiesRepository = $channelPropertiesRepository;
 		$this->deviceConnectionStateManager = $deviceConnectionStateManager;
@@ -406,112 +406,40 @@ class RtuClient extends Client
 			)
 		);
 
-		foreach ($this->devicePropertiesRepository->findAllByDevice($device->getId(), MetadataEntities\Modules\DevicesModule\DeviceDynamicPropertyEntity::class) as $property) {
-			$logContext = [
-				'source'    => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
-				'type'      => 'rtu-client',
-				'device'    => [
-					'id' => $device->getId()->toString(),
-				],
-				'property'  => [
-					'id' => $property->getId()->toString(),
-				],
-			];
-
-			/**
-			 * Device property writing
-			 */
-
-			try {
-				$result = $this->writeProperty($station, $device, $property);
-
-				if ($result) {
-					return true;
-				}
-			} catch (Exceptions\InvalidArgumentException $ex) {
-				$this->logger->warning('Device property value could not be written', array_merge($logContext, [
-					'exception' => [
-						'message' => $ex->getMessage(),
-						'code'    => $ex->getCode(),
-					],
-				]));
-			} catch (Exceptions\NotSupportedException $ex) {
-				$this->logger->warning('Device property value is not supported for now', array_merge($logContext, [
-					'exception' => [
-						'message' => $ex->getMessage(),
-						'code'    => $ex->getCode(),
-					],
-				]));
-			} catch (Exceptions\ModbusRtuException $ex) {
-				$this->logger->error('Modbus communication with device failed', array_merge($logContext, [
-					'exception' => [
-						'message' => $ex->getMessage(),
-						'code'    => $ex->getCode(),
-					],
-				]));
-
-				// Something wrong during communication
-				return true;
-			} catch (Exceptions\NotReachableException $ex) {
-				$this->logger->error('Maximum device property write attempts reached', array_merge($logContext, [
-					'exception' => [
-						'message' => $ex->getMessage(),
-						'code'    => $ex->getCode(),
-					],
-				]));
-
-				// Device is probably offline
-				return true;
-			}
-
-			/**
-			 * Device property reading
-			 */
-
-			try {
-				$result = $this->readProperty($station, $device, $property);
-
-				if ($result) {
-					return true;
-				}
-			} catch (Exceptions\InvalidArgumentException $ex) {
-				$this->logger->warning('Device property value could not be read', array_merge($logContext, [
-					'exception' => [
-						'message' => $ex->getMessage(),
-						'code'    => $ex->getCode(),
-					],
-				]));
-			} catch (Exceptions\NotSupportedException $ex) {
-				$this->logger->warning('Device property data type is not supported for now', array_merge($logContext, [
-					'exception' => [
-						'message' => $ex->getMessage(),
-						'code'    => $ex->getCode(),
-					],
-				]));
-			} catch (Exceptions\ModbusRtuException $ex) {
-				$this->logger->error('Modbus communication with device failed', array_merge($logContext, [
-					'exception' => [
-						'message' => $ex->getMessage(),
-						'code'    => $ex->getCode(),
-					],
-				]));
-
-				// Something wrong during communication
-				return true;
-			} catch (Exceptions\NotReachableException $ex) {
-				$this->logger->error('Maximum device property read attempts reached', array_merge($logContext, [
-					'exception' => [
-						'message' => $ex->getMessage(),
-						'code'    => $ex->getCode(),
-					],
-				]));
-
-				// Device is probably offline
-				return true;
-			}
-		}
-
 		foreach ($this->channelsRepository->findAllByDevice($device->getId()) as $channel) {
+			$address = $this->channelHelper->getConfiguration(
+				$channel->getId(),
+				Types\DevicePropertyIdentifierType::get(
+					Types\ChannelPropertyIdentifierType::IDENTIFIER_ADDRESS
+				)
+			);
+
+			if (!is_int($address)) {
+				foreach ($this->channelPropertiesRepository->findAllByChannel($channel->getId(), MetadataEntities\Modules\DevicesModule\ChannelDynamicPropertyEntity::class) as $property) {
+					$this->propertyStateHelper->setValue(
+						$property,
+						Utils\ArrayHash::from([
+							'valid'         => false,
+							'expectedValue' => null,
+							'pending'       => false,
+						])
+					);
+				}
+
+				$this->logger->warning('Channel address is missing', [
+					'source'    => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
+					'type'      => 'rtu-client',
+					'device'    => [
+						'id' => $device->getId()->toString(),
+					],
+					'channel'   => [
+						'id' => $channel->getId()->toString(),
+					],
+				]);
+
+				continue;
+			}
+
 			foreach ($this->channelPropertiesRepository->findAllByChannel($channel->getId(), MetadataEntities\Modules\DevicesModule\ChannelDynamicPropertyEntity::class) as $property) {
 				$logContext = [
 					'source'    => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
@@ -532,7 +460,7 @@ class RtuClient extends Client
 				 */
 
 				try {
-					$result = $this->writeProperty($station, $device, $property);
+					$result = $this->writeProperty($station, $address, $device, $property);
 
 					if ($result) {
 						return true;
@@ -578,7 +506,7 @@ class RtuClient extends Client
 				 */
 
 				try {
-					$result = $this->readProperty($station, $device, $property);
+					$result = $this->readProperty($station, $address, $device, $property);
 
 					if ($result) {
 						return true;
@@ -626,6 +554,7 @@ class RtuClient extends Client
 
 	/**
 	 * @param int $station
+	 * @param int $address
 	 * @param MetadataEntities\Modules\DevicesModule\IDeviceEntity $device
 	 * @param IPropertyEntity $property
 	 *
@@ -638,6 +567,7 @@ class RtuClient extends Client
 	 */
 	private function writeProperty(
 		int $station,
+		int $address,
 		MetadataEntities\Modules\DevicesModule\IDeviceEntity $device,
 		MetadataEntities\Modules\DevicesModule\IPropertyEntity $property
 	): bool {
@@ -651,30 +581,11 @@ class RtuClient extends Client
 				$property instanceof MetadataEntities\Modules\DevicesModule\IDeviceDynamicPropertyEntity
 				|| $property instanceof MetadataEntities\Modules\DevicesModule\IChannelDynamicPropertyEntity
 			)
-			// Property identifier have to have valid identifier format
-			&& preg_match(ModbusConnector\Constants::PROPERTY_REGISTER, $property->getIdentifier(), $propertyMatches) === 1
 			// Property have to be writable
 			&& $property->isSettable()
 			&& $property->getExpectedValue() !== null
 			&& $property->isPending()
 		) {
-			if (
-				!array_key_exists('name', $propertyMatches)
-				|| !array_key_exists('address', $propertyMatches)
-			) {
-				unset($this->processedWrittenProperties[$propertyUuid]);
-
-				$this->propertyStateHelper->setValue(
-					$property,
-					Utils\ArrayHash::from([
-						'expectedValue' => null,
-						'pending'       => false,
-					])
-				);
-
-				throw new Exceptions\InvalidArgumentException('Property identifier has invalid format');
-			}
-
 			if (!in_array($property->getDataType()->getValue(), [
 				MetadataTypes\DataTypeType::DATA_TYPE_CHAR,
 				MetadataTypes\DataTypeType::DATA_TYPE_SHORT,
@@ -759,7 +670,7 @@ class RtuClient extends Client
 						if (in_array($valueToWrite->getValue(), [0, 1], true) || is_bool($valueToWrite->getValue())) {
 							$result = $this->writeSingleCoil(
 								$station,
-								(int) $propertyMatches['address'],
+								$address,
 								is_bool($valueToWrite->getValue()) ? $valueToWrite->getValue() : $valueToWrite->getValue() === 1
 							);
 
@@ -813,7 +724,7 @@ class RtuClient extends Client
 					) {
 						$result = $this->writeSingleRegister(
 							$station,
-							(int) $propertyMatches['address'],
+							$address,
 							(int) $valueToWrite->getValue(),
 							$property->getNumberOfDecimals(),
 							(
@@ -919,6 +830,7 @@ class RtuClient extends Client
 
 	/**
 	 * @param int $station
+	 * @param int $address
 	 * @param MetadataEntities\Modules\DevicesModule\IDeviceEntity $device
 	 * @param IPropertyEntity $property
 	 *
@@ -931,6 +843,7 @@ class RtuClient extends Client
 	 */
 	private function readProperty(
 		int $station,
+		int $address,
 		MetadataEntities\Modules\DevicesModule\IDeviceEntity $device,
 		MetadataEntities\Modules\DevicesModule\IPropertyEntity $property
 	): bool {
@@ -944,27 +857,9 @@ class RtuClient extends Client
 				$property instanceof MetadataEntities\Modules\DevicesModule\IDeviceDynamicPropertyEntity
 				|| $property instanceof MetadataEntities\Modules\DevicesModule\IChannelDynamicPropertyEntity
 			)
-			// Property identifier have to have valid identifier format
-			&& preg_match(ModbusConnector\Constants::PROPERTY_REGISTER, $property->getIdentifier(), $propertyMatches) === 1
 			// Property have to be readable
 			&& $property->isQueryable()
 		) {
-			if (
-				!array_key_exists('name', $propertyMatches)
-				|| !array_key_exists('address', $propertyMatches)
-			) {
-				unset($this->processedReadProperties[$propertyUuid]);
-
-				$this->propertyStateHelper->setValue(
-					$property,
-					Utils\ArrayHash::from([
-						'valid' => false,
-					])
-				);
-
-				throw new Exceptions\InvalidArgumentException('Property identifier has invalid format');
-			}
-
 			$deviceExpectedDataType = $this->transformer->determineDeviceReadDataType(
 				$property->getDataType(),
 				$property->getFormat()
@@ -1033,13 +928,13 @@ class RtuClient extends Client
 					if ($property->isSettable()) {
 						$result = $this->readCoils(
 							$station,
-							(int) $propertyMatches['address'],
+							$address,
 							1
 						);
 					} else {
 						$result = $this->readDiscreteInputs(
 							$station,
-							(int) $propertyMatches['address'],
+							$address,
 							1
 						);
 					}
@@ -1090,7 +985,7 @@ class RtuClient extends Client
 					if ($property->isSettable()) {
 						$result = $this->readHoldingRegisters(
 							$station,
-							(int) $propertyMatches['address'],
+							$address,
 							1,
 							$property->getNumberOfDecimals(),
 							(
@@ -1101,7 +996,7 @@ class RtuClient extends Client
 					} else {
 						$result = $this->readInputRegisters(
 							$station,
-							(int) $propertyMatches['address'],
+							$address,
 							1,
 							$property->getNumberOfDecimals(),
 							(
