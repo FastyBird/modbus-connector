@@ -51,7 +51,7 @@ final class ChannelsPropertiesFixture extends DataFixtures\AbstractFixture imple
 		for ($i = 1; $i <= 4; $i++) {
 			$switchProperty = new DevicesModuleEntities\Channels\Properties\DynamicProperty(
 				$channel,
-				'switch-' . $i
+				'switch_' . $i
 			);
 			$switchProperty->setDataType(MetadataTypes\DataTypeType::get(MetadataTypes\DataTypeType::DATA_TYPE_SWITCH));
 			$switchProperty->setSettable(true);

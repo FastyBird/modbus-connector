@@ -38,6 +38,7 @@ final class ConnectorFixture extends DataFixtures\AbstractFixture implements Dat
 	public function load(Persistence\ObjectManager $manager): void
 	{
 		$connector = new Entities\ModbusConnectorEntity('modbus-rtu');
+		$connector->setName('Modbus RTU');
 
         $manager->persist($connector);
         $manager->flush();

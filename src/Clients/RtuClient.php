@@ -58,6 +58,18 @@ class RtuClient extends Client
 	private const HANDLER_START_DELAY = 2;
 	private const HANDLER_PROCESSING_INTERVAL = 0.01;
 
+	private const FUNCTION_CODE_READ_COIL = 0x01;
+	private const FUNCTION_CODE_READ_DISCRETE = 0x02;
+	private const FUNCTION_CODE_READ_HOLDING = 0x03;
+	private const FUNCTION_CODE_READ_INPUT = 0x04;
+	private const FUNCTION_CODE_WRITE_SINGLE_COIL = 0x05;
+	private const FUNCTION_CODE_WRITE_SINGLE_HOLDING = 0x06;
+	private const FUNCTION_CODE_WRITE_MULTIPLE_COILS = 0x15;
+	private const FUNCTION_CODE_WRITE_MULTIPLE_HOLDINGS = 0x16;
+
+	/** @var bool */
+	private bool $closed = true;
+
 	/** @var string[] */
 	private array $processedDevices = [];
 
@@ -69,6 +81,9 @@ class RtuClient extends Client
 
 	/** @var Array<string, DateTimeInterface|int> */
 	private array $processedReadProperties = [];
+
+	/** @var bool|null */
+	private ?bool $machineUsingLittleEndian = null;
 
 	/** @var EventLoop\TimerInterface|null */
 	private ?EventLoop\TimerInterface $handlerTimer;
@@ -240,12 +255,18 @@ class RtuClient extends Client
 
 		$this->interface->open();
 
+		$this->closed = false;
+
 		$this->eventLoop->addTimer(
 			self::HANDLER_START_DELAY,
 			function (): void {
 				$this->handlerTimer = $this->eventLoop->addPeriodicTimer(
 					self::HANDLER_PROCESSING_INTERVAL,
 					function (): void {
+						if ($this->closed) {
+							return;
+						}
+
 						$this->handleCommunication();
 					}
 				);
@@ -258,6 +279,8 @@ class RtuClient extends Client
 	 */
 	public function disconnect(): void
 	{
+		$this->closed = true;
+
 		if ($this->handlerTimer !== null) {
 			$this->eventLoop->cancelTimer($this->handlerTimer);
 		}
@@ -661,8 +684,10 @@ class RtuClient extends Client
 				MetadataTypes\DataTypeType::DATA_TYPE_UINT,
 				MetadataTypes\DataTypeType::DATA_TYPE_FLOAT,
 				MetadataTypes\DataTypeType::DATA_TYPE_BOOLEAN,
+				MetadataTypes\DataTypeType::DATA_TYPE_STRING,
 				MetadataTypes\DataTypeType::DATA_TYPE_ENUM,
 				MetadataTypes\DataTypeType::DATA_TYPE_SWITCH,
+				MetadataTypes\DataTypeType::DATA_TYPE_BUTTON,
 			])) {
 				unset($this->processedWrittenProperties[$propertyUuid]);
 
@@ -735,7 +760,7 @@ class RtuClient extends Client
 							$result = $this->writeSingleCoil(
 								$station,
 								(int) $propertyMatches['address'],
-								is_bool($valueToWrite->getValue()) ? ($valueToWrite->getValue() ? 1 : 0) : $valueToWrite->getValue()
+								is_bool($valueToWrite->getValue()) ? $valueToWrite->getValue() : $valueToWrite->getValue() === 1
 							);
 
 						} else {
@@ -749,7 +774,7 @@ class RtuClient extends Client
 								])
 							);
 
-							throw new Exceptions\InvalidStateException('Value for boolean property have to be 1 or 0');
+							throw new Exceptions\InvalidStateException('Value for boolean property have to be 1/0 or true/false');
 						}
 					} elseif ($valueToWrite->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_FLOAT)) {
 						unset($this->processedWrittenProperties[$propertyUuid]);
@@ -783,27 +808,18 @@ class RtuClient extends Client
 					} elseif (
 						$valueToWrite->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SHORT)
 						|| $valueToWrite->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_USHORT)
-					) {
-						unset($this->processedWrittenProperties[$propertyUuid]);
-
-						$this->propertyStateHelper->setValue(
-							$property,
-							Utils\ArrayHash::from([
-								'expectedValue' => null,
-								'pending'       => false,
-							])
-						);
-
-						throw new Exceptions\NotSupportedException('Short integer value is not supported for now');
-
-					} elseif (
-						$valueToWrite->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_CHAR)
+						|| $valueToWrite->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_CHAR)
 						|| $valueToWrite->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_UCHAR)
 					) {
 						$result = $this->writeSingleRegister(
 							$station,
 							(int) $propertyMatches['address'],
-							(int) $valueToWrite->getValue()
+							(int) $valueToWrite->getValue(),
+							$property->getNumberOfDecimals(),
+							(
+								$valueToWrite->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SHORT)
+								|| $valueToWrite->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_CHAR)
+							)
 						);
 
 					} elseif ($valueToWrite->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_STRING)) {
@@ -818,6 +834,32 @@ class RtuClient extends Client
 						);
 
 						throw new Exceptions\NotSupportedException('String value is not supported for now');
+
+					} elseif ($valueToWrite->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SWITCH)) {
+						unset($this->processedWrittenProperties[$propertyUuid]);
+
+						$this->propertyStateHelper->setValue(
+							$property,
+							Utils\ArrayHash::from([
+								'expectedValue' => null,
+								'pending'       => false,
+							])
+						);
+
+						throw new Exceptions\NotSupportedException('Simple switch value is not supported for now');
+
+					} elseif ($valueToWrite->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_BUTTON)) {
+						unset($this->processedWrittenProperties[$propertyUuid]);
+
+						$this->propertyStateHelper->setValue(
+							$property,
+							Utils\ArrayHash::from([
+								'expectedValue' => null,
+								'pending'       => false,
+							])
+						);
+
+						throw new Exceptions\NotSupportedException('Simple button value is not supported for now');
 
 					} else {
 						unset($this->processedWrittenProperties[$propertyUuid]);
@@ -891,8 +933,7 @@ class RtuClient extends Client
 		int $station,
 		MetadataEntities\Modules\DevicesModule\IDeviceEntity $device,
 		MetadataEntities\Modules\DevicesModule\IPropertyEntity $property
-	): bool
-	{
+	): bool {
 		$now = $this->dateTimeFactory->getNow();
 
 		$propertyUuid = $property->getId()->toString();
@@ -924,7 +965,12 @@ class RtuClient extends Client
 				throw new Exceptions\InvalidArgumentException('Property identifier has invalid format');
 			}
 
-			if (!in_array($property->getDataType()->getValue(), [
+			$deviceExpectedDataType = $this->transformer->determineDeviceReadDataType(
+				$property->getDataType(),
+				$property->getFormat()
+			);
+
+			if (!in_array($deviceExpectedDataType->getValue(), [
 				MetadataTypes\DataTypeType::DATA_TYPE_CHAR,
 				MetadataTypes\DataTypeType::DATA_TYPE_SHORT,
 				MetadataTypes\DataTypeType::DATA_TYPE_INT,
@@ -933,8 +979,10 @@ class RtuClient extends Client
 				MetadataTypes\DataTypeType::DATA_TYPE_UINT,
 				MetadataTypes\DataTypeType::DATA_TYPE_FLOAT,
 				MetadataTypes\DataTypeType::DATA_TYPE_BOOLEAN,
+				MetadataTypes\DataTypeType::DATA_TYPE_STRING,
 				MetadataTypes\DataTypeType::DATA_TYPE_ENUM,
 				MetadataTypes\DataTypeType::DATA_TYPE_SWITCH,
+				MetadataTypes\DataTypeType::DATA_TYPE_BUTTON,
 			])) {
 				unset($this->processedReadProperties[$propertyUuid]);
 
@@ -981,7 +1029,7 @@ class RtuClient extends Client
 			}
 
 			try {
-				if ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_BOOLEAN)) {
+				if ($deviceExpectedDataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_BOOLEAN)) {
 					if ($property->isSettable()) {
 						$result = $this->readCoils(
 							$station,
@@ -1004,9 +1052,9 @@ class RtuClient extends Client
 						$value = false;
 					} else {
 						// Extract value from response
-						$value = intval($result['registers'][0]);
+						$value = $result['registers'][0];
 					}
-				} elseif ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_FLOAT)) {
+				} elseif ($deviceExpectedDataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_FLOAT)) {
 					unset($this->processedReadProperties[$propertyUuid]);
 
 					$this->propertyStateHelper->setValue(
@@ -1019,8 +1067,8 @@ class RtuClient extends Client
 					throw new Exceptions\NotSupportedException('Float data type is not supported for now');
 
 				} elseif (
-					$property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_INT)
-					|| $property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_UINT)
+					$deviceExpectedDataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_INT)
+					|| $deviceExpectedDataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_UINT)
 				) {
 					unset($this->processedReadProperties[$propertyUuid]);
 
@@ -1034,35 +1082,32 @@ class RtuClient extends Client
 					throw new Exceptions\NotSupportedException('Long integer data type is not supported for now');
 
 				} elseif (
-					$property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SHORT)
-					|| $property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_USHORT)
-				) {
-					unset($this->processedReadProperties[$propertyUuid]);
-
-					$this->propertyStateHelper->setValue(
-						$property,
-						Utils\ArrayHash::from([
-							'valid' => false,
-						])
-					);
-
-					throw new Exceptions\NotSupportedException('Short integer data type is not supported for now');
-
-				} elseif (
-					$property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_CHAR)
-					|| $property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_UCHAR)
+					$deviceExpectedDataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SHORT)
+					|| $deviceExpectedDataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_USHORT)
+					|| $deviceExpectedDataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_CHAR)
+					|| $deviceExpectedDataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_UCHAR)
 				) {
 					if ($property->isSettable()) {
 						$result = $this->readHoldingRegisters(
 							$station,
 							(int) $propertyMatches['address'],
-							1
+							1,
+							$property->getNumberOfDecimals(),
+							(
+								$deviceExpectedDataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SHORT)
+								|| $deviceExpectedDataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_CHAR)
+							)
 						);
 					} else {
 						$result = $this->readInputRegisters(
 							$station,
 							(int) $propertyMatches['address'],
-							1
+							1,
+							$property->getNumberOfDecimals(),
+							(
+								$deviceExpectedDataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SHORT)
+								|| $deviceExpectedDataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_CHAR)
+							)
 						);
 					}
 
@@ -1074,9 +1119,9 @@ class RtuClient extends Client
 						$value = false;
 					} else {
 						// Extract value from response
-						$value = intval($result['registers'][0]);
+						$value = $result['registers'][0];
 					}
-				} elseif ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_STRING)) {
+				} elseif ($deviceExpectedDataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_STRING)) {
 					unset($this->processedReadProperties[$propertyUuid]);
 
 					$this->propertyStateHelper->setValue(
@@ -1088,24 +1133,7 @@ class RtuClient extends Client
 
 					throw new Exceptions\NotSupportedException('String data type is not supported for now');
 
-				} elseif ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SWITCH)) {
-					$result = $this->readHoldingRegisters(
-						$station,
-						(int) $propertyMatches['address'],
-						1
-					);
-
-					if (
-						!is_array($result)
-						|| !array_key_exists('registers', $result)
-						|| !is_array($result['registers'])
-					) {
-						$value = false;
-					} else {
-						// Extract value from response
-						$value = intval($result['registers'][0]);
-					}
-				} elseif ($property->getDataType()->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_ENUM)) {
+				} elseif ($deviceExpectedDataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_ENUM)) {
 					unset($this->processedReadProperties[$propertyUuid]);
 
 					$this->propertyStateHelper->setValue(
@@ -1116,6 +1144,30 @@ class RtuClient extends Client
 					);
 
 					throw new Exceptions\NotSupportedException('Enum data type is not supported for now');
+
+				} elseif ($deviceExpectedDataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_SWITCH)) {
+					unset($this->processedReadProperties[$propertyUuid]);
+
+					$this->propertyStateHelper->setValue(
+						$property,
+						Utils\ArrayHash::from([
+							'valid' => false,
+						])
+					);
+
+					throw new Exceptions\NotSupportedException('Simple switch data type is not supported for now');
+
+				} elseif ($deviceExpectedDataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_BUTTON)) {
+					unset($this->processedReadProperties[$propertyUuid]);
+
+					$this->propertyStateHelper->setValue(
+						$property,
+						Utils\ArrayHash::from([
+							'valid' => false,
+						])
+					);
+
+					throw new Exceptions\NotSupportedException('Simple button data type is not supported for now');
 
 				} else {
 					unset($this->processedReadProperties[$propertyUuid]);
@@ -1203,7 +1255,7 @@ class RtuClient extends Client
 	 * @param int $quantity Quantity of coils (n1)
 	 * @param bool $raw
 	 *
-	 * @return Array<string, string|int|mixed[]>|string|false
+	 * @return Array<string, int|Array<int, int>>|string|false
 	 * [
 	 *    'station'  => $station,
 	 *    'function' => 0x01,
@@ -1219,7 +1271,7 @@ class RtuClient extends Client
 		int $quantity,
 		bool $raw = false
 	): string|array|false {
-		$request = pack('C2n2', $station, 0x01, $startingAddress, $quantity);
+		$request = pack('C2n2', $station, self::FUNCTION_CODE_READ_COIL, $startingAddress, $quantity);
 
 		$crc = $this->crc16($request);
 
@@ -1262,7 +1314,7 @@ class RtuClient extends Client
 	 * @param int $quantity Quantity of Inputs (n1)
 	 * @param bool $raw
 	 *
-	 * @return Array<string, string|int|mixed[]>|string|false
+	 * @return Array<string, int|Array<int, int>>|string|false
 	 * [
 	 *    'station'  => $station,
 	 *    'function' => 0x02,
@@ -1278,7 +1330,7 @@ class RtuClient extends Client
 		int $quantity,
 		bool $raw = false
 	): string|array|false {
-		$request = pack('C2n2', $station, 0x02, $startingAddress, $quantity);
+		$request = pack('C2n2', $station, self::FUNCTION_CODE_READ_DISCRETE, $startingAddress, $quantity);
 
 		$crc = $this->crc16($request);
 
@@ -1319,12 +1371,14 @@ class RtuClient extends Client
 	 * @param int $station Station Address (C1)
 	 * @param int $startingAddress Starting Address (n1)
 	 * @param int $quantity Quantity of Registers (n1)
+	 * @param int|null $numberOfDecimals
+	 * @param bool $signed
 	 * @param bool $raw
 	 *
-	 * @return Array<string, string|int|mixed[]>|string|false
+	 * @return Array<string, int|Array<int, int|float|null>>|string|false
 	 * [
 	 *    'station'   => $station,
-	 *    'function'  => 0x01,
+	 *    'function'  => 0x03,
 	 *    'count'     => $count,
 	 *    'registers' => [],
 	 * ]
@@ -1335,9 +1389,11 @@ class RtuClient extends Client
 		int $station,
 		int $startingAddress,
 		int $quantity,
+		?int $numberOfDecimals = null,
+		bool $signed = false,
 		bool $raw = false
 	): string|array|false {
-		$request = pack('C2n2', $station, 0x03, $startingAddress, $quantity);
+		$request = pack('C2n2', $station, self::FUNCTION_CODE_READ_HOLDING, $startingAddress, $quantity);
 
 		$crc = $this->crc16($request);
 
@@ -1360,13 +1416,33 @@ class RtuClient extends Client
 				return false;
 			}
 
-			$registersUnpacked = unpack('n*', substr($response, 3, -2));
+			$registersUnpacked = unpack('C*', substr($response, 3, -2));
 
 			if ($registersUnpacked === false) {
 				return false;
 			}
 
-			$response = $unpacked + ['registers' => array_values($registersUnpacked)];
+			$registersValuesChunks = array_chunk($registersUnpacked, 2);
+
+			if ($signed) {
+				$response = $unpacked + [
+					'registers' => array_values(array_map(function (array $valueChunk): ?int {
+						return $this->unpackSignedInt(
+							$valueChunk,
+							Types\ByteOrderType::get(Types\ByteOrderType::BYTE_ORDER_BIG)
+						);
+					}, $registersValuesChunks)),
+				];
+			} else {
+				$response = $unpacked + [
+						'registers' => array_values(array_map(function (array $valueChunk): ?int {
+							return $this->unpackUnsignedInt(
+								$valueChunk,
+								Types\ByteOrderType::get(Types\ByteOrderType::BYTE_ORDER_BIG)
+							);
+						}, $registersValuesChunks)),
+					];
+			}
 		}
 
 		return $response;
@@ -1378,9 +1454,17 @@ class RtuClient extends Client
 	 * @param int $station Station Address (C1)
 	 * @param int $startingAddress Starting Address (n1)
 	 * @param int $quantity Quantity of Input Registers
+	 * @param int|null $numberOfDecimals
+	 * @param bool $signed
 	 * @param bool $raw
 	 *
-	 * @return Array<string, string|int|mixed[]>|string|false
+	 * @return Array<string, int|Array<int, int|float|null>>|string|false
+	 * [
+	 *    'station'   => $station,
+	 *    'function'  => 0x04,
+	 *    'count'     => $count,
+	 *    'registers' => [],
+	 * ]
 	 *
 	 * @throws Exceptions\ModbusRtuException
 	 */
@@ -1388,9 +1472,11 @@ class RtuClient extends Client
 		int $station,
 		int $startingAddress,
 		int $quantity,
+		?int $numberOfDecimals = null,
+		bool $signed = false,
 		bool $raw = false
 	): string|array|false {
-		$request = pack('C2n2', $station, 0x04, $startingAddress, $quantity);
+		$request = pack('C2n2', $station, self::FUNCTION_CODE_READ_INPUT, $startingAddress, $quantity);
 
 		$crc = $this->crc16($request);
 
@@ -1413,13 +1499,33 @@ class RtuClient extends Client
 				return false;
 			}
 
-			$registersUnpacked = unpack('n*', substr($response, 3, -2));
+			$registersUnpacked = unpack('C*', substr($response, 3, -2));
 
 			if ($registersUnpacked === false) {
 				return false;
 			}
 
-			$response = $unpacked + ['registers' => array_values($registersUnpacked)];
+			$registersValuesChunks = array_chunk($registersUnpacked, 2);
+
+			if ($signed) {
+				$response = $unpacked + [
+						'registers' => array_values(array_map(function (array $valueChunk): ?int {
+							return $this->unpackSignedInt(
+								$valueChunk,
+								Types\ByteOrderType::get(Types\ByteOrderType::BYTE_ORDER_BIG)
+							);
+						}, $registersValuesChunks)),
+					];
+			} else {
+				$response = $unpacked + [
+						'registers' => array_values(array_map(function (array $valueChunk): ?int {
+							return $this->unpackUnsignedInt(
+								$valueChunk,
+								Types\ByteOrderType::get(Types\ByteOrderType::BYTE_ORDER_BIG)
+							);
+						}, $registersValuesChunks)),
+					];
+			}
 		}
 
 		return $response;
@@ -1429,21 +1535,24 @@ class RtuClient extends Client
 	 * (0x05) Write Single Coil
 	 *
 	 * @param int $station Station Address (C1)
-	 * @param int $outputAddress Output Address (n1)
-	 * @param int $value Output Value (n1)
+	 * @param int $coilAddress Coil Address (n1)
+	 * @param bool $value Output Value (n1)
 	 * @param bool $raw
 	 *
-	 * @return Array<string, string|int|float>|string|false
+	 * @return Array<string, int|bool>|string|false
 	 *
 	 * @throws Exceptions\ModbusRtuException
 	 */
 	private function writeSingleCoil(
 		int $station,
-		int $outputAddress,
-		int $value,
+		int $coilAddress,
+		bool $value,
 		bool $raw = false
 	): string|array|false {
-		$request = pack('C2n2', $station, 0x05, $outputAddress, $value);
+		// Pack header (transform to binary)
+		$request = pack('C2n', $station, self::FUNCTION_CODE_WRITE_SINGLE_COIL, $coilAddress);
+		// Pack value (transform to binary)
+		$request .= pack('n', $value ? 0xFF00 : 0x0000);
 
 		$crc = $this->crc16($request);
 
@@ -1460,7 +1569,19 @@ class RtuClient extends Client
 		}
 
 		if ($raw === false) {
-			$response = unpack('C1station/C1function/n1address/n1value', $response);
+			$unpacked = unpack('C1station/C1function/n1address', $response);
+
+			if ($unpacked === false) {
+				return false;
+			}
+
+			$valueUnpacked = unpack('n1', substr($response, 4, -2));
+
+			if ($valueUnpacked === false) {
+				return false;
+			}
+
+			$response = $unpacked + ['value' => current($valueUnpacked) === 0xFF00];
 		}
 
 		return $response;
@@ -1471,20 +1592,28 @@ class RtuClient extends Client
 	 *
 	 * @param int $station Station Address (C1)
 	 * @param int $registerAddress Register Address (n1)
-	 * @param int $value Register Value (n1)
+	 * @param int|float $value Register Value (n1)
+	 * @param int|null $numberOfDecimals
+	 * @param bool $signed
 	 * @param bool $raw
 	 *
-	 * @return Array<string, string|int|float>|string|false
+	 * @return Array<string, int|float|null>|string|false
 	 *
 	 * @throws Exceptions\ModbusRtuException
 	 */
 	private function writeSingleRegister(
 		int $station,
 		int $registerAddress,
-		int $value,
+		int|float $value,
+		?int $numberOfDecimals = null,
+		bool $signed = false,
 		bool $raw = false
 	): string|array|false {
-		$request = pack('C2n2', $station, 0x06, $registerAddress, $value);
+		// Pack header (transform to binary)
+		$request = pack('C2n', $station, self::FUNCTION_CODE_WRITE_SINGLE_HOLDING, $registerAddress);
+		// Pack value (transform to binary)
+		// TODO: Add handling for 32 (C4) and 64 (C8) bytes
+		$request .= pack('C2', ($value >> 8) & 0xFF, ($value >> 0) & 0xFF);
 
 		$crc = $this->crc16($request);
 
@@ -1501,14 +1630,40 @@ class RtuClient extends Client
 		}
 
 		if ($raw === false) {
-			$response = unpack('C1station/C1function/n1address/n1value', $response);
+			$unpacked = unpack('C1station/C1function/n1address', $response);
+
+			if ($unpacked === false) {
+				return false;
+			}
+
+			$valueChunk = unpack('C*', substr($response, 4, -2));
+
+			if ($valueChunk === false) {
+				return false;
+			}
+
+			if ($signed) {
+				$response = $unpacked + [
+					'value' => $this->unpackSignedInt(
+						$valueChunk,
+						Types\ByteOrderType::get(Types\ByteOrderType::BYTE_ORDER_BIG)
+					),
+				];
+			} else {
+				$response = $unpacked + [
+					'value' => $this->unpackUnsignedInt(
+						$valueChunk,
+						Types\ByteOrderType::get(Types\ByteOrderType::BYTE_ORDER_BIG)
+					),
+				];
+			}
 		}
 
 		return $response;
 	}
 
 	/**
-	 * (0x0F) Write Multiple Coils
+	 * (0x15) Write Multiple Coils
 	 *
 	 * @param int $station Station Address (C1)
 	 * @param int $startingAddress Starting Address (n1)
@@ -1527,7 +1682,7 @@ class RtuClient extends Client
 			throw new Exceptions\ModbusRtuException('Incorrect number of arguments', -4);
 		}
 
-		$request = pack('C2n2', $station, 0x0F, $startingAddress, $quantity);
+		$request = pack('C2n2', $station, self::FUNCTION_CODE_WRITE_MULTIPLE_COILS, $startingAddress, $quantity);
 		$request .= pack('C1C*', $quantity, ...array_slice(func_get_args(), 3));
 
 		$crc = $this->crc16($request);
@@ -1540,7 +1695,7 @@ class RtuClient extends Client
 	}
 
 	/**
-	 * (0x10) Write Multiple registers
+	 * (0x16) Write Multiple registers
 	 *
 	 * @param int $station Station Address (C1)
 	 * @param int $startingAddress Starting Address (n1)
@@ -1561,7 +1716,7 @@ class RtuClient extends Client
 			throw new Exceptions\ModbusRtuException('Incorrect number of arguments', -4);
 		}
 
-		$request = pack('C2n2', $station, 0x10, $startingAddress, $quantity);
+		$request = pack('C2n2', $station, self::FUNCTION_CODE_WRITE_MULTIPLE_HOLDINGS, $startingAddress, $quantity);
 		$request .= pack('C1n*', 2 * $quantity, ...array_slice(func_get_args(), 3));
 
 		$crc = $this->crc16($request);
@@ -1827,6 +1982,91 @@ class RtuClient extends Client
 		}
 
 		return pack('v1', $crc);
+	}
+
+	/**
+	 * @param int[] $bytes
+	 * @param Types\ByteOrderType $byteOrder
+	 *
+	 * @return int|null
+	 */
+	private function unpackSignedInt(array $bytes, Types\ByteOrderType $byteOrder): ?int
+	{
+		if (
+			(
+				$this->isLittleEndian()
+				&& $byteOrder->equalsValue(Types\ByteOrderType::BYTE_ORDER_LITTLE)
+			) || (
+				!$this->isLittleEndian()
+				&& $byteOrder->equalsValue(Types\ByteOrderType::BYTE_ORDER_BIG)
+			)
+		) {
+			// If machine is using same byte order as device
+			$value = unpack('s', pack('C*', ...array_values($bytes)));
+
+		} elseif (
+			(
+				!$this->isLittleEndian()
+				&& $byteOrder->equalsValue(Types\ByteOrderType::BYTE_ORDER_LITTLE)
+			) || (
+				$this->isLittleEndian()
+				&& $byteOrder->equalsValue(Types\ByteOrderType::BYTE_ORDER_BIG)
+			)
+		) {
+			// If machine is using different byte order than device, do byte order swap
+			$value = unpack('s', pack('C*', ...array_reverse(array_values($bytes))));
+
+		} else {
+			return null;
+		}
+
+		if ($value === false) {
+			return null;
+		}
+
+		return intval(current($value));
+	}
+
+	/**
+	 * @param int[] $bytes
+	 * @param Types\ByteOrderType $byteOrder
+	 *
+	 * @return int|null
+	 */
+	private function unpackUnsignedInt(array $bytes, Types\ByteOrderType $byteOrder): ?int
+	{
+		if ($byteOrder->equalsValue(Types\ByteOrderType::BYTE_ORDER_LITTLE)) {
+			$bytes = array_reverse(array_values($bytes));
+		}
+
+		return array_reduce(
+			$bytes,
+			function ($out, $in): int {
+				return $out << 8 | $in;
+			}
+		);
+	}
+
+	/**
+	 * Detect machine byte order configuration
+	 *
+	 * @return bool
+	 */
+	private function isLittleEndian(): bool
+	{
+		if ($this->machineUsingLittleEndian !== null) {
+			return $this->machineUsingLittleEndian;
+		}
+
+		$testUnpacked = unpack('S', '\x01\x00');
+
+		if ($testUnpacked === false) {
+			throw new Exceptions\InvalidStateException('Endian order could not be determined');
+		}
+
+		$this->machineUsingLittleEndian = current($testUnpacked) === 1;
+
+		return $this->machineUsingLittleEndian;
 	}
 
 }
