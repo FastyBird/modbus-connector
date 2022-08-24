@@ -75,7 +75,7 @@ final class ConnectorHelper
 				$type->getValue() === Types\ConnectorPropertyIdentifierType::IDENTIFIER_RTU_BAUD_RATE
 				&& !Types\BaudRateType::isValidValue($configuration->getValue())
 			) {
-				return ModbusConnector\Constants::DEFAULT_RTU_BAUD_RATE;
+				return Types\BaudRateType::BAUD_RATE_9600;
 			}
 
 			if (
@@ -104,7 +104,7 @@ final class ConnectorHelper
 		}
 
 		if ($type->getValue() === Types\ConnectorPropertyIdentifierType::IDENTIFIER_RTU_BAUD_RATE) {
-			return ModbusConnector\Constants::DEFAULT_RTU_BAUD_RATE;
+			return Types\BaudRateType::BAUD_RATE_9600;
 		}
 
 		if ($type->getValue() === Types\ConnectorPropertyIdentifierType::IDENTIFIER_RTU_PARITY) {

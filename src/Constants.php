@@ -26,9 +26,6 @@ namespace FastyBird\ModbusConnector;
 final class Constants
 {
 
-	public const DEFAULT_RTU_BAUD_RATE = Types\BaudRateType::BAUD_RATE_9600;
 	public const DEFAULT_RTU_SERIAL_INTERFACE = '/dev/ttyAMA0';
-
-	public const PROPERTY_REGISTER = '/^(?P<name>[a-zA-Z-]+)_(?P<address>[0-9]+)$/';
 
 }
