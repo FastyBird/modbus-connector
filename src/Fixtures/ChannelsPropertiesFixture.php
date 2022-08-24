@@ -64,7 +64,7 @@ final class ChannelsPropertiesFixture extends DataFixtures\AbstractFixture imple
 			$switchProperty->setDataType(MetadataTypes\DataTypeType::get(MetadataTypes\DataTypeType::DATA_TYPE_SWITCH));
 			$switchProperty->setSettable(true);
 			$switchProperty->setQueryable(true);
-			$switchProperty->setFormat('sw|switch_on:u8|1:u16|1000,sw|switch_off:u8|0:u16|2000,sw|switch_toggle::u16|3000');
+			$switchProperty->setFormat('sw|switch_on:u8|1:u16|256,sw|switch_off:u8|0:u16|512,sw|switch_toggle::u16|768');
 
 			$manager->persist($addressProperty);
 			$manager->persist($switchProperty);
