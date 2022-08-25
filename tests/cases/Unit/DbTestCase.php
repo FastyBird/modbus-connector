@@ -6,8 +6,8 @@ use DateTimeImmutable;
 use Doctrine\DBAL;
 use Doctrine\ORM;
 use FastyBird\DateTimeFactory;
-use FastyBird\DevicesModule\DI;
-use FastyBird\DevicesModule\Exceptions;
+use FastyBird\ModbusConnector\DI;
+use FastyBird\ModbusConnector\Exceptions;
 use Mockery;
 use Nette;
 use Nettrine\ORM as NettrineORM;
@@ -105,7 +105,7 @@ abstract class DbTestCase extends BaseMockeryTestCase
 			$config->addConfig($neonFile);
 		}
 
-		DI\DevicesModuleExtension::register($config);
+		DI\ModbusConnectorExtension::register($config);
 
 		$this->container = $config->createContainer();
 

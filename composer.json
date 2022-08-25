@@ -98,6 +98,9 @@
     "patches" : {
       "nettrine/orm" : {
         "Enable connection overrides" : "https://raw.githubusercontent.com/FastyBird/libraries-patches/master/nettrine.orm.mangerRegistry.diff"
+      },
+      "nette/utils": {
+        "Bug: Offset check with null support" : "https://raw.githubusercontent.com/FastyBird/libraries-patches/master/nette.array.offsetCheck.diff"
       }
     }
   }

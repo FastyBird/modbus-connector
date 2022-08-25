@@ -90,7 +90,7 @@ class ExecuteCommand extends Console\Command\Command
 
 		$io = new Style\SymfonyStyle($input, $output);
 
-		$io->title('FB modbus connector - service');
+		$io->title('Modbus connector - service');
 
 		$io->note('This action will run connector service.');
 

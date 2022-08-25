@@ -137,7 +137,7 @@ class InitializeCommand extends Console\Command\Command
 	{
 		$io = new Style\SymfonyStyle($input, $output);
 
-		$io->title('FB modbus connector - initialization');
+		$io->title('Modbus connector - initialization');
 
 		$io->note('This action will create|update connector configuration.');
 
