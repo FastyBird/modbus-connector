@@ -2,7 +2,7 @@
 
 namespace Tests\Cases;
 
-use FastyBird\TuyaConnector;
+use FastyBird\ModbusConnector;
 use Nette;
 use Nette\DI;
 use Ninjify\Nunjuck\TestCase\BaseMockeryTestCase;
@@ -44,7 +44,7 @@ abstract class BaseTestCase extends BaseMockeryTestCase
 			$config->addConfig($additionalConfig);
 		}
 
-		TuyaConnector\DI\TuyaConnectorExtension::register($config);
+		ModbusConnector\DI\ModbusConnectorExtension::register($config);
 
 		return $config->createContainer();
 	}
