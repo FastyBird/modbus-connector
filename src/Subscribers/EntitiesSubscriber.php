@@ -96,7 +96,10 @@ final class EntitiesSubscriber implements Common\EventSubscriber
 				'queryable'  => false,
 			]));
 
-		} elseif ($entity instanceof DevicesModuleEntities\Connectors\Properties\StaticProperty) {
+		} elseif (
+			$entity instanceof DevicesModuleEntities\Connectors\Properties\StaticProperty
+			&& $entity->getConnector() instanceof Entities\IModbusConnectorEntity
+		) {
 			if (
 				(
 					$entity->getIdentifier() === Types\ConnectorPropertyIdentifierType::IDENTIFIER_CLIENT_MODE
@@ -120,7 +123,10 @@ final class EntitiesSubscriber implements Common\EventSubscriber
 					$entity->getIdentifier()
 				));
 			}
-		} elseif ($entity instanceof DevicesModuleEntities\Devices\Properties\StaticProperty) {
+		} elseif (
+			$entity instanceof DevicesModuleEntities\Devices\Properties\StaticProperty
+			&& $entity->getDevice() instanceof Entities\IModbusDeviceEntity
+		) {
 			if (
 				(
 					$entity->getIdentifier() === Types\DevicePropertyIdentifierType::IDENTIFIER_BYTE_ORDER
