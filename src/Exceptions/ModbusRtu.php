@@ -104,12 +104,12 @@ class ModbusRtu extends PhpException implements Exception
 		}
 
 		$output .= sprintf(
-			'%s: %s in %s:%s',
-			self::class,
-			$this->message,
-			$this->file,
-			$this->line
-		) . "\n";
+				'%s: %s in %s:%s',
+				self::class,
+				$this->message,
+				$this->file,
+				$this->line
+			) . "\n";
 
 		if ($this->request !== null) {
 			$output .= 'Request: "' . $this->request . '"' . "\n";

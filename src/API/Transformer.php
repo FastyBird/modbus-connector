@@ -172,7 +172,7 @@ final class Transformer
 			return null;
 		}
 
-        if ($dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_BOOLEAN)) {
+		if ($dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_BOOLEAN)) {
 			if (is_bool($value)) {
 				return new ValueObjects\DeviceData(
 					$value,

@@ -40,8 +40,8 @@ final class Connector extends DataFixtures\AbstractFixture implements DataFixtur
 		$connector = new Entities\ModbusConnector('modbus-rtu');
 		$connector->setName('Modbus RTU');
 
-        $manager->persist($connector);
-        $manager->flush();
+		$manager->persist($connector);
+		$manager->flush();
 
 		$this->addReference('modbus-rtu-connector', $connector);
 	}

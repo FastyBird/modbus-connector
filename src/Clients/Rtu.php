@@ -306,7 +306,8 @@ class Rtu implements Client
 		foreach ($this->processedWrittenProperties as $index => $processedProperty) {
 			if (
 				$processedProperty instanceof DateTimeInterface
-				&& ((float) $this->dateTimeFactory->getNow()->format('Uv') - (float) $processedProperty->format('Uv')) >= self::WRITE_DEBOUNCE_DELAY
+				&& ((float) $this->dateTimeFactory->getNow()
+						->format('Uv') - (float) $processedProperty->format('Uv')) >= self::WRITE_DEBOUNCE_DELAY
 			) {
 				unset($this->processedWrittenProperties[$index]);
 			}
@@ -315,7 +316,8 @@ class Rtu implements Client
 		foreach ($this->devicesRepository->findAllByConnector($this->connector->getId()) as $device) {
 			if (
 				!in_array($device->getId()->toString(), $this->processedDevices, true)
-				&& !$this->deviceConnectionStateManager->getState($device)->equalsValue(MetadataTypes\ConnectionStateType::STATE_STOPPED)
+				&& !$this->deviceConnectionStateManager->getState($device)
+					->equalsValue(MetadataTypes\ConnectionStateType::STATE_STOPPED)
 			) {
 				$deviceAddress = $this->deviceHelper->getConfiguration(
 					$device->getId(),
@@ -335,20 +337,21 @@ class Rtu implements Client
 
 				// Check if device is lost or not
 				if (array_key_exists($device->getId()->toString(), $this->lostDevices)) {
-					if ($this->deviceConnectionStateManager->getState($device)->equalsValue(MetadataTypes\ConnectionStateType::STATE_LOST)) {
+					if ($this->deviceConnectionStateManager->getState($device)
+						->equalsValue(MetadataTypes\ConnectionStateType::STATE_LOST)) {
 						$this->logger->debug('Device is still lost', [
-							'source'    => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
-							'type'      => 'rtu-client',
-							'device'    => [
+							'source' => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
+							'type'   => 'rtu-client',
+							'device' => [
 								'id' => $device->getId()->toString(),
 							],
 						]);
 
 					} else {
 						$this->logger->debug('Device is lost', [
-							'source'    => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
-							'type'      => 'rtu-client',
-							'device'    => [
+							'source' => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
+							'type'   => 'rtu-client',
+							'device' => [
 								'id' => $device->getId()->toString(),
 							],
 						]);
@@ -359,14 +362,16 @@ class Rtu implements Client
 						);
 					}
 
-					if ($this->dateTimeFactory->getNow()->getTimestamp() - $this->lostDevices[$device->getId()->toString()]->getTimestamp() < self::LOST_DELAY) {
+					if ($this->dateTimeFactory->getNow()->getTimestamp() - $this->lostDevices[$device->getId()
+							->toString()]->getTimestamp() < self::LOST_DELAY) {
 						continue;
 					}
 				}
 
 				// Check device state...
 				if (
-					!$this->deviceConnectionStateManager->getState($device)->equalsValue(Metadata\Types\ConnectionStateType::STATE_CONNECTED)
+					!$this->deviceConnectionStateManager->getState($device)
+						->equalsValue(Metadata\Types\ConnectionStateType::STATE_CONNECTED)
 				) {
 					// ... and if it is not ready, set it to ready
 					$this->deviceConnectionStateManager->setState(
@@ -425,12 +430,12 @@ class Rtu implements Client
 				}
 
 				$this->logger->warning('Channel address is missing', [
-					'source'    => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
-					'type'      => 'rtu-client',
-					'device'    => [
+					'source'  => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
+					'type'    => 'rtu-client',
+					'device'  => [
 						'id' => $device->getId()->toString(),
 					],
-					'channel'   => [
+					'channel' => [
 						'id' => $channel->getId()->toString(),
 					],
 				]);
@@ -440,15 +445,15 @@ class Rtu implements Client
 
 			foreach ($this->channelPropertiesRepository->findAllByChannel($channel->getId(), MetadataEntities\Modules\DevicesModule\ChannelDynamicPropertyEntity::class) as $property) {
 				$logContext = [
-					'source'    => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
-					'type'      => 'rtu-client',
-					'device'    => [
+					'source'   => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
+					'type'     => 'rtu-client',
+					'device'   => [
 						'id' => $device->getId()->toString(),
 					],
-					'channel'   => [
+					'channel'  => [
 						'id' => $channel->getId()->toString(),
 					],
-					'property'  => [
+					'property' => [
 						'id' => $property->getId()->toString(),
 					],
 				];
@@ -1319,13 +1324,13 @@ class Rtu implements Client
 
 			if ($signed) {
 				$response = $unpacked + [
-					'registers' => array_values(array_map(function (array $valueChunk): ?int {
-						return $this->unpackSignedInt(
-							$valueChunk,
-							Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_BIG)
-						);
-					}, $registersValuesChunks)),
-				];
+						'registers' => array_values(array_map(function (array $valueChunk): ?int {
+							return $this->unpackSignedInt(
+								$valueChunk,
+								Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_BIG)
+							);
+						}, $registersValuesChunks)),
+					];
 			} else {
 				$response = $unpacked + [
 						'registers' => array_values(array_map(function (array $valueChunk): ?int {
@@ -1537,18 +1542,18 @@ class Rtu implements Client
 
 			if ($signed) {
 				$response = $unpacked + [
-					'value' => $this->unpackSignedInt(
-						$valueChunk,
-						Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_BIG)
-					),
-				];
+						'value' => $this->unpackSignedInt(
+							$valueChunk,
+							Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_BIG)
+						),
+					];
 			} else {
 				$response = $unpacked + [
-					'value' => $this->unpackUnsignedInt(
-						$valueChunk,
-						Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_BIG)
-					),
-				];
+						'value' => $this->unpackUnsignedInt(
+							$valueChunk,
+							Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_BIG)
+						),
+					];
 			}
 		}
 
