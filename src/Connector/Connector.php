@@ -32,14 +32,14 @@ final class Connector implements DevicesModuleConnectors\IConnector
 
 	use Nette\SmartObject;
 
-	/** @var Clients\IClient */
-	private Clients\IClient $client;
+	/** @var Clients\Client */
+	private Clients\Client $client;
 
 	/**
-	 * @param Clients\IClient $client
+	 * @param Clients\Client $client
 	 */
 	public function __construct(
-		Clients\IClient $client,
+		Clients\Client $client,
 	) {
 		$this->client = $client;
 	}

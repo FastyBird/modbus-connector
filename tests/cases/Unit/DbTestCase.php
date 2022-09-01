@@ -178,7 +178,7 @@ abstract class DbTestCase extends BaseMockeryTestCase
 		$handle = @fopen($file, 'r'); // intentionally @
 
 		if ($handle === false) {
-			throw new Exceptions\InvalidArgumentException(sprintf('Cannot open file "%s".', $file));
+			throw new Exceptions\InvalidArgument(sprintf('Cannot open file "%s".', $file));
 		}
 
 		$count = 0;

@@ -29,12 +29,12 @@ interface ConnectorFactory
 {
 
 	/**
-	 * @param Clients\IClient $client
+	 * @param Clients\Client $client
 	 *
 	 * @return Connector
 	 */
 	public function create(
-		Clients\IClient $client
+		Clients\Client $client
 	): Connector;
 
 }

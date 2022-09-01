@@ -31,17 +31,17 @@ final class Configuration
 
 	use Nette\SmartObject;
 
-	/** @var Types\BaudRateType */
-	private Types\BaudRateType $baudRate;
+	/** @var Types\BaudRate */
+	private Types\BaudRate $baudRate;
 
-	/** @var Types\ByteSizeType */
-	private Types\ByteSizeType $dataBits;
+	/** @var Types\ByteSize */
+	private Types\ByteSize $dataBits;
 
-	/** @var Types\StopBitsType */
-	private Types\StopBitsType $stopBits;
+	/** @var Types\StopBits */
+	private Types\StopBits $stopBits;
 
-	/** @var Types\ParityType */
-	private Types\ParityType $parity;
+	/** @var Types\Parity */
+	private Types\Parity $parity;
 
 	/** @var int */
 	private int $flowControl;
@@ -50,25 +50,25 @@ final class Configuration
 	private int $isCanonical;
 
 	/**
-	 * @param Types\BaudRateType|null $baudRate
-	 * @param Types\ByteSizeType|null $dataBits
-	 * @param Types\StopBitsType|null $stopBits
-	 * @param Types\ParityType|null $parity
+	 * @param Types\BaudRate|null $baudRate
+	 * @param Types\ByteSize|null $dataBits
+	 * @param Types\StopBits|null $stopBits
+	 * @param Types\Parity|null $parity
 	 * @param bool $flowControl
 	 * @param bool $isCanonical
 	 */
 	public function __construct(
-		?Types\BaudRateType $baudRate = null,
-		?Types\ByteSizeType $dataBits = null,
-		?Types\StopBitsType $stopBits = null,
-		?Types\ParityType $parity = null,
+		?Types\BaudRate $baudRate = null,
+		?Types\ByteSize $dataBits = null,
+		?Types\StopBits $stopBits = null,
+		?Types\Parity $parity = null,
 		bool $flowControl = true,
 		bool $isCanonical = true,
 	) {
-		$this->baudRate = $baudRate ?? Types\BaudRateType::get(Types\BaudRateType::BAUD_RATE_9600);
-		$this->dataBits = $dataBits ?? Types\ByteSizeType::get(Types\ByteSizeType::SIZE_8);
-		$this->stopBits = $stopBits ?? Types\StopBitsType::get(Types\StopBitsType::STOP_BIT_ONE);
-		$this->parity = $parity ?? Types\ParityType::get(Types\ParityType::PARITY_NONE);
+		$this->baudRate = $baudRate ?? Types\BaudRate::get(Types\BaudRate::BAUD_RATE_9600);
+		$this->dataBits = $dataBits ?? Types\ByteSize::get(Types\ByteSize::SIZE_8);
+		$this->stopBits = $stopBits ?? Types\StopBits::get(Types\StopBits::STOP_BIT_ONE);
+		$this->parity = $parity ?? Types\Parity::get(Types\Parity::PARITY_NONE);
 
 		$this->flowControl = $flowControl ? 1 : 0;
 		$this->isCanonical = $isCanonical ? 1 : 0;

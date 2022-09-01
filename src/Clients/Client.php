@@ -15,19 +15,50 @@
 
 namespace FastyBird\ModbusConnector\Clients;
 
-use Nette;
+use FastyBird\Metadata\Entities as MetadataEntities;
 
 /**
- * Base client service
+ * Modbus device client interface
  *
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Clients
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-abstract class Client implements IClient
+interface Client
 {
 
-	use Nette\SmartObject;
+	/**
+	 * @param MetadataEntities\Actions\IActionDeviceControlEntity $action
+	 *
+	 * @return void
+	 */
+	public function writeDeviceControl(MetadataEntities\Actions\IActionDeviceControlEntity $action): void;
+
+	/**
+	 * @param MetadataEntities\Actions\IActionChannelControlEntity $action
+	 *
+	 * @return void
+	 */
+	public function writeChannelControl(MetadataEntities\Actions\IActionChannelControlEntity $action): void;
+
+	/**
+	 * @return bool
+	 */
+	public function isConnected(): bool;
+
+	/**
+	 * Create servers/clients
+	 *
+	 * @return void
+	 */
+	public function connect(): void;
+
+	/**
+	 * Destroy servers/clients
+	 *
+	 * @return void
+	 */
+	public function disconnect(): void;
 
 }

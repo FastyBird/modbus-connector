@@ -43,24 +43,24 @@ final class SerialDio extends Serial
 			$error = error_get_last();
 
 			if (is_array($error)) {
-				$error = new Exceptions\InvalidStateException($error['message'], 0);
+				$error = new Exceptions\InvalidState($error['message'], 0);
 
-				throw new Exceptions\InvalidStateException(
+				throw new Exceptions\InvalidState(
 					sprintf('Unable to open the connection %s', $this->port),
 					0,
 					$error
 				);
 			}
 
-			throw new Exceptions\InvalidStateException(sprintf('Unable to open the connection %s', $this->port));
+			throw new Exceptions\InvalidState(sprintf('Unable to open the connection %s', $this->port));
 		}
 
 		if (!stream_set_blocking($this->resource, false)) {
-			throw new Exceptions\InvalidStateException('Setting blocking error');
+			throw new Exceptions\InvalidState('Setting blocking error');
 		}
 
 		if (!stream_set_timeout($this->resource, 0, 2000)) {
-			throw new Exceptions\InvalidStateException('Setting timeout error');
+			throw new Exceptions\InvalidState('Setting timeout error');
 		}
 	}
 
@@ -83,16 +83,16 @@ final class SerialDio extends Serial
 			$error = error_get_last();
 
 			if (is_array($error)) {
-				$error = new Exceptions\InvalidStateException($error['message'], 0);
+				$error = new Exceptions\InvalidState($error['message'], 0);
 
-				throw new Exceptions\InvalidStateException(
+				throw new Exceptions\InvalidState(
 					sprintf('Unable to open the connection %s', $this->port),
 					0,
 					$error
 				);
 			}
 
-			throw new Exceptions\InvalidStateException(sprintf('Unable to open the connection %s', $this->port));
+			throw new Exceptions\InvalidState(sprintf('Unable to open the connection %s', $this->port));
 		}
 	}
 

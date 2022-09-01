@@ -100,54 +100,54 @@ class ModbusConnectorExtension extends DI\CompilerExtension
 
 		// Clients
 		$builder->addFactoryDefinition($this->prefix('client.rtu'))
-			->setImplement(Clients\RtuClientFactory::class)
+			->setImplement(Clients\RtuFactory::class)
 			->getResultDefinition()
-			->setType(Clients\RtuClient::class);
+			->setType(Clients\Rtu::class);
 
 		// Messages API
 		$builder->addDefinition($this->prefix('api.transformer'), new DI\Definitions\ServiceDefinition())
 			->setType(API\Transformer::class);
 
 		// Events subscribers
-		$builder->addDefinition($this->prefix('subscribers.entities'), new DI\Definitions\ServiceDefinition())
-			->setType(Subscribers\EntitiesSubscriber::class);
+		$builder->addDefinition($this->prefix('subscribers.properties'), new DI\Definitions\ServiceDefinition())
+			->setType(Subscribers\Properties::class);
 
 		// API schemas
 		$builder->addDefinition($this->prefix('schemas.connector.modbus'), new DI\Definitions\ServiceDefinition())
-			->setType(Schemas\ModbusConnectorSchema::class);
+			->setType(Schemas\ModbusConnector::class);
 
 		$builder->addDefinition($this->prefix('schemas.device.modbus'), new DI\Definitions\ServiceDefinition())
-			->setType(Schemas\ModbusDeviceSchema::class);
+			->setType(Schemas\ModbusDevice::class);
 
 		// API hydrators
 		$builder->addDefinition($this->prefix('hydrators.connector.modbus'), new DI\Definitions\ServiceDefinition())
-			->setType(Hydrators\ModbusConnectorHydrator::class);
+			->setType(Hydrators\ModbusConnector::class);
 
 		$builder->addDefinition($this->prefix('hydrators.device.modbus'), new DI\Definitions\ServiceDefinition())
-			->setType(Hydrators\ModbusDeviceHydrator::class);
+			->setType(Hydrators\ModbusDevice::class);
 
 		// Helpers
 		$builder->addDefinition($this->prefix('helpers.database'), new DI\Definitions\ServiceDefinition())
-			->setType(Helpers\DatabaseHelper::class);
+			->setType(Helpers\Database::class);
 
 		$builder->addDefinition($this->prefix('helpers.connector'), new DI\Definitions\ServiceDefinition())
-			->setType(Helpers\ConnectorHelper::class);
+			->setType(Helpers\Connector::class);
 
 		$builder->addDefinition($this->prefix('helpers.device'), new DI\Definitions\ServiceDefinition())
-			->setType(Helpers\DeviceHelper::class);
+			->setType(Helpers\Device::class);
 
 		$builder->addDefinition($this->prefix('helpers.channel'), new DI\Definitions\ServiceDefinition())
-			->setType(Helpers\ChannelHelper::class);
+			->setType(Helpers\Channel::class);
 
 		$builder->addDefinition($this->prefix('helpers.property'), new DI\Definitions\ServiceDefinition())
-			->setType(Helpers\PropertyHelper::class);
+			->setType(Helpers\Property::class);
 
 		// Console commands
 		$builder->addDefinition($this->prefix('commands.initialize'), new DI\Definitions\ServiceDefinition())
-			->setType(Commands\InitializeCommand::class);
+			->setType(Commands\Initialize::class);
 
 		$builder->addDefinition($this->prefix('commands.execute'), new DI\Definitions\ServiceDefinition())
-			->setType(Commands\ExecuteCommand::class);
+			->setType(Commands\Execute::class);
 	}
 
 	/**
@@ -185,12 +185,12 @@ class ModbusConnectorExtension extends DI\CompilerExtension
 		$fixturesLoaderService = $builder->getDefinitionByType(NettrineFixtures\Loader\FixturesLoader::class);
 
 		if ($fixturesLoaderService instanceof DI\Definitions\ServiceDefinition) {
-			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\ConnectorFixture()]);
-			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\ConnectorPropertiesFixture()]);
-			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\DevicesFixture()]);
-			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\DevicesPropertiesFixture()]);
-			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\ChannelsFixture()]);
-			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\ChannelsPropertiesFixture()]);
+			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\Connector()]);
+			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\ConnectorProperties()]);
+			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\Devices()]);
+			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\DevicesProperties()]);
+			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\Channels()]);
+			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\ChannelsProperties()]);
 		}
 	}
 

@@ -19,11 +19,11 @@ final class ServicesTest extends BaseTestCase
 	{
 		$container = $this->createContainer();
 
-		Assert::notNull($container->getByType(Schemas\ModbusDeviceSchema::class));
-		Assert::notNull($container->getByType(Schemas\ModbusConnectorSchema::class));
+		Assert::notNull($container->getByType(Schemas\ModbusDevice::class));
+		Assert::notNull($container->getByType(Schemas\ModbusConnector::class));
 
-		Assert::notNull($container->getByType(Hydrators\ModbusDeviceHydrator::class));
-		Assert::notNull($container->getByType(Hydrators\ModbusConnectorHydrator::class));
+		Assert::notNull($container->getByType(Hydrators\ModbusDevice::class));
+		Assert::notNull($container->getByType(Hydrators\ModbusConnector::class));
 	}
 
 }

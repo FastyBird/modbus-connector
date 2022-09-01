@@ -25,7 +25,7 @@ use FastyBird\ModbusConnector\Exceptions;
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-abstract class Serial implements ISerial
+abstract class Serial
 {
 
 	/** @var mixed */
@@ -52,27 +52,31 @@ abstract class Serial implements ISerial
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * Binds a named resource, specified by setDevice, to a stream
+	 *
+	 * @param string $mode The mode parameter specifies the type of access you require to the stream (as `fopen()`)
+	 *
+	 * @return void
 	 */
 	public function open(string $mode = 'r+b'): void
 	{
 		if (is_resource($this->resource)) {
-			throw new Exceptions\InvalidStateException('The connection is already opened');
+			throw new Exceptions\InvalidState('The connection is already opened');
 		}
 
 		if (!preg_match('~^[raw]\+?b?$~', $mode)) {
-			throw new Exceptions\InvalidStateException(sprintf('Invalid opening mode: %s. Use fopen() modes.', $mode));
+			throw new Exceptions\InvalidState(sprintf('Invalid opening mode: %s. Use fopen() modes.', $mode));
 		}
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * @return void
 	 */
 	public function close(): void
 	{
 		if (is_resource($this->resource)) {
 			if (!fclose($this->resource)) {
-				throw new Exceptions\InvalidStateException(sprintf('Unable to close the connection %s', $this->port));
+				throw new Exceptions\InvalidState(sprintf('Unable to close the connection %s', $this->port));
 			}
 		}
 
@@ -80,24 +84,33 @@ abstract class Serial implements ISerial
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * Writes data to the serial stream
+	 *
+	 * @param string $data
+	 *
+	 * @return false|int Returns the number of bytes written, or `false` on error
 	 */
 	public function send(string $data): false|int
 	{
 		if (!is_resource($this->resource)) {
-			throw new Exceptions\InvalidStateException('Connection must be opened to write it');
+			throw new Exceptions\InvalidState('Connection must be opened to write it');
 		}
 
 		return fwrite($this->resource, $data);
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * Reads remainder of the serial stream into a string
+	 *
+	 * @param int $length The maximum bytes to read. Defaults to -1 (read all the remaining buffer)
+	 * @param int $offset Seek to the specified offset before reading. If this number is negative,no seeking will occur and reading will start from the current position
+	 *
+	 * @return false|string Returns a received data or `false` on failure
 	 */
 	public function read(int $length = -1, int $offset = -1): false|string
 	{
 		if (!is_resource($this->resource)) {
-			throw new Exceptions\InvalidStateException('Connection must be opened to read it');
+			throw new Exceptions\InvalidState('Connection must be opened to read it');
 		}
 
 		return stream_get_contents($this->resource, $length, $offset);

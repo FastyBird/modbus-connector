@@ -161,27 +161,27 @@ final class Transformer
 	 * @param MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|null $format
 	 * @param bool|float|int|string|DateTimeInterface|MetadataTypes\ButtonPayloadType|MetadataTypes\SwitchPayloadType|null $value
 	 *
-	 * @return ValueObjects\DeviceDataValueObject|null
+	 * @return ValueObjects\DeviceData|null
 	 */
 	public function transformValueToDevice(
 		MetadataTypes\DataTypeType $dataType,
 		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|null $format,
 		bool|float|int|string|DateTimeInterface|MetadataTypes\ButtonPayloadType|MetadataTypes\SwitchPayloadType|null $value
-	): ?ValueObjects\DeviceDataValueObject {
+	): ?ValueObjects\DeviceData {
 		if ($value === null) {
 			return null;
 		}
 
         if ($dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_BOOLEAN)) {
 			if (is_bool($value)) {
-				return new ValueObjects\DeviceDataValueObject(
+				return new ValueObjects\DeviceData(
 					$value,
 					$dataType
 				);
 			}
 
 			if (is_numeric($value) && in_array((int) $value, [0, 1], true)) {
-				return new ValueObjects\DeviceDataValueObject(
+				return new ValueObjects\DeviceData(
 					(int) $value === 1,
 					$dataType
 				);
@@ -192,7 +192,7 @@ final class Transformer
 
 		if ($dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_FLOAT)) {
 			if (is_numeric($value)) {
-				return new ValueObjects\DeviceDataValueObject(
+				return new ValueObjects\DeviceData(
 					(float) $value,
 					$dataType
 				);
@@ -210,7 +210,7 @@ final class Transformer
 			|| $dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_UINT)
 		) {
 			if (is_numeric($value)) {
-				return new ValueObjects\DeviceDataValueObject(
+				return new ValueObjects\DeviceData(
 					(int) $value,
 					$dataType
 				);
@@ -220,7 +220,7 @@ final class Transformer
 		}
 
 		if ($dataType->equalsValue(MetadataTypes\DataTypeType::DATA_TYPE_STRING)) {
-			return new ValueObjects\DeviceDataValueObject(
+			return new ValueObjects\DeviceData(
 				$value instanceof DateTimeInterface ? $value->format(DateTimeInterface::ATOM) : (string) $value,
 				$dataType
 			);
@@ -240,7 +240,7 @@ final class Transformer
 				));
 
 				if (count($filtered) === 1) {
-					return new ValueObjects\DeviceDataValueObject(
+					return new ValueObjects\DeviceData(
 						strval($value),
 						MetadataTypes\DataTypeType::get(MetadataTypes\DataTypeType::DATA_TYPE_STRING)
 					);
@@ -261,7 +261,7 @@ final class Transformer
 					count($filtered) === 1
 					&& $filtered[0][2] instanceof MetadataValueObjects\CombinedEnumFormatItem
 				) {
-					return new ValueObjects\DeviceDataValueObject(
+					return new ValueObjects\DeviceData(
 						is_scalar($filtered[0][2]->getValue()) ? $filtered[0][2]->getValue() : strval($filtered[0][2]->getValue()),
 						$this->shortDataTypeToLong($filtered[0][2]->getDataType())
 					);
@@ -279,7 +279,7 @@ final class Transformer
 					&& $value instanceof MetadataTypes\ButtonPayloadType
 				)
 			) {
-				return new ValueObjects\DeviceDataValueObject(
+				return new ValueObjects\DeviceData(
 					strval($value->getValue()),
 					MetadataTypes\DataTypeType::get(MetadataTypes\DataTypeType::DATA_TYPE_STRING)
 				);

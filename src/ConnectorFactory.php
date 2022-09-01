@@ -40,18 +40,18 @@ final class ConnectorFactory implements DevicesModuleConnectors\IConnectorFactor
 	/** @var Connector\ConnectorFactory */
 	private Connector\ConnectorFactory $connectorFactory;
 
-	/** @var Helpers\ConnectorHelper */
-	private Helpers\ConnectorHelper $connectorHelper;
+	/** @var Helpers\Connector */
+	private Helpers\Connector $connectorHelper;
 
 	/**
 	 * @param Clients\ClientFactory[] $clientsFactories
 	 * @param Connector\ConnectorFactory $connectorFactory
-	 * @param Helpers\ConnectorHelper $connectorHelper
+	 * @param Helpers\Connector $connectorHelper
 	 */
 	public function __construct(
 		array $clientsFactories,
 		Connector\ConnectorFactory $connectorFactory,
-		Helpers\ConnectorHelper $connectorHelper
+		Helpers\Connector $connectorHelper
 	) {
 		$this->clientsFactories = $clientsFactories;
 		$this->connectorFactory = $connectorFactory;
@@ -63,7 +63,7 @@ final class ConnectorFactory implements DevicesModuleConnectors\IConnectorFactor
 	 */
 	public function getType(): string
 	{
-		return Entities\ModbusConnectorEntity::CONNECTOR_TYPE;
+		return Entities\ModbusConnector::CONNECTOR_TYPE;
 	}
 
 	/**
@@ -76,7 +76,7 @@ final class ConnectorFactory implements DevicesModuleConnectors\IConnectorFactor
 	): DevicesModuleConnectors\IConnector {
 		$mode = $this->connectorHelper->getConfiguration(
 			$connector->getId(),
-			Types\ConnectorPropertyIdentifierType::get(Types\ConnectorPropertyIdentifierType::IDENTIFIER_CLIENT_MODE)
+			Types\ConnectorPropertyIdentifier::get(Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE)
 		);
 
 		if ($mode === null) {
