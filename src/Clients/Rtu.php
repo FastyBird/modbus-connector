@@ -307,7 +307,7 @@ class Rtu implements Client
 			if (
 				$processedProperty instanceof DateTimeInterface
 				&& ((float) $this->dateTimeFactory->getNow()
-						->format('Uv') - (float) $processedProperty->format('Uv')) >= self::WRITE_DEBOUNCE_DELAY
+                    ->format('Uv') - (float) $processedProperty->format('Uv')) >= self::WRITE_DEBOUNCE_DELAY
 			) {
 				unset($this->processedWrittenProperties[$index]);
 			}
@@ -363,7 +363,7 @@ class Rtu implements Client
 					}
 
 					if ($this->dateTimeFactory->getNow()->getTimestamp() - $this->lostDevices[$device->getId()
-							->toString()]->getTimestamp() < self::LOST_DELAY) {
+                        ->toString()]->getTimestamp() < self::LOST_DELAY) {
 						continue;
 					}
 				}
