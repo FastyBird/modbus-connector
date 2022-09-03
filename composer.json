@@ -41,7 +41,7 @@
     "ext-pcntl": "*",
     "clue/multicast-react": "^1.1",
     "cweagans/composer-patches": "^1.7",
-    "fastybird/devices-module": "dev-master as 0.75.0",
+    "fastybird/devices-module": "dev-main as 0.75.0",
     "fastybird/json-api": "^0.11",
     "fastybird/metadata": "^0.76",
     "fastybird/socket-server-factory": "^0.5",
