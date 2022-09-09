@@ -37,19 +37,19 @@
   "minimum-stability" : "stable",
 
   "require" : {
-    "php": ">=8.0.0|>=8.1.0",
-    "ext-pcntl": "*",
-    "clue/multicast-react": "^1.1",
-    "cweagans/composer-patches": "^1.7",
-    "fastybird/devices-module": "dev-main as 0.75.0",
-    "fastybird/json-api": "^0.11",
-    "fastybird/metadata": "^0.76",
-    "fastybird/socket-server-factory": "^0.5",
-    "nette/bootstrap": "^3.1",
-    "nette/di": "^3.0",
-    "nettrine/fixtures": "^0.6.3",
-    "psr/log": "^1.1",
-    "react/http": "^1.6"
+    "php" : ">=8.0.0|>=8.1.0",
+    "ext-pcntl" : "*",
+    "clue/multicast-react" : "^1.1",
+    "cweagans/composer-patches" : "^1.7",
+    "fastybird/devices-module" : "dev-main as 0.75.0",
+    "fastybird/json-api" : "^0.11",
+    "fastybird/metadata" : "^0.76",
+    "fastybird/socket-server-factory" : "^0.5",
+    "nette/bootstrap" : "^3.1",
+    "nette/di" : "^3.0",
+    "nettrine/fixtures" : "^0.6.3",
+    "psr/log" : "^1.1",
+    "react/http" : "^1.6"
   },
 
   "require-dev" : {
@@ -66,8 +66,8 @@
     "tracy/tracy" : "^2.9"
   },
 
-  "suggest": {
-    "ext-dio": "To use integrated serial interface"
+  "suggest" : {
+    "ext-dio" : "To use integrated serial interface"
   },
 
   "autoload" : {
@@ -99,7 +99,7 @@
       "nettrine/orm" : {
         "Enable connection overrides" : "https://raw.githubusercontent.com/FastyBird/libraries-patches/master/nettrine.orm.mangerRegistry.diff"
       },
-      "nette/utils": {
+      "nette/utils" : {
         "Bug: Offset check with null support" : "https://raw.githubusercontent.com/FastyBird/libraries-patches/master/nette.array.offsetCheck.diff"
       }
     }

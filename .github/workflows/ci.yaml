@@ -13,7 +13,7 @@ on:
     - cron: "0 8 * * 1" # At 08:00 on Monday
 
 env:
-  extensions: "json,dio"
+  extensions: "json"
   cache-version: "1"
   composer-version: "v2"
   composer-install: "composer update --no-interaction --no-progress --no-suggest --prefer-dist --prefer-stable"
@@ -21,7 +21,7 @@ env:
 
 jobs:
   qa:
-    name: "Quality assurance of PHP code"
+    name: "Code quality assurance"
     runs-on: "${{ matrix.operating-system }}"
 
     strategy:
@@ -81,7 +81,7 @@ jobs:
         run: "make cs"
 
   static-analysis:
-    name: "Static analysis of PHP code"
+    name: "Code static analysis"
     runs-on: "${{ matrix.operating-system }}"
 
     strategy:
@@ -138,7 +138,7 @@ jobs:
         run: "make phpstan"
 
   tests:
-    name: "Tests of PHP code"
+    name: "Code tests"
     runs-on: "${{ matrix.operating-system }}"
     needs: ["qa", "static-analysis"]
 
@@ -210,7 +210,7 @@ jobs:
           path: tests/**/output
 
   tests-code-coverage:
-    name: "Tests of PHP code with code coverage"
+    name: "Code tests with code coverage"
     runs-on: "${{ matrix.operating-system }}"
     needs: ["tests"]
 
