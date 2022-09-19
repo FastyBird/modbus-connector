@@ -184,14 +184,6 @@ class Rtu implements Client
 	/**
 	 * {@inheritDoc}
 	 */
-	public function isConnected(): bool
-	{
-		return true;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
 	public function connect(): void
 	{
 		$configuration = new Clients\Interfaces\Configuration(
@@ -283,22 +275,6 @@ class Rtu implements Client
 	}
 
 	/**
-	 * {@inheritDoc}
-	 */
-	public function writeChannelControl(MetadataEntities\Actions\IActionChannelControlEntity $action): void
-	{
-		// TODO: Implement writeChannelControl() method.
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public function writeDeviceControl(MetadataEntities\Actions\IActionDeviceControlEntity $action): void
-	{
-		// TODO: Implement writeDeviceControl() method.
-	}
-
-	/**
 	 * @return void
 	 */
 	private function handleCommunication(): void
@@ -306,8 +282,7 @@ class Rtu implements Client
 		foreach ($this->processedWrittenProperties as $index => $processedProperty) {
 			if (
 				$processedProperty instanceof DateTimeInterface
-				&& ((float) $this->dateTimeFactory->getNow()
-                    ->format('Uv') - (float) $processedProperty->format('Uv')) >= self::WRITE_DEBOUNCE_DELAY
+				&& ((float) $this->dateTimeFactory->getNow()->format('Uv') - (float) $processedProperty->format('Uv')) >= self::WRITE_DEBOUNCE_DELAY
 			) {
 				unset($this->processedWrittenProperties[$index]);
 			}
