@@ -319,6 +319,9 @@ class Rtu implements Client
 							[
 								'source' => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
 								'type'   => 'rtu-client',
+								'connector' => [
+									'id' => $this->connector->getId()->toString(),
+								],
 								'device' => [
 									'id' => $device->getId()->toString(),
 								],
@@ -331,6 +334,9 @@ class Rtu implements Client
 							[
 								'source' => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
 								'type'   => 'rtu-client',
+								'connector' => [
+									'id' => $this->connector->getId()->toString(),
+								],
 								'device' => [
 									'id' => $device->getId()->toString(),
 								],
@@ -415,6 +421,9 @@ class Rtu implements Client
 					[
 						'source'  => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
 						'type'    => 'rtu-client',
+						'connector' => [
+							'id' => $this->connector->getId()->toString(),
+						],
 						'device'  => [
 							'id' => $device->getId()->toString(),
 						],
@@ -431,6 +440,9 @@ class Rtu implements Client
 				$logContext = [
 					'source'   => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
 					'type'     => 'rtu-client',
+					'connector' => [
+						'id' => $this->connector->getId()->toString(),
+					],
 					'device'   => [
 						'id' => $device->getId()->toString(),
 					],
