@@ -339,22 +339,28 @@ class Rtu implements Client
 				if (array_key_exists($device->getId()->toString(), $this->lostDevices)) {
 					if ($this->deviceConnectionStateManager->getState($device)
 						->equalsValue(MetadataTypes\ConnectionStateType::STATE_LOST)) {
-						$this->logger->debug('Device is still lost', [
-							'source' => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
-							'type'   => 'rtu-client',
-							'device' => [
-								'id' => $device->getId()->toString(),
-							],
-						]);
+						$this->logger->debug(
+							'Device is still lost',
+							[
+								'source' => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
+								'type'   => 'rtu-client',
+								'device' => [
+									'id' => $device->getId()->toString(),
+								],
+							]
+						);
 
 					} else {
-						$this->logger->debug('Device is lost', [
-							'source' => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
-							'type'   => 'rtu-client',
-							'device' => [
-								'id' => $device->getId()->toString(),
-							],
-						]);
+						$this->logger->debug(
+							'Device is lost',
+							[
+								'source' => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
+								'type'   => 'rtu-client',
+								'device' => [
+									'id' => $device->getId()->toString(),
+								],
+							]
+						);
 
 						$this->deviceConnectionStateManager->setState(
 							$device,
@@ -429,16 +435,19 @@ class Rtu implements Client
 					);
 				}
 
-				$this->logger->warning('Channel address is missing', [
-					'source'  => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
-					'type'    => 'rtu-client',
-					'device'  => [
-						'id' => $device->getId()->toString(),
-					],
-					'channel' => [
-						'id' => $channel->getId()->toString(),
-					],
-				]);
+				$this->logger->warning(
+					'Channel address is missing',
+					[
+						'source'  => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
+						'type'    => 'rtu-client',
+						'device'  => [
+							'id' => $device->getId()->toString(),
+						],
+						'channel' => [
+							'id' => $channel->getId()->toString(),
+						],
+					]
+				);
 
 				continue;
 			}
@@ -469,36 +478,48 @@ class Rtu implements Client
 						return true;
 					}
 				} catch (Exceptions\InvalidArgument $ex) {
-					$this->logger->warning('Channel property value could not be written', array_merge($logContext, [
-						'exception' => [
-							'message' => $ex->getMessage(),
-							'code'    => $ex->getCode(),
-						],
-					]));
+					$this->logger->warning(
+						'Channel property value could not be written',
+						array_merge($logContext, [
+							'exception' => [
+								'message' => $ex->getMessage(),
+								'code'    => $ex->getCode(),
+							],
+						])
+					);
 				} catch (Exceptions\NotSupported $ex) {
-					$this->logger->warning('Channel property value is not supported for now', array_merge($logContext, [
-						'exception' => [
-							'message' => $ex->getMessage(),
-							'code'    => $ex->getCode(),
-						],
-					]));
+					$this->logger->warning(
+						'Channel property value is not supported for now',
+						array_merge($logContext, [
+							'exception' => [
+								'message' => $ex->getMessage(),
+								'code'    => $ex->getCode(),
+							],
+						])
+					);
 				} catch (Exceptions\ModbusRtu $ex) {
-					$this->logger->error('Modbus communication with device failed', array_merge($logContext, [
-						'exception' => [
-							'message' => $ex->getMessage(),
-							'code'    => $ex->getCode(),
-						],
-					]));
+					$this->logger->error(
+						'Modbus communication with device failed',
+						array_merge($logContext, [
+							'exception' => [
+								'message' => $ex->getMessage(),
+								'code'    => $ex->getCode(),
+							],
+						])
+					);
 
 					// Something wrong during communication
 					return true;
 				} catch (Exceptions\NotReachable $ex) {
-					$this->logger->error('Maximum channel property write attempts reached', array_merge($logContext, [
-						'exception' => [
-							'message' => $ex->getMessage(),
-							'code'    => $ex->getCode(),
-						],
-					]));
+					$this->logger->error(
+						'Maximum channel property write attempts reached',
+						array_merge($logContext, [
+							'exception' => [
+								'message' => $ex->getMessage(),
+								'code'    => $ex->getCode(),
+							],
+						])
+					);
 
 					// Device is probably offline
 					return true;
@@ -515,36 +536,48 @@ class Rtu implements Client
 						return true;
 					}
 				} catch (Exceptions\InvalidArgument $ex) {
-					$this->logger->warning('Channel property value could not be read', array_merge($logContext, [
-						'exception' => [
-							'message' => $ex->getMessage(),
-							'code'    => $ex->getCode(),
-						],
-					]));
+					$this->logger->warning(
+						'Channel property value could not be read',
+						array_merge($logContext, [
+							'exception' => [
+								'message' => $ex->getMessage(),
+								'code'    => $ex->getCode(),
+							],
+						])
+					);
 				} catch (Exceptions\NotSupported $ex) {
-					$this->logger->warning('Channel property data type is not supported for now', array_merge($logContext, [
-						'exception' => [
-							'message' => $ex->getMessage(),
-							'code'    => $ex->getCode(),
-						],
-					]));
+					$this->logger->warning(
+						'Channel property data type is not supported for now',
+						array_merge($logContext, [
+							'exception' => [
+								'message' => $ex->getMessage(),
+								'code'    => $ex->getCode(),
+							],
+						])
+					);
 				} catch (Exceptions\ModbusRtu $ex) {
-					$this->logger->error('Modbus communication with device failed', array_merge($logContext, [
-						'exception' => [
-							'message' => $ex->getMessage(),
-							'code'    => $ex->getCode(),
-						],
-					]));
+					$this->logger->error(
+						'Modbus communication with device failed',
+						array_merge($logContext, [
+							'exception' => [
+								'message' => $ex->getMessage(),
+								'code'    => $ex->getCode(),
+							],
+						])
+					);
 
 					// Something wrong during communication
 					return true;
 				} catch (Exceptions\NotReachable $ex) {
-					$this->logger->error('Maximum channel property read attempts reached', array_merge($logContext, [
-						'exception' => [
-							'message' => $ex->getMessage(),
-							'code'    => $ex->getCode(),
-						],
-					]));
+					$this->logger->error(
+						'Maximum channel property read attempts reached',
+						array_merge($logContext, [
+							'exception' => [
+								'message' => $ex->getMessage(),
+								'code'    => $ex->getCode(),
+							],
+						])
+					);
 
 					// Device is probably offline
 					return true;

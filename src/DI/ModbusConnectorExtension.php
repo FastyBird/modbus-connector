@@ -16,11 +16,12 @@
 namespace FastyBird\ModbusConnector\DI;
 
 use Doctrine\Persistence;
-use FastyBird\ModbusConnector;
+use FastyBird\DevicesModule\DI as DevicesModuleDI;
 use FastyBird\ModbusConnector\API;
 use FastyBird\ModbusConnector\Clients;
 use FastyBird\ModbusConnector\Commands;
 use FastyBird\ModbusConnector\Connector;
+use FastyBird\ModbusConnector\Entities;
 use FastyBird\ModbusConnector\Fixtures;
 use FastyBird\ModbusConnector\Helpers;
 use FastyBird\ModbusConnector\Hydrators;
@@ -89,14 +90,14 @@ class ModbusConnectorExtension extends DI\CompilerExtension
 		}
 
 		// Service factory
-		$builder->addDefinition($this->prefix('service.factory'), new DI\Definitions\ServiceDefinition())
-			->setType(ModbusConnector\ConnectorFactory::class);
-
-		// Connector
-		$builder->addFactoryDefinition($this->prefix('connector'))
+		$builder->addFactoryDefinition($this->prefix('executor.factory'))
 			->setImplement(Connector\ConnectorFactory::class)
 			->getResultDefinition()
-			->setType(Connector\Connector::class);
+			->setType(Connector\Connector::class)
+			->addTag(
+				DevicesModuleDI\DevicesModuleExtension::CONNECTOR_TYPE_TAG,
+				Entities\ModbusConnector::CONNECTOR_TYPE
+			);
 
 		// Clients
 		$builder->addFactoryDefinition($this->prefix('client.rtu'))

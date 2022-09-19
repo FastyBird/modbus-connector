@@ -16,11 +16,16 @@
 namespace FastyBird\ModbusConnector\Connector;
 
 use FastyBird\DevicesModule\Connectors as DevicesModuleConnectors;
+use FastyBird\DevicesModule\Exceptions as DevicesModuleExceptions;
+use FastyBird\Metadata\Entities as MetadataEntities;
 use FastyBird\ModbusConnector\Clients;
+use FastyBird\ModbusConnector\Helpers;
+use FastyBird\ModbusConnector\Types;
 use Nette;
+use ReflectionClass;
 
 /**
- * Connector service container
+ * Connector service executor
  *
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Connector
@@ -32,23 +37,68 @@ final class Connector implements DevicesModuleConnectors\IConnector
 
 	use Nette\SmartObject;
 
-	/** @var Clients\Client */
-	private Clients\Client $client;
+	/** @var MetadataEntities\Modules\DevicesModule\IConnectorEntity */
+	private MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector;
+
+	/** @var Clients\Client|null */
+	private ?Clients\Client $client = null;
+
+	/** @var Clients\ClientFactory[] */
+	private array $clientsFactories;
+
+	/** @var Helpers\Connector */
+	private Helpers\Connector $connectorHelper;
 
 	/**
-	 * @param Clients\Client $client
+	 * @param MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector
+	 * @param Clients\ClientFactory[] $clientsFactories
+	 * @param Helpers\Connector $connectorHelper
 	 */
 	public function __construct(
-		Clients\Client $client,
+		MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector,
+		array $clientsFactories,
+		Helpers\Connector $connectorHelper
 	) {
-		$this->client = $client;
+		$this->connector = $connector;
+
+		$this->clientsFactories = $clientsFactories;
+
+		$this->connectorHelper = $connectorHelper;
 	}
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @throws DevicesModuleExceptions\TerminateException
 	 */
 	public function execute(): void
 	{
+		$mode = $this->connectorHelper->getConfiguration(
+			$this->connector->getId(),
+			Types\ConnectorPropertyIdentifier::get(Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE)
+		);
+
+		if ($mode === null) {
+			throw new DevicesModuleExceptions\TerminateException('Connector client mode is not configured');
+		}
+
+		foreach ($this->clientsFactories as $clientFactory) {
+			$rc = new ReflectionClass($clientFactory);
+
+			$constants = $rc->getConstants();
+
+			if (
+				array_key_exists(Clients\ClientFactory::MODE_CONSTANT_NAME, $constants)
+				&& $constants[Clients\ClientFactory::MODE_CONSTANT_NAME] === $mode
+			) {
+				$this->client = $clientFactory->create($this->connector);
+			}
+		}
+
+		if ($this->client === null) {
+			throw new DevicesModuleExceptions\TerminateException('Connector client is not configured');
+		}
+
 		$this->client->connect();
 	}
 
@@ -57,7 +107,7 @@ final class Connector implements DevicesModuleConnectors\IConnector
 	 */
 	public function terminate(): void
 	{
-		$this->client->disconnect();
+		$this->client?->disconnect();
 	}
 
 	/**
