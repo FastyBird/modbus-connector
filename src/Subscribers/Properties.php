@@ -46,9 +46,6 @@ final class Properties implements Common\EventSubscriber
 	{
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
 	public function getSubscribedEvents(): array
 	{
 		return [
