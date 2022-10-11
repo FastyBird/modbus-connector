@@ -139,7 +139,7 @@ class ModbusConnectorExtension extends DI\CompilerExtension
 			->getResultDefinition()
 			->setType(Connector\Connector::class)
 			->setArguments([
-				'clientsFactories' => $builder->findByType(Clients\ClientFactory::class)
+				'clientsFactories' => $builder->findByType(Clients\ClientFactory::class),
 			]);
 
 		// Console commands
