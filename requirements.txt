@@ -1,9 +1,0 @@
-fastnumbers>=3.2
-fastybird-devices-module>=0.72
-fastybird-metadata>=0.69
-inflection>=0.5
-kink>=0.6
-minimalmodbus>=2.0
-pyserial>=3.5
-setuptools>=57.4
-whistle>=1.0

@@ -9,19 +9,14 @@
 [![PHP downloads total](https://badgen.net/packagist/dt/FastyBird/modbus-connector?cache=300&style=flat-square)](https://packagist.org/packages/FastyBird/modbus-connector)
 [![PHPStan](https://img.shields.io/badge/phpstan-enabled-brightgreen.svg?style=flat-square)](https://github.com/phpstan/phpstan)
 
-![Python](https://badgen.net/pypi/python/fastybird-modbus-connector?cache=300&style=flat-square)
-[![Python latest stable](https://badgen.net/pypi/v/fastybird-modbus-connector?cache=300&style=flat-square)](https://pypi.org/project/fastybird-modbus-connector/)
-[![Python downloads month](https://img.shields.io/pypi/dm/fastybird-modbus-connector?cache=300&style=flat-square)](https://pypi.org/project/fastybird-modbus-connector/)
-[![Black](https://img.shields.io/badge/black-enabled-brightgreen.svg?style=flat-square)](https://github.com/psf/black)
-[![MyPy](https://img.shields.io/badge/mypy-enabled-brightgreen.svg?style=flat-square)](http://mypy-lang.org)
+***
 
-## What is FastyBird IoT Modbus connector?
+## What is Modbus connector?
 
-Modbus connector is a combined [FastyBird IoT](https://www.fastybird.com) extension which is integrating [Modbus](https://www.modbus.org) devices into [FastyBird](https://www.fastybird.com) IoT system
+Modbus connector is [FastyBird IoT](https://www.fastybird.com) extension which is integrating [Modbus](https://www.modbus.org) devices into [FastyBird](https://www.fastybird.com) IoT system
 
-[FastyBird](https://www.fastybird.com) [IoT](https://en.wikipedia.org/wiki/Internet_of_things) Modbus connector is
-an [Apache2 licensed](http://www.apache.org/licenses/LICENSE-2.0) distributed extension, developed
-in [PHP](https://www.php.net) with [Nette framework](https://nette.org) and in [Python](https://python.org).
+Modbus connector is an [Apache2 licensed](http://www.apache.org/licenses/LICENSE-2.0) distributed extension, developed
+in [PHP](https://www.php.net) with [Nette framework](https://nette.org).
 
 ### Features:
 
@@ -29,34 +24,20 @@ in [PHP](https://www.php.net) with [Nette framework](https://nette.org) and in [
 - Modbus connector management for [FastyBird IoT](https://www.fastybird.com) [devices module](https://github.com/FastyBird/devices-module)
 - Modbus device management for [FastyBird IoT](https://www.fastybird.com) [devices module](https://github.com/FastyBird/devices-module)
 - [{JSON:API}](https://jsonapi.org/) schemas for full api access
-- Integrated connector Python worker
 
 ## Requirements
 
-PHP part of [FastyBird](https://www.fastybird.com) Modbus connector is tested against PHP 7.4
-and [ReactPHP http](https://github.com/reactphp/http) 0.8 event-driven, streaming plaintext HTTP server
+Modbus connector is tested against PHP 8.1
 and [Nette framework](https://nette.org/en/) 3.0 PHP framework for real programmers
-
-Python part of [FastyBird](https://www.fastybird.com) Modbus connector is tested against [Python 3.7](http://python.org)
 
 ## Installation
 
 ### Manual installation
 
-#### Application backend in PHP
-
 The best way to install **fastybird/modbus-connector** is using [Composer](http://getcomposer.org/):
 
 ```sh
 composer require fastybird/modbus-connector
-```
-
-#### Application workers in Python
-
-The best way to install **fastybird-modbus-connector** is using [Pip](https://pip.pypa.io/en/stable/):
-
-```sh
-pip install fastybird-modbus-connector
 ```
 
 ### Marketplace installation
@@ -65,7 +46,7 @@ You could install this connector in your [FastyBird IoT](https://www.fastybird.c
 
 ## Documentation
 
-Learn how to connect Modbus devices to FastyBird IoT system
+Learn how to connect Modbus devices and manage them with [FastyBird IoT](https://www.fastybird.com) system
 in [documentation](https://github.com/FastyBird/modbus-connector/blob/master/.docs/en/index.md).
 
 ## Feedback

@@ -1,0 +1,134 @@
+<?php declare(strict_types = 1);
+
+/**
+ * Properties.php
+ *
+ * @license        More in LICENSE.md
+ * @copyright      https://www.fastybird.com
+ * @author         Adam Kadlec <adam.kadlec@fastybird.com>
+ * @package        FastyBird:ModbusConnector!
+ * @subpackage     Subscribers
+ * @since          0.34.0
+ *
+ * @date           04.08.22
+ */
+
+namespace FastyBird\ModbusConnector\Subscribers;
+
+use Doctrine\Common;
+use Doctrine\ORM;
+use FastyBird\DevicesModule\Entities as DevicesModuleEntities;
+use FastyBird\DevicesModule\Exceptions as DevicesModuleExceptions;
+use FastyBird\DevicesModule\Models as DevicesModuleModels;
+use FastyBird\Metadata\Types as MetadataTypes;
+use FastyBird\ModbusConnector\Entities;
+use FastyBird\ModbusConnector\Types;
+use Nette;
+use Nette\Utils;
+use function sprintf;
+
+/**
+ * Doctrine entities events
+ *
+ * @package        FastyBird:ModbusConnector!
+ * @subpackage     Subscribers
+ *
+ * @author         Adam Kadlec <adam.kadlec@fastybird.com>
+ */
+final class Properties implements Common\EventSubscriber
+{
+
+	use Nette\SmartObject;
+
+	public function __construct(
+		private readonly DevicesModuleModels\Devices\Properties\PropertiesManager $propertiesManager,
+	)
+	{
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getSubscribedEvents(): array
+	{
+		return [
+			ORM\Events::postPersist,
+		];
+	}
+
+	public function postPersist(ORM\Event\LifecycleEventArgs $eventArgs): void
+	{
+		// onFlush was executed before, everything already initialized
+		$entity = $eventArgs->getObject();
+
+		// Check for valid entity
+		if ($entity instanceof Entities\ModbusDevice) {
+			$stateProperty = $entity->getProperty(Types\DevicePropertyIdentifier::IDENTIFIER_STATE);
+
+			if ($stateProperty !== null) {
+				$entity->removeProperty($stateProperty);
+			}
+
+			$this->propertiesManager->create(Utils\ArrayHash::from([
+				'device' => $entity,
+				'entity' => DevicesModuleEntities\Devices\Properties\Dynamic::class,
+				'identifier' => Types\DevicePropertyIdentifier::IDENTIFIER_STATE,
+				'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_ENUM),
+				'unit' => null,
+				'format' => [
+					MetadataTypes\ConnectionState::STATE_CONNECTED,
+					MetadataTypes\ConnectionState::STATE_DISCONNECTED,
+					MetadataTypes\ConnectionState::STATE_STOPPED,
+					MetadataTypes\ConnectionState::STATE_LOST,
+					MetadataTypes\ConnectionState::STATE_UNKNOWN,
+				],
+				'settable' => false,
+				'queryable' => false,
+			]));
+
+		} elseif (
+			$entity instanceof DevicesModuleEntities\Connectors\Properties\Variable
+			&& $entity->getConnector() instanceof Entities\ModbusConnector
+		) {
+			if (
+				(
+					$entity->getIdentifier() === Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE
+					&& !Types\ClientMode::isValidValue($entity->getValue())
+				) || (
+					$entity->getIdentifier() === Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_BYTE_SIZE
+					&& !Types\ByteSize::isValidValue($entity->getValue())
+				) || (
+					$entity->getIdentifier() === Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_BAUD_RATE
+					&& !Types\BaudRate::isValidValue($entity->getValue())
+				) || (
+					$entity->getIdentifier() === Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_PARITY
+					&& !Types\Parity::isValidValue($entity->getValue())
+				) || (
+					$entity->getIdentifier() === Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_STOP_BITS
+					&& !Types\StopBits::isValidValue($entity->getValue())
+				)
+			) {
+				throw new DevicesModuleExceptions\InvalidArgument(sprintf(
+					'Provided value for connector property: %s is not in valid range',
+					$entity->getIdentifier(),
+				));
+			}
+		} elseif (
+			$entity instanceof DevicesModuleEntities\Devices\Properties\Variable
+			&& $entity->getDevice() instanceof Entities\ModbusDevice
+		) {
+			if (
+				(
+					$entity->getIdentifier() === Types\DevicePropertyIdentifier::IDENTIFIER_BYTE_ORDER
+					&& !Types\ByteOrder::isValidValue($entity->getValue())
+				)
+			) {
+				throw new DevicesModuleExceptions\InvalidArgument(sprintf(
+					'Provided value for device property: %s is not in valid range',
+					$entity->getIdentifier(),
+				));
+			}
+		}
+	}
+
+}

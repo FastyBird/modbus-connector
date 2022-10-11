@@ -22,80 +22,24 @@ use FastyBird\Metadata\Types as MetadataTypes;
 /**
  * @ORM\Entity
  */
-class ModbusConnector extends DevicesModuleEntities\Connectors\Connector implements IModbusConnector
+class ModbusConnector extends DevicesModuleEntities\Connectors\Connector
 {
 
 	public const CONNECTOR_TYPE = 'modbus';
 
-	/**
-	 * {@inheritDoc}
-	 */
 	public function getType(): string
 	{
 		return self::CONNECTOR_TYPE;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	public function getInterface(): string
-	{
-		$property = $this->findProperty(MetadataTypes\ConnectorPropertyNameType::NAME_INTERFACE);
-
-		if (
-			$property === null
-			|| !$property instanceof DevicesModuleEntities\Connectors\Properties\IStaticProperty
-			|| !is_string($property->getValue())
-		) {
-			return '/dev/ttyAMA0';
-		}
-
-		return $property->getValue();
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public function getBaudRate(): int
-	{
-		$property = $this->findProperty(MetadataTypes\ConnectorPropertyNameType::NAME_BAUD_RATE);
-
-		if (
-			$property === null
-			|| !$property instanceof DevicesModuleEntities\Connectors\Properties\IStaticProperty
-			|| !is_int($property->getValue())
-		) {
-			return 9600;
-		}
-
-		return $property->getValue();
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public function toArray(): array
-	{
-		return array_merge(parent::toArray(), [
-			'interface' => $this->getInterface(),
-			'baud_rate' => $this->getBaudRate(),
-		]);
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
 	public function getDiscriminatorName(): string
 	{
 		return self::CONNECTOR_TYPE;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	public function getSource(): MetadataTypes\ModuleSourceType|MetadataTypes\PluginSourceType|MetadataTypes\ConnectorSourceType
+	public function getSource(): MetadataTypes\ModuleSource|MetadataTypes\PluginSource|MetadataTypes\ConnectorSource
 	{
-		return MetadataTypes\ConnectorSourceType::get(MetadataTypes\ConnectorSourceType::SOURCE_CONNECTOR_MODBUS);
+		return MetadataTypes\ConnectorSource::get(MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS);
 	}
 
 }
