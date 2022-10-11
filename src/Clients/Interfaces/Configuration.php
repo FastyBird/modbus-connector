@@ -17,6 +17,7 @@ namespace FastyBird\ModbusConnector\Clients\Interfaces;
 
 use FastyBird\ModbusConnector\Types;
 use Nette;
+use function intval;
 
 /**
  * Base serial interface configuration
@@ -31,40 +32,27 @@ final class Configuration
 
 	use Nette\SmartObject;
 
-	/** @var Types\BaudRate */
 	private Types\BaudRate $baudRate;
 
-	/** @var Types\ByteSize */
 	private Types\ByteSize $dataBits;
 
-	/** @var Types\StopBits */
 	private Types\StopBits $stopBits;
 
-	/** @var Types\Parity */
 	private Types\Parity $parity;
 
-	/** @var int */
 	private int $flowControl;
 
-	/** @var int */
 	private int $isCanonical;
 
-	/**
-	 * @param Types\BaudRate|null $baudRate
-	 * @param Types\ByteSize|null $dataBits
-	 * @param Types\StopBits|null $stopBits
-	 * @param Types\Parity|null $parity
-	 * @param bool $flowControl
-	 * @param bool $isCanonical
-	 */
 	public function __construct(
-		?Types\BaudRate $baudRate = null,
-		?Types\ByteSize $dataBits = null,
-		?Types\StopBits $stopBits = null,
-		?Types\Parity $parity = null,
+		Types\BaudRate|null $baudRate = null,
+		Types\ByteSize|null $dataBits = null,
+		Types\StopBits|null $stopBits = null,
+		Types\Parity|null $parity = null,
 		bool $flowControl = true,
 		bool $isCanonical = true,
-	) {
+	)
+	{
 		$this->baudRate = $baudRate ?? Types\BaudRate::get(Types\BaudRate::BAUD_RATE_9600);
 		$this->dataBits = $dataBits ?? Types\ByteSize::get(Types\ByteSize::SIZE_8);
 		$this->stopBits = $stopBits ?? Types\StopBits::get(Types\StopBits::STOP_BIT_ONE);
@@ -80,10 +68,10 @@ final class Configuration
 	public function toArray(): array
 	{
 		return [
-			'data_rate'    => intval($this->baudRate->getValue()),
-			'data_bits'    => intval($this->dataBits->getValue()),
-			'stop_bits'    => intval($this->stopBits->getValue()),
-			'parity'       => intval($this->parity->getValue()),
+			'data_rate' => intval($this->baudRate->getValue()),
+			'data_bits' => intval($this->dataBits->getValue()),
+			'stop_bits' => intval($this->stopBits->getValue()),
+			'parity' => intval($this->parity->getValue()),
 			'flow_control' => $this->flowControl,
 			'is_canonical' => $this->isCanonical,
 		];

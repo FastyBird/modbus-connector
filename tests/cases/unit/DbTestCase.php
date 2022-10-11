@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1);
 
-namespace Tests\Cases;
+namespace Tests\Cases\Unit;
 
 use DateTimeImmutable;
 use Doctrine\DBAL;
@@ -13,20 +13,33 @@ use Nette;
 use Nettrine\ORM as NettrineORM;
 use Ninjify\Nunjuck\TestCase\BaseMockeryTestCase;
 use RuntimeException;
+use function array_reverse;
+use function assert;
+use function fclose;
+use function feof;
+use function fgets;
+use function fopen;
+use function in_array;
+use function md5;
+use function rtrim;
+use function set_time_limit;
+use function sprintf;
+use function strlen;
+use function substr;
+use function time;
+use function trim;
 
 abstract class DbTestCase extends BaseMockeryTestCase
 {
 
-	/** @var Nette\DI\Container|null */
-	private ?Nette\DI\Container $container = null;
+	private Nette\DI\Container|null $container = null;
 
-	/** @var bool */
 	private bool $isDatabaseSetUp = false;
 
-	/** @var string[] */
+	/** @var Array<string> */
 	private array $sqlFiles = [];
 
-	/** @var string[] */
+	/** @var Array<string> */
 	private array $neonFiles = [];
 
 	public function setUp(): void
@@ -42,13 +55,10 @@ abstract class DbTestCase extends BaseMockeryTestCase
 
 		$this->mockContainerService(
 			DateTimeFactory\DateTimeFactory::class,
-			$dateTimeFactory
+			$dateTimeFactory,
 		);
 	}
 
-	/**
-	 * @param string $file
-	 */
 	protected function registerDatabaseSchemaFile(string $file): void
 	{
 		if (!in_array($file, $this->sqlFiles, true)) {
@@ -56,16 +66,11 @@ abstract class DbTestCase extends BaseMockeryTestCase
 		}
 	}
 
-	/**
-	 * @param string $serviceType
-	 * @param object $serviceMock
-	 *
-	 * @return void
-	 */
 	protected function mockContainerService(
 		string $serviceType,
-		object $serviceMock
-	): void {
+		object $serviceMock,
+	): void
+	{
 		$container = $this->getContainer();
 		$foundServiceNames = $container->findByType($serviceType);
 
@@ -74,9 +79,6 @@ abstract class DbTestCase extends BaseMockeryTestCase
 		}
 	}
 
-	/**
-	 * @return Nette\DI\Container
-	 */
 	protected function getContainer(): Nette\DI\Container
 	{
 		if ($this->container === null) {
@@ -86,9 +88,6 @@ abstract class DbTestCase extends BaseMockeryTestCase
 		return $this->container;
 	}
 
-	/**
-	 * @return Nette\DI\Container
-	 */
 	private function createContainer(): Nette\DI\Container
 	{
 		$rootDir = __DIR__ . '/../..';
@@ -114,9 +113,6 @@ abstract class DbTestCase extends BaseMockeryTestCase
 		return $this->container;
 	}
 
-	/**
-	 * @return void
-	 */
 	private function setupDatabase(): void
 	{
 		if (!$this->isDatabaseSetUp) {
@@ -130,7 +126,7 @@ abstract class DbTestCase extends BaseMockeryTestCase
 			foreach ($schemas as $sql) {
 				try {
 					$db->exec($sql);
-				} catch (DBAL\DBALException $ex) {
+				} catch (DBAL\DBALException) {
 					throw new RuntimeException('Database schema could not be created');
 				}
 			}
@@ -143,34 +139,22 @@ abstract class DbTestCase extends BaseMockeryTestCase
 		}
 	}
 
-	/**
-	 * @return DBAL\Connection
-	 */
 	protected function getDb(): DBAL\Connection
 	{
-		/** @var DBAL\Connection $service */
 		$service = $this->getContainer()->getByType(DBAL\Connection::class);
+		assert($service instanceof DBAL\Connection);
 
 		return $service;
 	}
 
-	/**
-	 * @return NettrineORM\EntityManagerDecorator
-	 */
 	protected function getEntityManager(): NettrineORM\EntityManagerDecorator
 	{
-		/** @var NettrineORM\EntityManagerDecorator $service */
 		$service = $this->getContainer()->getByType(NettrineORM\EntityManagerDecorator::class);
+		assert($service instanceof NettrineORM\EntityManagerDecorator);
 
 		return $service;
 	}
 
-	/**
-	 * @param DBAL\Connection $db
-	 * @param string $file
-	 *
-	 * @return int
-	 */
 	private function loadFromFile(DBAL\Connection $db, string $file): int
 	{
 		@set_time_limit(0); // intentionally @
@@ -200,7 +184,7 @@ abstract class DbTestCase extends BaseMockeryTestCase
 						$db->query($sql);
 						$sql = '';
 						$count++;
-					} catch (DBAL\DBALException $ex) {
+					} catch (DBAL\DBALException) {
 						// File could not be loaded
 					}
 				} else {
@@ -213,7 +197,7 @@ abstract class DbTestCase extends BaseMockeryTestCase
 			try {
 				$db->query($sql);
 				$count++;
-			} catch (DBAL\DBALException $ex) {
+			} catch (DBAL\DBALException) {
 				// File could not be loaded
 			}
 		}
@@ -223,12 +207,6 @@ abstract class DbTestCase extends BaseMockeryTestCase
 		return $count;
 	}
 
-	/**
-	 * @param string $serviceName
-	 * @param object $service
-	 *
-	 * @return void
-	 */
 	private function replaceContainerService(string $serviceName, object $service): void
 	{
 		$container = $this->getContainer();
@@ -237,9 +215,6 @@ abstract class DbTestCase extends BaseMockeryTestCase
 		$container->addService($serviceName, $service);
 	}
 
-	/**
-	 * @param string $file
-	 */
 	protected function registerNeonConfigurationFile(string $file): void
 	{
 		if (!in_array($file, $this->neonFiles, true)) {
@@ -247,9 +222,6 @@ abstract class DbTestCase extends BaseMockeryTestCase
 		}
 	}
 
-	/**
-	 * @return void
-	 */
 	protected function tearDown(): void
 	{
 		$this->container = null; // Fatal error: Cannot redeclare class SystemContainer

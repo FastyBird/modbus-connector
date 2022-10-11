@@ -16,6 +16,16 @@
 namespace FastyBird\ModbusConnector\Clients\Interfaces;
 
 use FastyBird\ModbusConnector\Exceptions;
+use function array_values;
+use function error_clear_last;
+use function error_get_last;
+use function exec;
+use function fopen;
+use function is_array;
+use function is_resource;
+use function sprintf;
+use function stream_set_blocking;
+use function utf8_encode;
 
 /**
  * Serial interface using Darwin file stream
@@ -28,9 +38,6 @@ use FastyBird\ModbusConnector\Exceptions;
 final class SerialDarwin extends Serial
 {
 
-	/**
-	 * {@inheritDoc}
-	 */
 	public function open(string $mode = 'r+b'): void
 	{
 		parent::open($mode);
@@ -50,7 +57,7 @@ final class SerialDarwin extends Serial
 				throw new Exceptions\InvalidState(
 					sprintf('Unable to open the connection %s', $this->port),
 					0,
-					$error
+					$error,
 				);
 			}
 
@@ -64,8 +71,6 @@ final class SerialDarwin extends Serial
 
 	/**
 	 * Sets and prepare the port for connection
-	 *
-	 * @return void
 	 */
 	protected function setPortOptions(): void
 	{
@@ -73,8 +78,8 @@ final class SerialDarwin extends Serial
 		unset($params['is_canonical']);
 
 		$paramsFormats = [
-			'stop_bits'    => [1 => '-cstopb', 2 => 'cstopb'],
-			'parity'       => [0 => '-parenb', 1 => 'parenb parodd', 2 => 'parenb -parodd'],
+			'stop_bits' => [1 => '-cstopb', 2 => 'cstopb'],
+			'parity' => [0 => '-parenb', 1 => 'parenb parodd', 2 => 'parenb -parodd'],
 			'flow_control' => [0 => 'clocal -crtscts -ixon -ixoff', 1 => '-clocal -crtscts ixon ixoff'],
 		];
 

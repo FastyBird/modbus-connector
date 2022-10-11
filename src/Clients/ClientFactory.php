@@ -30,11 +30,6 @@ interface ClientFactory
 
 	public const MODE_CONSTANT_NAME = 'MODE';
 
-	/**
-	 * @param MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector
-	 *
-	 * @return Client
-	 */
-	public function create(MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector): Client;
+	public function create(MetadataEntities\DevicesModule\Connector $connector): Client;
 
 }

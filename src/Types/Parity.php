@@ -16,6 +16,7 @@
 namespace FastyBird\ModbusConnector\Types;
 
 use Consistence;
+use function strval;
 
 /**
  * Communication stop bits types
@@ -32,12 +33,11 @@ class Parity extends Consistence\Enum\Enum
 	 * Define versions
 	 */
 	public const PARITY_NONE = 0;
+
 	public const PARITY_ODD = 1;
+
 	public const PARITY_EVEN = 2;
 
-	/**
-	 * @return string
-	 */
 	public function __toString(): string
 	{
 		return strval(self::getValue());

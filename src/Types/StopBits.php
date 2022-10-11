@@ -16,6 +16,7 @@
 namespace FastyBird\ModbusConnector\Types;
 
 use Consistence;
+use function strval;
 
 /**
  * Communication stop bits types
@@ -32,12 +33,11 @@ class StopBits extends Consistence\Enum\Enum
 	 * Define versions
 	 */
 	public const STOP_BIT_NONE = 0;
+
 	public const STOP_BIT_ONE = 1;
+
 	public const STOP_BIT_TWO = 2;
 
-	/**
-	 * @return string
-	 */
 	public function __toString(): string
 	{
 		return strval(self::getValue());

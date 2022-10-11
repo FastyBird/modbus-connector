@@ -21,19 +21,15 @@ use FastyBird\ModbusConnector\Entities;
 /**
  * Modbus device entity hydrator
  *
+ * @phpstan-extends DevicesModuleHydrators\Devices\Device<Entities\ModbusDevice>
+ *
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Hydrators
- *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
- *
- * @phpstan-extends DevicesModuleHydrators\Devices\DeviceHydrator<Entities\ModbusDevice>
  */
-final class ModbusDevice extends DevicesModuleHydrators\Devices\DeviceHydrator
+final class ModbusDevice extends DevicesModuleHydrators\Devices\Device
 {
 
-	/**
-	 * {@inheritDoc}
-	 */
 	public function getEntityName(): string
 	{
 		return Entities\ModbusDevice::class;

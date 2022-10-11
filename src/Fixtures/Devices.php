@@ -33,10 +33,6 @@ final class Devices extends DataFixtures\AbstractFixture implements DataFixtures
 {
 
 	/**
-	 * @param Persistence\ObjectManager $manager
-	 *
-	 * @return void
-	 *
 	 * @throws Throwable
 	 */
 	public function load(Persistence\ObjectManager $manager): void
@@ -50,7 +46,7 @@ final class Devices extends DataFixtures\AbstractFixture implements DataFixtures
 		$device = new Entities\ModbusDevice(
 			'fixture-device',
 			$connector,
-			'Fixture device'
+			'Fixture device',
 		);
 
 		$manager->persist($device);

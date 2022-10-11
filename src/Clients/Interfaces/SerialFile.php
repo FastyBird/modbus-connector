@@ -16,6 +16,8 @@
 namespace FastyBird\ModbusConnector\Clients\Interfaces;
 
 use FastyBird\ModbusConnector\Exceptions;
+use function php_uname;
+use function preg_replace;
 
 /**
  * Serial interface using file stream
@@ -28,17 +30,10 @@ use FastyBird\ModbusConnector\Exceptions;
 final class SerialFile extends Serial
 {
 
-	/** @var SerialDarwin|SerialLinux|SerialWindows */
 	private SerialDarwin|SerialLinux|SerialWindows $serialFile;
 
-	/**
-	 * @param string $port
-	 * @param Configuration $configuration
-	 */
-	public function __construct(
-		string $port,
-		Configuration $configuration
-	) {
+	public function __construct(string $port, Configuration $configuration)
+	{
 		parent::__construct($port, $configuration);
 
 		$osName = preg_replace('~^.*(Linux|Darwing|Windows).*$~', '$1', php_uname());
@@ -55,17 +50,12 @@ final class SerialFile extends Serial
 	 * Binds a named resource, specified by setDevice, to a stream
 	 *
 	 * @param string $mode The mode parameter specifies the type of access you require to the stream (as `fopen()`)
-	 *
-	 * @return void
 	 */
 	public function open(string $mode = 'r+b'): void
 	{
 		$this->serialFile->open($mode);
 	}
 
-	/**
-	 * @return void
-	 */
 	public function close(): void
 	{
 		$this->serialFile->close();
@@ -73,8 +63,6 @@ final class SerialFile extends Serial
 
 	/**
 	 * Writes data to the serial stream
-	 *
-	 * @param string $data
 	 *
 	 * @return false|int Returns the number of bytes written, or `false` on error
 	 */

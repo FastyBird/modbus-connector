@@ -21,6 +21,7 @@ use Doctrine\Persistence;
 use FastyBird\ModbusConnector\Exceptions;
 use Nette;
 use Throwable;
+use function gc_collect_cycles;
 
 /**
  * Useful database helpers
@@ -35,16 +36,8 @@ final class Database
 
 	use Nette\SmartObject;
 
-	/** @var Persistence\ManagerRegistry */
-	private Persistence\ManagerRegistry $managerRegistry;
-
-	/**
-	 * @param Persistence\ManagerRegistry $managerRegistry
-	 */
-	public function __construct(
-		Persistence\ManagerRegistry $managerRegistry
-	) {
-		$this->managerRegistry = $managerRegistry;
+	public function __construct(private readonly Persistence\ManagerRegistry $managerRegistry)
+	{
 	}
 
 	/**
@@ -62,7 +55,6 @@ final class Database
 			$this->pingAndReconnect();
 
 			return $callback();
-
 		} catch (Throwable $ex) {
 			throw new Exceptions\InvalidState('An error occurred: ' . $ex->getMessage(), $ex->getCode(), $ex);
 		}
@@ -91,7 +83,6 @@ final class Database
 			$this->getConnection()->commit();
 
 			return $result;
-
 		} catch (Throwable $ex) {
 			// Revert all changes when error occur
 			if ($this->getConnection()->isTransactionActive()) {
@@ -102,9 +93,6 @@ final class Database
 		}
 	}
 
-	/**
-	 * @return DBAL\Connection
-	 */
 	public function getConnection(): DBAL\Connection
 	{
 		$em = $this->getEntityManager();
@@ -116,9 +104,6 @@ final class Database
 		throw new Exceptions\Runtime('Entity manager could not be loaded');
 	}
 
-	/**
-	 * @return bool
-	 */
 	public function ping(): bool
 	{
 		$connection = $this->getConnection();
@@ -135,8 +120,6 @@ final class Database
 	}
 
 	/**
-	 * @return void
-	 *
 	 * @throws DBAL\Exception
 	 */
 	public function reconnect(): void
@@ -148,8 +131,6 @@ final class Database
 	}
 
 	/**
-	 * @return void
-	 *
 	 * @throws DBAL\Exception
 	 */
 	private function pingAndReconnect(): void
@@ -180,10 +161,7 @@ final class Database
 		}
 	}
 
-	/**
-	 * @return ORM\EntityManagerInterface|null
-	 */
-	private function getEntityManager(): ?ORM\EntityManagerInterface
+	private function getEntityManager(): ORM\EntityManagerInterface|null
 	{
 		$em = $this->managerRegistry->getManager();
 

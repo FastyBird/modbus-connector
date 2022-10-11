@@ -33,6 +33,8 @@ use Nette\Schema;
 use Nettrine\Fixtures as NettrineFixtures;
 use React\EventLoop;
 use stdClass;
+use function assert;
+use const DIRECTORY_SEPARATOR;
 
 /**
  * Modbus connector
@@ -45,59 +47,43 @@ use stdClass;
 class ModbusConnectorExtension extends DI\CompilerExtension
 {
 
-	/**
-	 * @param Nette\Configurator $config
-	 * @param string $extensionName
-	 *
-	 * @return void
-	 */
+	public const NAME = 'fbModbusConnector';
+
 	public static function register(
 		Nette\Configurator $config,
-		string $extensionName = 'fbModbusConnector'
-	): void {
-		$config->onCompile[] = function (
+		string $extensionName = self::NAME,
+	): void
+	{
+		$config->onCompile[] = static function (
 			Nette\Configurator $config,
-			DI\Compiler $compiler
+			DI\Compiler $compiler,
 		) use ($extensionName): void {
 			$compiler->addExtension($extensionName, new ModbusConnectorExtension());
 		};
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
 	public function getConfigSchema(): Schema\Schema
 	{
 		return Schema\Expect::structure([
-			'loop' => Schema\Expect::anyOf(Schema\Expect::string(), Schema\Expect::type(DI\Definitions\Statement::class))
+			'loop' => Schema\Expect::anyOf(
+				Schema\Expect::string(),
+				Schema\Expect::type(DI\Definitions\Statement::class),
+			)
 				->nullable(),
 		]);
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
 	public function loadConfiguration(): void
 	{
 		$builder = $this->getContainerBuilder();
-		/** @var stdClass $configuration */
 		$configuration = $this->getConfig();
+		assert($configuration instanceof stdClass);
 
 		if ($configuration->loop === null && $builder->getByType(EventLoop\LoopInterface::class) === null) {
 			$builder->addDefinition($this->prefix('client.loop'), new DI\Definitions\ServiceDefinition())
 				->setType(EventLoop\LoopInterface::class)
 				->setFactory('React\EventLoop\Factory::create');
 		}
-
-		// Service factory
-		$builder->addFactoryDefinition($this->prefix('executor.factory'))
-			->setImplement(Connector\ConnectorFactory::class)
-			->addTag(
-				DevicesModuleDI\DevicesModuleExtension::CONNECTOR_TYPE_TAG,
-				Entities\ModbusConnector::CONNECTOR_TYPE
-			)
-			->getResultDefinition()
-			->setType(Connector\Connector::class);
 
 		// Clients
 		$builder->addFactoryDefinition($this->prefix('client.rtu'))
@@ -143,6 +129,19 @@ class ModbusConnectorExtension extends DI\CompilerExtension
 		$builder->addDefinition($this->prefix('helpers.property'), new DI\Definitions\ServiceDefinition())
 			->setType(Helpers\Property::class);
 
+		// Service factory
+		$builder->addFactoryDefinition($this->prefix('executor.factory'))
+			->setImplement(Connector\ConnectorFactory::class)
+			->addTag(
+				DevicesModuleDI\DevicesModuleExtension::CONNECTOR_TYPE_TAG,
+				Entities\ModbusConnector::CONNECTOR_TYPE,
+			)
+			->getResultDefinition()
+			->setType(Connector\Connector::class)
+			->setArguments([
+				'clientsFactories' => $builder->findByType(Clients\ClientFactory::class)
+			]);
+
 		// Console commands
 		$builder->addDefinition($this->prefix('commands.initialize'), new DI\Definitions\ServiceDefinition())
 			->setType(Commands\Initialize::class);
@@ -151,9 +150,6 @@ class ModbusConnectorExtension extends DI\CompilerExtension
 			->setType(Commands\Execute::class);
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
 	public function beforeCompile(): void
 	{
 		parent::beforeCompile();
@@ -167,10 +163,15 @@ class ModbusConnectorExtension extends DI\CompilerExtension
 		$ormAnnotationDriverService = $builder->getDefinition('nettrineOrmAnnotations.annotationDriver');
 
 		if ($ormAnnotationDriverService instanceof DI\Definitions\ServiceDefinition) {
-			$ormAnnotationDriverService->addSetup('addPaths', [[__DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'Entities']]);
+			$ormAnnotationDriverService->addSetup(
+				'addPaths',
+				[[__DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'Entities']],
+			);
 		}
 
-		$ormAnnotationDriverChainService = $builder->getDefinitionByType(Persistence\Mapping\Driver\MappingDriverChain::class);
+		$ormAnnotationDriverChainService = $builder->getDefinitionByType(
+			Persistence\Mapping\Driver\MappingDriverChain::class,
+		);
 
 		if ($ormAnnotationDriverChainService instanceof DI\Definitions\ServiceDefinition) {
 			$ormAnnotationDriverChainService->addSetup('addDriver', [

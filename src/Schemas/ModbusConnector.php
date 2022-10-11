@@ -22,32 +22,25 @@ use FastyBird\ModbusConnector\Entities;
 /**
  * Modbus connector entity schema
  *
+ * @phpstan-extends DevicesModuleSchemas\Connectors\Connector<Entities\ModbusConnector>
+ *
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Schemas
- *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
- *
- * @phpstan-extends DevicesModuleSchemas\Connectors\ConnectorSchema<Entities\ModbusConnector>
  */
-final class ModbusConnector extends DevicesModuleSchemas\Connectors\ConnectorSchema
+final class ModbusConnector extends DevicesModuleSchemas\Connectors\Connector
 {
 
 	/**
 	 * Define entity schema type string
 	 */
-	public const SCHEMA_TYPE = MetadataTypes\ConnectorSourceType::SOURCE_CONNECTOR_MODBUS . '/connector/' . Entities\ModbusConnector::CONNECTOR_TYPE;
+	public const SCHEMA_TYPE = MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS . '/connector/' . Entities\ModbusConnector::CONNECTOR_TYPE;
 
-	/**
-	 * {@inheritDoc}
-	 */
 	public function getEntityClass(): string
 	{
 		return Entities\ModbusConnector::class;
 	}
 
-	/**
-	 * @return string
-	 */
 	public function getType(): string
 	{
 		return self::SCHEMA_TYPE;

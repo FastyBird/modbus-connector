@@ -1,7 +1,5 @@
 # FastyBird IoT Modbus connector
 
-***
-
 [![Build Status](https://badgen.net/github/checks/FastyBird/modbus-connector/master?cache=300&style=flat-square)](https://github.com/FastyBird/modbus-connector/actions)
 [![Licence](https://badgen.net/github/license/FastyBird/modbus-connector?cache=300&style=flat-square)](https://github.com/FastyBird/modbus-connector/blob/master/LICENSE.md)
 [![Code coverage](https://badgen.net/coveralls/c/github/FastyBird/modbus-connector?cache=300&style=flat-square)](https://coveralls.io/r/FastyBird/modbus-connector)
@@ -30,7 +28,6 @@ in [PHP](https://www.php.net) with [Nette framework](https://nette.org).
 ## Requirements
 
 Modbus connector is tested against PHP 8.1
-and [ReactPHP Socket](https://github.com/reactphp/socket) 1.11 async, streaming plaintext TCP/IP and secure TLS socket server and client connections
 and [Nette framework](https://nette.org/en/) 3.0 PHP framework for real programmers
 
 ## Installation

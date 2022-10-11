@@ -31,36 +31,22 @@ class DeviceData
 
 	use Nette\SmartObject;
 
-	/** @var MetadataTypes\DataTypeType */
-	private MetadataTypes\DataTypeType $dataType;
+	private MetadataTypes\DataType $dataType;
 
-	/** @var string|int|float|bool */
-	private string|int|float|bool $value;
-
-	/**
-	 * @param string|int|float|bool $value
-	 * @param MetadataTypes\DataTypeType|null $dataType
-	 */
 	public function __construct(
-		string|int|float|bool $value,
-		?MetadataTypes\DataTypeType $dataType
-	) {
-		$this->value = $value;
-		$this->dataType = $dataType ?: MetadataTypes\DataTypeType::get(MetadataTypes\DataTypeType::DATA_TYPE_STRING);
+		private readonly string|int|float|bool $value,
+		MetadataTypes\DataType|null $dataType,
+	)
+	{
+		$this->dataType = $dataType ?? MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING);
 	}
 
-	/**
-	 * @return float|bool|int|string
-	 */
 	public function getValue(): float|bool|int|string
 	{
 		return $this->value;
 	}
 
-	/**
-	 * @return MetadataTypes\DataTypeType
-	 */
-	public function getDataType(): MetadataTypes\DataTypeType
+	public function getDataType(): MetadataTypes\DataType
 	{
 		return $this->dataType;
 	}

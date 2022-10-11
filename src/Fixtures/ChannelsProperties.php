@@ -22,6 +22,7 @@ use FastyBird\Metadata\Types as MetadataTypes;
 use FastyBird\ModbusConnector\Exceptions;
 use FastyBird\ModbusConnector\Types\ChannelPropertyIdentifier;
 use Throwable;
+use function strval;
 
 /**
  * Channels properties database fixture
@@ -35,10 +36,6 @@ final class ChannelsProperties extends DataFixtures\AbstractFixture implements D
 {
 
 	/**
-	 * @param Persistence\ObjectManager $manager
-	 *
-	 * @return void
-	 *
 	 * @throws Throwable
 	 */
 	public function load(Persistence\ObjectManager $manager): void
@@ -46,25 +43,27 @@ final class ChannelsProperties extends DataFixtures\AbstractFixture implements D
 		for ($i = 1; $i <= 4; $i++) {
 			$channel = $this->getReference('modbus-rtu-channel-' . $i);
 
-			if (!$channel instanceof DevicesModuleEntities\Channels\IChannel) {
+			if (!$channel instanceof DevicesModuleEntities\Channels\Channel) {
 				throw new Exceptions\InvalidState('Channel reference could not be loaded');
 			}
 
-			$addressProperty = new DevicesModuleEntities\Channels\Properties\StaticProperty(
+			$addressProperty = new DevicesModuleEntities\Channels\Properties\Variable(
 				$channel,
-				ChannelPropertyIdentifier::IDENTIFIER_ADDRESS
+				ChannelPropertyIdentifier::IDENTIFIER_ADDRESS,
 			);
-			$addressProperty->setDataType(MetadataTypes\DataTypeType::get(MetadataTypes\DataTypeType::DATA_TYPE_UINT));
+			$addressProperty->setDataType(MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UINT));
 			$addressProperty->setValue(strval($i));
 
-			$switchProperty = new DevicesModuleEntities\Channels\Properties\DynamicProperty(
+			$switchProperty = new DevicesModuleEntities\Channels\Properties\Dynamic(
 				$channel,
-				'switch'
+				'switch',
 			);
-			$switchProperty->setDataType(MetadataTypes\DataTypeType::get(MetadataTypes\DataTypeType::DATA_TYPE_SWITCH));
+			$switchProperty->setDataType(MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_SWITCH));
 			$switchProperty->setSettable(true);
 			$switchProperty->setQueryable(true);
-			$switchProperty->setFormat('sw|switch_on:u8|1:u16|256,sw|switch_off:u8|0:u16|512,sw|switch_toggle::u16|768');
+			$switchProperty->setFormat(
+				'sw|switch_on:u8|1:u16|256,sw|switch_off:u8|0:u16|512,sw|switch_toggle::u16|768',
+			);
 
 			$manager->persist($addressProperty);
 			$manager->persist($switchProperty);

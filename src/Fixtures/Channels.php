@@ -34,10 +34,6 @@ final class Channels extends DataFixtures\AbstractFixture implements DataFixture
 {
 
 	/**
-	 * @param Persistence\ObjectManager $manager
-	 *
-	 * @return void
-	 *
 	 * @throws Throwable
 	 */
 	public function load(Persistence\ObjectManager $manager): void
@@ -51,7 +47,7 @@ final class Channels extends DataFixtures\AbstractFixture implements DataFixture
 		for ($i = 1; $i <= 4; $i++) {
 			$channel = new DevicesModuleEntities\Channels\Channel(
 				$device,
-				'channel-' . $i
+				'channel-' . $i,
 			);
 
 			$manager->persist($channel);

@@ -17,6 +17,9 @@ namespace FastyBird\ModbusConnector\Exceptions;
 
 use Exception as PhpException;
 use Throwable;
+use function array_key_exists;
+use function bin2hex;
+use function sprintf;
 
 /**
  * Modbus RTU communication exception
@@ -42,59 +45,40 @@ class ModbusRtu extends PhpException implements Exception
 		0x0B => 'Gateway target device failed to respond',
 	];
 
-	/** @var Throwable|null */
-	private ?Throwable $previous;
+	protected string|null $request = null;
 
-	/** @var string|null */
-	protected ?string $request = null;
+	protected string|null $response = null;
 
-	/** @var string|null */
-	protected ?string $response = null;
-
-	/**
-	 * @param string|null $message
-	 * @param int $code
-	 * @param string|null $request
-	 * @param string|null $response
-	 * @param Throwable|null $previous
-	 */
 	public function __construct(
-		?string $message = null,
+		string|null $message = null,
 		int $code = 0,
-		?string $request = null,
-		?string $response = null,
-		?Throwable $previous = null
-	) {
-		$this->previous = $previous;
+		string|null $request = null,
+		string|null $response = null,
+		private readonly Throwable|null $previous = null,
+	)
+	{
 		$this->request = $request !== null ? bin2hex($request) : null;
 		$this->response = $response !== null ? bin2hex($response) : null;
 
 		if ($message === null && $code !== 0) {
-			$message = array_key_exists($code, self::EXCEPTION_CODES) ? self::EXCEPTION_CODES[$code] : self::EXCEPTION_CODES[0x00];
+			$message = array_key_exists($code, self::EXCEPTION_CODES)
+				? self::EXCEPTION_CODES[$code]
+				: self::EXCEPTION_CODES[0x00];
 		}
 
 		parent::__construct($message ?? '', $code, $previous);
 	}
 
-	/**
-	 * @return string|null
-	 */
-	public function getRequest(): ?string
+	public function getRequest(): string|null
 	{
 		return $this->request;
 	}
 
-	/**
-	 * @return string|null
-	 */
-	public function getResponse(): ?string
+	public function getResponse(): string|null
 	{
 		return $this->response;
 	}
 
-	/**
-	 * @return string
-	 */
 	public function __toString(): string
 	{
 		$output = '';
@@ -104,12 +88,12 @@ class ModbusRtu extends PhpException implements Exception
 		}
 
 		$output .= sprintf(
-            '%s: %s in %s:%s',
-            self::class,
-            $this->message,
-            $this->file,
-            $this->line
-        ) . "\n";
+			'%s: %s in %s:%s',
+			self::class,
+			$this->message,
+			$this->file,
+			$this->line,
+		) . "\n";
 
 		if ($this->request !== null) {
 			$output .= 'Request: "' . $this->request . '"' . "\n";

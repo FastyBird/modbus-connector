@@ -17,6 +17,7 @@ namespace FastyBird\ModbusConnector\Types;
 
 use Consistence;
 use FastyBird\Metadata\Types as MetadataTypes;
+use function strval;
 
 /**
  * Connector control name types
@@ -32,11 +33,8 @@ class ConnectorControlName extends Consistence\Enum\Enum
 	/**
 	 * Define device states
 	 */
-	public const NAME_REBOOT = MetadataTypes\ControlNameType::NAME_REBOOT;
+	public const NAME_REBOOT = MetadataTypes\ControlName::NAME_REBOOT;
 
-	/**
-	 * @return string
-	 */
 	public function __toString(): string
 	{
 		return strval(self::getValue());

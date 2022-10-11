@@ -16,6 +16,7 @@
 namespace FastyBird\ModbusConnector\Types;
 
 use Consistence;
+use function strval;
 
 /**
  * Communication data bits types
@@ -32,14 +33,15 @@ class ByteSize extends Consistence\Enum\Enum
 	 * Define versions
 	 */
 	public const SIZE_4 = 4; // win
+
 	public const SIZE_5 = 5;
+
 	public const SIZE_6 = 6;
+
 	public const SIZE_7 = 7;
+
 	public const SIZE_8 = 8;
 
-	/**
-	 * @return string
-	 */
 	public function __toString(): string
 	{
 		return strval(self::getValue());

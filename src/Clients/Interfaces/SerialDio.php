@@ -16,6 +16,15 @@
 namespace FastyBird\ModbusConnector\Clients\Interfaces;
 
 use FastyBird\ModbusConnector\Exceptions;
+use function dio_raw;
+use function dio_serial;
+use function error_clear_last;
+use function error_get_last;
+use function is_array;
+use function is_resource;
+use function sprintf;
+use function stream_set_blocking;
+use function stream_set_timeout;
 
 /**
  * Serial interface using php-dio extension
@@ -28,9 +37,6 @@ use FastyBird\ModbusConnector\Exceptions;
 final class SerialDio extends Serial
 {
 
-	/**
-	 * {@inheritDoc}
-	 */
 	public function open(string $mode = 'r+b'): void
 	{
 		parent::open($mode);
@@ -48,7 +54,7 @@ final class SerialDio extends Serial
 				throw new Exceptions\InvalidState(
 					sprintf('Unable to open the connection %s', $this->port),
 					0,
-					$error
+					$error,
 				);
 			}
 
@@ -59,7 +65,7 @@ final class SerialDio extends Serial
 			throw new Exceptions\InvalidState('Setting blocking error');
 		}
 
-		if (!stream_set_timeout($this->resource, 0, 2000)) {
+		if (!stream_set_timeout($this->resource, 0, 2_000)) {
 			throw new Exceptions\InvalidState('Setting timeout error');
 		}
 	}
@@ -68,8 +74,6 @@ final class SerialDio extends Serial
 	 * Binds a named resource, specified by setDevice, to a raw stream
 	 *
 	 * @param string $mode The mode parameter specifies the type of access you require to the stream (as `fopen()`)
-	 *
-	 * @return void
 	 */
 	public function openRaw(string $mode = 'r+b'): void
 	{
@@ -88,7 +92,7 @@ final class SerialDio extends Serial
 				throw new Exceptions\InvalidState(
 					sprintf('Unable to open the connection %s', $this->port),
 					0,
-					$error
+					$error,
 				);
 			}
 

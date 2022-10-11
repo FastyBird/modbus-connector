@@ -30,11 +30,6 @@ use FastyBird\ModbusConnector\Entities;
 final class Connector extends DataFixtures\AbstractFixture implements DataFixtures\FixtureInterface
 {
 
-	/**
-	 * @param Persistence\ObjectManager $manager
-	 *
-	 * @return void
-	 */
 	public function load(Persistence\ObjectManager $manager): void
 	{
 		$connector = new Entities\ModbusConnector('modbus-rtu');

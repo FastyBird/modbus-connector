@@ -16,7 +16,8 @@
 namespace FastyBird\ModbusConnector\Helpers;
 
 use FastyBird\DevicesModule\Models as DevicesModuleModels;
-use FastyBird\Metadata;
+use FastyBird\Metadata\Entities as MetadataEntities;
+use FastyBird\Metadata\Exceptions as MetadataExceptions;
 use Nette;
 use Nette\Utils;
 
@@ -33,35 +34,22 @@ final class Property
 
 	use Nette\SmartObject;
 
-	/** @var DevicesModuleModels\States\DevicePropertyStateManager */
-	private DevicesModuleModels\States\DevicePropertyStateManager $devicePropertyStateManager;
-
-	/** @var DevicesModuleModels\States\ChannelPropertyStateManager */
-	private DevicesModuleModels\States\ChannelPropertyStateManager $channelPropertyStateManager;
-
-	/**
-	 * @param DevicesModuleModels\States\DevicePropertyStateManager $devicePropertyStateManager
-	 * @param DevicesModuleModels\States\ChannelPropertyStateManager $channelPropertyStateManager
-	 */
 	public function __construct(
-		DevicesModuleModels\States\DevicePropertyStateManager $devicePropertyStateManager,
-		DevicesModuleModels\States\ChannelPropertyStateManager $channelPropertyStateManager
-	) {
-		$this->devicePropertyStateManager = $devicePropertyStateManager;
-		$this->channelPropertyStateManager = $channelPropertyStateManager;
+		private readonly DevicesModuleModels\States\DevicePropertyStateManager $devicePropertyStateManager,
+		private readonly DevicesModuleModels\States\ChannelPropertyStateManager $channelPropertyStateManager,
+	)
+	{
 	}
 
 	/**
-	 * @param Metadata\Entities\Modules\DevicesModule\IDeviceDynamicPropertyEntity|Metadata\Entities\Modules\DevicesModule\IChannelDynamicPropertyEntity $property
-	 * @param Utils\ArrayHash $data
-	 *
-	 * @return void
+	 * @throws MetadataExceptions\FileNotFound
 	 */
 	public function setValue(
-		Metadata\Entities\Modules\DevicesModule\IDeviceDynamicPropertyEntity|Metadata\Entities\Modules\DevicesModule\IChannelDynamicPropertyEntity $property,
-		Utils\ArrayHash $data
-	): void {
-		if ($property instanceof Metadata\Entities\Modules\DevicesModule\IDeviceDynamicPropertyEntity) {
+		MetadataEntities\DevicesModule\DeviceDynamicProperty|MetadataEntities\DevicesModule\ChannelDynamicProperty $property,
+		Utils\ArrayHash $data,
+	): void
+	{
+		if ($property instanceof MetadataEntities\DevicesModule\DeviceDynamicProperty) {
 			$this->devicePropertyStateManager->setValue($property, $data);
 		} else {
 			$this->channelPropertyStateManager->setValue($property, $data);

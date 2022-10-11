@@ -21,6 +21,7 @@ use FastyBird\DevicesModule\Entities as DevicesModuleEntities;
 use FastyBird\DevicesModule\Models as DevicesModuleModels;
 use FastyBird\DevicesModule\Queries as DevicesModuleQueries;
 use FastyBird\Metadata;
+use FastyBird\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Metadata\Types as MetadataTypes;
 use FastyBird\ModbusConnector\Entities;
 use FastyBird\ModbusConnector\Exceptions;
@@ -33,6 +34,10 @@ use Symfony\Component\Console\Input;
 use Symfony\Component\Console\Output;
 use Symfony\Component\Console\Style;
 use Throwable;
+use function array_search;
+use function array_values;
+use function count;
+use function sprintf;
 
 /**
  * Connector initialize command
@@ -46,76 +51,34 @@ class Initialize extends Console\Command\Command
 {
 
 	private const CHOICE_QUESTION_CREATE_CONNECTOR = 'Create new connector configuration';
+
 	private const CHOICE_QUESTION_EDIT_CONNECTOR = 'Edit existing connector configuration';
+
 	private const CHOICE_QUESTION_DELETE_CONNECTOR = 'Delete existing connector configuration';
 
 	private const CHOICE_QUESTION_RTU_MODE = 'Modbus RTU over serial line';
+
 	private const CHOICE_QUESTION_TCP_MODE = 'Modbus TCP';
 
-	/** @var DevicesModuleModels\Connectors\IConnectorsRepository */
-	private DevicesModuleModels\Connectors\IConnectorsRepository $connectorsRepository;
-
-	/** @var DevicesModuleModels\Connectors\IConnectorsManager */
-	private DevicesModuleModels\Connectors\IConnectorsManager $connectorsManager;
-
-	/** @var DevicesModuleModels\Connectors\Properties\IPropertiesRepository */
-	private DevicesModuleModels\Connectors\Properties\IPropertiesRepository $propertiesRepository;
-
-	/** @var DevicesModuleModels\Connectors\Properties\IPropertiesManager */
-	private DevicesModuleModels\Connectors\Properties\IPropertiesManager $propertiesManager;
-
-	/** @var DevicesModuleModels\Connectors\Controls\IControlsManager */
-	private DevicesModuleModels\Connectors\Controls\IControlsManager $controlsManager;
-
-	/** @var DevicesModuleModels\DataStorage\IConnectorsRepository */
-	private DevicesModuleModels\DataStorage\IConnectorsRepository $connectorsDataStorageRepository;
-
-	/** @var Persistence\ManagerRegistry */
-	private Persistence\ManagerRegistry $managerRegistry;
-
-	/** @var Log\LoggerInterface */
 	private Log\LoggerInterface $logger;
 
-	/**
-	 * @param DevicesModuleModels\Connectors\IConnectorsRepository $connectorsRepository
-	 * @param DevicesModuleModels\Connectors\IConnectorsManager $connectorsManager
-	 * @param DevicesModuleModels\Connectors\Properties\IPropertiesRepository $propertiesRepository
-	 * @param DevicesModuleModels\Connectors\Properties\IPropertiesManager $propertiesManager
-	 * @param DevicesModuleModels\Connectors\Controls\IControlsManager $controlsManager
-	 * @param DevicesModuleModels\DataStorage\IConnectorsRepository $connectorsDataStorageRepository
-	 * @param Persistence\ManagerRegistry $managerRegistry
-	 * @param Log\LoggerInterface|null $logger
-	 * @param string|null $name
-	 */
 	public function __construct(
-		DevicesModuleModels\Connectors\IConnectorsRepository $connectorsRepository,
-		DevicesModuleModels\Connectors\IConnectorsManager $connectorsManager,
-		DevicesModuleModels\Connectors\Properties\IPropertiesRepository $propertiesRepository,
-		DevicesModuleModels\Connectors\Properties\IPropertiesManager $propertiesManager,
-		DevicesModuleModels\Connectors\Controls\IControlsManager $controlsManager,
-		DevicesModuleModels\DataStorage\IConnectorsRepository $connectorsDataStorageRepository,
-		Persistence\ManagerRegistry $managerRegistry,
-		?Log\LoggerInterface $logger = null,
-		?string $name = null
-	) {
-		$this->connectorsRepository = $connectorsRepository;
-		$this->connectorsManager = $connectorsManager;
-		$this->propertiesRepository = $propertiesRepository;
-		$this->propertiesManager = $propertiesManager;
-		$this->controlsManager = $controlsManager;
-
-		$this->connectorsDataStorageRepository = $connectorsDataStorageRepository;
-
-		$this->managerRegistry = $managerRegistry;
-
+		private readonly DevicesModuleModels\Connectors\ConnectorsRepository $connectorsRepository,
+		private readonly DevicesModuleModels\Connectors\ConnectorsManager $connectorsManager,
+		private readonly DevicesModuleModels\Connectors\Properties\PropertiesRepository $propertiesRepository,
+		private readonly DevicesModuleModels\Connectors\Properties\PropertiesManager $propertiesManager,
+		private readonly DevicesModuleModels\Connectors\Controls\ControlsManager $controlsManager,
+		private readonly DevicesModuleModels\DataStorage\ConnectorsRepository $connectorsDataStorageRepository,
+		private readonly Persistence\ManagerRegistry $managerRegistry,
+		Log\LoggerInterface|null $logger = null,
+		string|null $name = null,
+	)
+	{
 		$this->logger = $logger ?? new Log\NullLogger();
 
 		parent::__construct($name);
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
 	protected function configure(): void
 	{
 		$this
@@ -123,15 +86,19 @@ class Initialize extends Console\Command\Command
 			->setDescription('Modbus connector initialization')
 			->setDefinition(
 				new Input\InputDefinition([
-					new Input\InputOption('no-confirm', null, Input\InputOption::VALUE_NONE, 'Do not ask for any confirmation'),
-				])
+					new Input\InputOption(
+						'no-confirm',
+						null,
+						Input\InputOption::VALUE_NONE,
+						'Do not ask for any confirmation',
+					),
+				]),
 			);
 	}
 
 	/**
-	 * {@inheritDoc}
-	 *
 	 * @throws DBAL\Exception
+	 * @throws MetadataExceptions\FileNotFound
 	 */
 	protected function execute(Input\InputInterface $input, Output\OutputInterface $output): int
 	{
@@ -144,7 +111,7 @@ class Initialize extends Console\Command\Command
 		if (!$input->getOption('no-confirm')) {
 			$question = new Console\Question\ConfirmationQuestion(
 				'Would you like to continue?',
-				false
+				false,
 			);
 
 			$continue = $io->askQuestion($question);
@@ -160,7 +127,7 @@ class Initialize extends Console\Command\Command
 				0 => self::CHOICE_QUESTION_CREATE_CONNECTOR,
 				1 => self::CHOICE_QUESTION_EDIT_CONNECTOR,
 				2 => self::CHOICE_QUESTION_DELETE_CONNECTOR,
-			]
+			],
 		);
 
 		$question->setErrorMessage('Selected answer: "%s" is not valid.');
@@ -181,11 +148,8 @@ class Initialize extends Console\Command\Command
 	}
 
 	/**
-	 * @param Style\SymfonyStyle $io
-	 *
-	 * @return void
-	 *
 	 * @throws DBAL\Exception
+	 * @throws MetadataExceptions\FileNotFound
 	 */
 	private function createNewConfiguration(Style\SymfonyStyle $io): void
 	{
@@ -230,21 +194,21 @@ class Initialize extends Console\Command\Command
 			$this->getOrmConnection()->beginTransaction();
 
 			$connector = $this->connectorsManager->create(Utils\ArrayHash::from([
-				'entity'     => Entities\ModbusConnector::class,
+				'entity' => Entities\ModbusConnector::class,
 				'identifier' => $identifier,
-				'name'       => $name === '' ? null : $name,
+				'name' => $name === '' ? null : $name,
 			]));
 
 			$this->propertiesManager->create(Utils\ArrayHash::from([
-				'entity'     => DevicesModuleEntities\Connectors\Properties\StaticProperty::class,
+				'entity' => DevicesModuleEntities\Connectors\Properties\Variable::class,
 				'identifier' => Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE,
-				'dataType'   => MetadataTypes\DataTypeType::get(MetadataTypes\DataTypeType::DATA_TYPE_STRING),
-				'value'      => $mode->getValue(),
-				'connector'  => $connector,
+				'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING),
+				'value' => $mode->getValue(),
+				'connector' => $connector,
 			]));
 
 			$this->controlsManager->create(Utils\ArrayHash::from([
-				'name'      => Types\ConnectorControlName::NAME_REBOOT,
+				'name' => Types\ConnectorControlName::NAME_REBOOT,
 				'connector' => $connector,
 			]));
 
@@ -253,20 +217,20 @@ class Initialize extends Console\Command\Command
 
 			$io->success(sprintf(
 				'New connector "%s" was successfully created',
-				$connector->getName() ?? $connector->getIdentifier()
+				$connector->getName() ?? $connector->getIdentifier(),
 			));
 		} catch (Throwable $ex) {
 			// Log caught exception
 			$this->logger->error(
 				'An unhandled error occurred',
 				[
-					'source'    => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
-					'type'      => 'initialize-cmd',
+					'source' => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
+					'type' => 'initialize-cmd',
 					'exception' => [
 						'message' => $ex->getMessage(),
-						'code'    => $ex->getCode(),
+						'code' => $ex->getCode(),
 					],
-				]
+				],
 			);
 
 			$io->error('Something went wrong, connector could not be created. Error was logged.');
@@ -279,11 +243,8 @@ class Initialize extends Console\Command\Command
 	}
 
 	/**
-	 * @param Style\SymfonyStyle $io
-	 *
-	 * @return void
-	 *
 	 * @throws DBAL\Exception
+	 * @throws MetadataExceptions\FileNotFound
 	 */
 	private function editExistingConfiguration(Style\SymfonyStyle $io): void
 	{
@@ -296,7 +257,8 @@ class Initialize extends Console\Command\Command
 				continue;
 			}
 
-			$connectors[$connector->getIdentifier()] = $connector->getIdentifier() . ($connector->getName() ? ' [' . $connector->getName() . ']' : '');
+			$connectors[$connector->getIdentifier()] = $connector->getIdentifier()
+				. ($connector->getName() ? ' [' . $connector->getName() . ']' : '');
 		}
 
 		if (count($connectors) === 0) {
@@ -304,7 +266,7 @@ class Initialize extends Console\Command\Command
 
 			$question = new Console\Question\ConfirmationQuestion(
 				'Would you like to create new Modbus connector configuration?',
-				false
+				false,
 			);
 
 			$continue = $io->askQuestion($question);
@@ -318,12 +280,12 @@ class Initialize extends Console\Command\Command
 
 		$question = new Console\Question\ChoiceQuestion(
 			'Please select connector to configure',
-			array_values($connectors)
+			array_values($connectors),
 		);
 
 		$question->setErrorMessage('Selected connector: "%s" is not valid.');
 
-		$connectorIdentifier = array_search($io->askQuestion($question), $connectors);
+		$connectorIdentifier = array_search($io->askQuestion($question), $connectors, true);
 
 		if ($connectorIdentifier === false) {
 			$io->error('Something went wrong, connector could not be loaded');
@@ -332,14 +294,14 @@ class Initialize extends Console\Command\Command
 				'Connector identifier was not able to get from answer',
 				[
 					'source' => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
-					'type'   => 'initialize-cmd',
-				]
+					'type' => 'initialize-cmd',
+				],
 			);
 
 			return;
 		}
 
-		$findConnectorQuery = new DevicesModuleQueries\FindConnectorsQuery();
+		$findConnectorQuery = new DevicesModuleQueries\FindConnectors();
 		$findConnectorQuery->byIdentifier($connectorIdentifier);
 
 		$connector = $this->connectorsRepository->findOneBy($findConnectorQuery);
@@ -351,14 +313,14 @@ class Initialize extends Console\Command\Command
 				'Connector was not found',
 				[
 					'source' => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
-					'type'   => 'initialize-cmd',
-				]
+					'type' => 'initialize-cmd',
+				],
 			);
 
 			return;
 		}
 
-		$findPropertyQuery = new DevicesModuleQueries\FindConnectorPropertiesQuery();
+		$findPropertyQuery = new DevicesModuleQueries\FindConnectorProperties();
 		$findPropertyQuery->forConnector($connector);
 		$findPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE);
 
@@ -370,7 +332,7 @@ class Initialize extends Console\Command\Command
 		} else {
 			$question = new Console\Question\ConfirmationQuestion(
 				'Do you want to change connector devices support?',
-				false
+				false,
 			);
 
 			$changeMode = $io->askQuestion($question);
@@ -391,7 +353,7 @@ class Initialize extends Console\Command\Command
 		if ($connector->isEnabled()) {
 			$question = new Console\Question\ConfirmationQuestion(
 				'Do you want to disable connector?',
-				false
+				false,
 			);
 
 			if ($io->askQuestion($question)) {
@@ -400,7 +362,7 @@ class Initialize extends Console\Command\Command
 		} else {
 			$question = new Console\Question\ConfirmationQuestion(
 				'Do you want to enable connector?',
-				false
+				false,
 			);
 
 			if ($io->askQuestion($question)) {
@@ -413,7 +375,7 @@ class Initialize extends Console\Command\Command
 			$this->getOrmConnection()->beginTransaction();
 
 			$connector = $this->connectorsManager->update($connector, Utils\ArrayHash::from([
-				'name'    => $name === '' ? null : $name,
+				'name' => $name === '' ? null : $name,
 				'enabled' => $enabled,
 			]));
 
@@ -423,11 +385,11 @@ class Initialize extends Console\Command\Command
 				}
 
 				$this->propertiesManager->create(Utils\ArrayHash::from([
-					'entity'     => DevicesModuleEntities\Connectors\Properties\StaticProperty::class,
+					'entity' => DevicesModuleEntities\Connectors\Properties\Variable::class,
 					'identifier' => Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE,
-					'dataType'   => MetadataTypes\DataTypeType::get(MetadataTypes\DataTypeType::DATA_TYPE_STRING),
-					'value'      => $mode->getValue(),
-					'connector'  => $connector,
+					'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING),
+					'value' => $mode->getValue(),
+					'connector' => $connector,
 				]));
 			} elseif ($mode !== null) {
 				$this->propertiesManager->update($modeProperty, Utils\ArrayHash::from([
@@ -440,20 +402,20 @@ class Initialize extends Console\Command\Command
 
 			$io->success(sprintf(
 				'Connector "%s" was successfully updated',
-				$connector->getName() ?? $connector->getIdentifier()
+				$connector->getName() ?? $connector->getIdentifier(),
 			));
 		} catch (Throwable $ex) {
 			// Log caught exception
 			$this->logger->error(
 				'An unhandled error occurred',
 				[
-					'source'    => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
-					'type'      => 'initialize-cmd',
+					'source' => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
+					'type' => 'initialize-cmd',
 					'exception' => [
 						'message' => $ex->getMessage(),
-						'code'    => $ex->getCode(),
+						'code' => $ex->getCode(),
 					],
-				]
+				],
 			);
 
 			$io->error('Something went wrong, connector could not be updated. Error was logged.');
@@ -466,10 +428,6 @@ class Initialize extends Console\Command\Command
 	}
 
 	/**
-	 * @param Style\SymfonyStyle $io
-	 *
-	 * @return void
-	 *
 	 * @throws DBAL\Exception
 	 */
 	private function deleteExistingConfiguration(Style\SymfonyStyle $io): void
@@ -483,7 +441,8 @@ class Initialize extends Console\Command\Command
 				continue;
 			}
 
-			$connectors[$connector->getIdentifier()] = $connector->getIdentifier() . ($connector->getName() ? ' [' . $connector->getName() . ']' : '');
+			$connectors[$connector->getIdentifier()] = $connector->getIdentifier()
+				. ($connector->getName() ? ' [' . $connector->getName() . ']' : '');
 		}
 
 		if (count($connectors) === 0) {
@@ -494,12 +453,12 @@ class Initialize extends Console\Command\Command
 
 		$question = new Console\Question\ChoiceQuestion(
 			'Please select connector to remove',
-			array_values($connectors)
+			array_values($connectors),
 		);
 
 		$question->setErrorMessage('Selected connector: "%s" is not valid.');
 
-		$connectorIdentifier = array_search($io->askQuestion($question), $connectors);
+		$connectorIdentifier = array_search($io->askQuestion($question), $connectors, true);
 
 		if ($connectorIdentifier === false) {
 			$io->error('Something went wrong, connector could not be loaded');
@@ -508,14 +467,14 @@ class Initialize extends Console\Command\Command
 				'Connector identifier was not able to get from answer',
 				[
 					'source' => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
-					'type'   => 'initialize-cmd',
-				]
+					'type' => 'initialize-cmd',
+				],
 			);
 
 			return;
 		}
 
-		$findConnectorQuery = new DevicesModuleQueries\FindConnectorsQuery();
+		$findConnectorQuery = new DevicesModuleQueries\FindConnectors();
 		$findConnectorQuery->byIdentifier($connectorIdentifier);
 
 		$connector = $this->connectorsRepository->findOneBy($findConnectorQuery);
@@ -527,8 +486,8 @@ class Initialize extends Console\Command\Command
 				'Connector was not found',
 				[
 					'source' => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
-					'type'   => 'initialize-cmd',
-				]
+					'type' => 'initialize-cmd',
+				],
 			);
 
 			return;
@@ -536,7 +495,7 @@ class Initialize extends Console\Command\Command
 
 		$question = new Console\Question\ConfirmationQuestion(
 			'Would you like to continue?',
-			false
+			false,
 		);
 
 		$continue = $io->askQuestion($question);
@@ -556,20 +515,20 @@ class Initialize extends Console\Command\Command
 
 			$io->success(sprintf(
 				'Connector "%s" was successfully removed',
-				$connector->getName() ?? $connector->getIdentifier()
+				$connector->getName() ?? $connector->getIdentifier(),
 			));
 		} catch (Throwable $ex) {
 			// Log caught exception
 			$this->logger->error(
 				'An unhandled error occurred',
 				[
-					'source'    => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
-					'type'      => 'initialize-cmd',
+					'source' => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
+					'type' => 'initialize-cmd',
 					'exception' => [
 						'message' => $ex->getMessage(),
-						'code'    => $ex->getCode(),
+						'code' => $ex->getCode(),
 					],
-				]
+				],
 			);
 
 			$io->error('Something went wrong, connector could not be removed. Error was logged.');
@@ -581,11 +540,6 @@ class Initialize extends Console\Command\Command
 		}
 	}
 
-	/**
-	 * @param Style\SymfonyStyle $io
-	 *
-	 * @return Types\ClientMode
-	 */
 	private function askMode(Style\SymfonyStyle $io): Types\ClientMode
 	{
 		$question = new Console\Question\ChoiceQuestion(
@@ -594,7 +548,7 @@ class Initialize extends Console\Command\Command
 				self::CHOICE_QUESTION_RTU_MODE,
 				self::CHOICE_QUESTION_TCP_MODE,
 			],
-			0
+			0,
 		);
 
 		$question->setErrorMessage('Selected answer: "%s" is not valid.');
@@ -612,9 +566,6 @@ class Initialize extends Console\Command\Command
 		throw new Exceptions\InvalidState('Unknown connector mode selected');
 	}
 
-	/**
-	 * @return DBAL\Connection
-	 */
 	private function getOrmConnection(): DBAL\Connection
 	{
 		$connection = $this->managerRegistry->getConnection();

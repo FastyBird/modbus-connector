@@ -23,6 +23,7 @@ use FastyBird\ModbusConnector\Helpers;
 use FastyBird\ModbusConnector\Types;
 use Nette;
 use ReflectionClass;
+use function array_key_exists;
 
 /**
  * Connector service executor
@@ -32,54 +33,36 @@ use ReflectionClass;
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-final class Connector implements DevicesModuleConnectors\IConnector
+final class Connector implements DevicesModuleConnectors\Connector
 {
 
 	use Nette\SmartObject;
 
-	/** @var MetadataEntities\Modules\DevicesModule\IConnectorEntity */
-	private MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector;
-
-	/** @var Clients\Client|null */
-	private ?Clients\Client $client = null;
-
-	/** @var Clients\ClientFactory[] */
-	private array $clientsFactories;
-
-	/** @var Helpers\Connector */
-	private Helpers\Connector $connectorHelper;
+	private Clients\Client|null $client = null;
 
 	/**
-	 * @param MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector
-	 * @param Clients\ClientFactory[] $clientsFactories
-	 * @param Helpers\Connector $connectorHelper
+	 * @param Array<Clients\ClientFactory> $clientsFactories
 	 */
 	public function __construct(
-		MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector,
-		array $clientsFactories,
-		Helpers\Connector $connectorHelper
-	) {
-		$this->connector = $connector;
-
-		$this->clientsFactories = $clientsFactories;
-
-		$this->connectorHelper = $connectorHelper;
+		private readonly MetadataEntities\DevicesModule\Connector $connector,
+		private readonly array $clientsFactories,
+		private readonly Helpers\Connector $connectorHelper,
+	)
+	{
 	}
 
 	/**
-	 * {@inheritDoc}
-	 *
-	 * @throws DevicesModuleExceptions\TerminateException
+	 * @throws DevicesModuleExceptions\Terminate
 	 */
 	public function execute(): void
 	{
 		$mode = $this->connectorHelper->getConfiguration(
 			$this->connector->getId(),
-			Types\ConnectorPropertyIdentifier::get(Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE)
+			Types\ConnectorPropertyIdentifier::get(Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE),
 		);
 
 		if ($mode === null) {
-			throw new DevicesModuleExceptions\TerminateException('Connector client mode is not configured');
+			throw new DevicesModuleExceptions\Terminate('Connector client mode is not configured');
 		}
 
 		foreach ($this->clientsFactories as $clientFactory) {
@@ -96,23 +79,17 @@ final class Connector implements DevicesModuleConnectors\IConnector
 		}
 
 		if ($this->client === null) {
-			throw new DevicesModuleExceptions\TerminateException('Connector client is not configured');
+			throw new DevicesModuleExceptions\Terminate('Connector client is not configured');
 		}
 
 		$this->client->connect();
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
 	public function terminate(): void
 	{
 		$this->client?->disconnect();
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
 	public function hasUnfinishedTasks(): bool
 	{
 		return false;

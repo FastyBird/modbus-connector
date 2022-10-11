@@ -16,6 +16,13 @@
 namespace FastyBird\ModbusConnector\Clients\Interfaces;
 
 use FastyBird\ModbusConnector\Exceptions;
+use function fclose;
+use function fwrite;
+use function is_resource;
+use function preg_match;
+use function register_shutdown_function;
+use function sprintf;
+use function stream_get_contents;
 
 /**
  * Base serial interface
@@ -28,26 +35,10 @@ use FastyBird\ModbusConnector\Exceptions;
 abstract class Serial
 {
 
-	/** @var mixed */
 	protected mixed $resource = null;
 
-	/** @var string */
-	protected string $port;
-
-	/** @var Configuration */
-	protected Configuration $configuration;
-
-	/**
-	 * @param string $port
-	 * @param Configuration $configuration
-	 */
-	public function __construct(
-		string $port,
-		Configuration $configuration
-	) {
-		$this->port = $port;
-		$this->configuration = $configuration;
-
+	public function __construct(protected string $port, protected Configuration $configuration)
+	{
 		register_shutdown_function([$this, 'close']);
 	}
 
@@ -55,8 +46,6 @@ abstract class Serial
 	 * Binds a named resource, specified by setDevice, to a stream
 	 *
 	 * @param string $mode The mode parameter specifies the type of access you require to the stream (as `fopen()`)
-	 *
-	 * @return void
 	 */
 	public function open(string $mode = 'r+b'): void
 	{
@@ -69,9 +58,6 @@ abstract class Serial
 		}
 	}
 
-	/**
-	 * @return void
-	 */
 	public function close(): void
 	{
 		if (is_resource($this->resource)) {
@@ -85,8 +71,6 @@ abstract class Serial
 
 	/**
 	 * Writes data to the serial stream
-	 *
-	 * @param string $data
 	 *
 	 * @return false|int Returns the number of bytes written, or `false` on error
 	 */

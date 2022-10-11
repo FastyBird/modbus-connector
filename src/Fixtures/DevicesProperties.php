@@ -36,10 +36,6 @@ final class DevicesProperties extends DataFixtures\AbstractFixture implements Da
 {
 
 	/**
-	 * @param Persistence\ObjectManager $manager
-	 *
-	 * @return void
-	 *
 	 * @throws Throwable
 	 */
 	public function load(Persistence\ObjectManager $manager): void
@@ -50,11 +46,11 @@ final class DevicesProperties extends DataFixtures\AbstractFixture implements Da
 			throw new Exceptions\InvalidState('Device reference could not be loaded');
 		}
 
-		$addressProperty = new DevicesModuleEntities\Devices\Properties\StaticProperty(
+		$addressProperty = new DevicesModuleEntities\Devices\Properties\Variable(
 			$device,
-			Types\DevicePropertyIdentifier::IDENTIFIER_ADDRESS
+			Types\DevicePropertyIdentifier::IDENTIFIER_ADDRESS,
 		);
-		$addressProperty->setDataType(MetadataTypes\DataTypeType::get(MetadataTypes\DataTypeType::DATA_TYPE_UINT));
+		$addressProperty->setDataType(MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UINT));
 		$addressProperty->setValue('1');
 
 		$manager->persist($addressProperty);

@@ -36,10 +36,6 @@ final class ConnectorProperties extends DataFixtures\AbstractFixture implements 
 {
 
 	/**
-	 * @param Persistence\ObjectManager $manager
-	 *
-	 * @return void
-	 *
 	 * @throws Throwable
 	 */
 	public function load(Persistence\ObjectManager $manager): void
@@ -50,18 +46,18 @@ final class ConnectorProperties extends DataFixtures\AbstractFixture implements 
 			throw new Exceptions\InvalidState('Connector reference could not be loaded');
 		}
 
-		$clientModeProperty = new DevicesModuleEntities\Connectors\Properties\StaticProperty(
+		$clientModeProperty = new DevicesModuleEntities\Connectors\Properties\Variable(
 			$connector,
-			Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE
+			Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE,
 		);
-		$clientModeProperty->setDataType(MetadataTypes\DataTypeType::get(MetadataTypes\DataTypeType::DATA_TYPE_STRING));
+		$clientModeProperty->setDataType(MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING));
 		$clientModeProperty->setValue(Types\ClientMode::MODE_RTU);
 
-		$interfaceProperty = new DevicesModuleEntities\Connectors\Properties\StaticProperty(
+		$interfaceProperty = new DevicesModuleEntities\Connectors\Properties\Variable(
 			$connector,
-			Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_INTERFACE
+			Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_INTERFACE,
 		);
-		$interfaceProperty->setDataType(MetadataTypes\DataTypeType::get(MetadataTypes\DataTypeType::DATA_TYPE_STRING));
+		$interfaceProperty->setDataType(MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING));
 		$interfaceProperty->setValue('/dev/ttyUSB0');
 
 		$manager->persist($clientModeProperty);

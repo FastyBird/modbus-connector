@@ -17,6 +17,7 @@ namespace FastyBird\ModbusConnector\Types;
 
 use Consistence;
 use FastyBird\Metadata\Types as MetadataTypes;
+use function strval;
 
 /**
  * Device property identifier types
@@ -32,13 +33,12 @@ class DevicePropertyIdentifier extends Consistence\Enum\Enum
 	/**
 	 * Define device states
 	 */
-	public const IDENTIFIER_STATE = MetadataTypes\DevicePropertyIdentifierType::IDENTIFIER_STATE;
-	public const IDENTIFIER_ADDRESS = MetadataTypes\DevicePropertyIdentifierType::IDENTIFIER_ADDRESS;
+	public const IDENTIFIER_STATE = MetadataTypes\DevicePropertyIdentifier::IDENTIFIER_STATE;
+
+	public const IDENTIFIER_ADDRESS = MetadataTypes\DevicePropertyIdentifier::IDENTIFIER_ADDRESS;
+
 	public const IDENTIFIER_BYTE_ORDER = 'byte_order';
 
-	/**
-	 * @return string
-	 */
 	public function __toString(): string
 	{
 		return strval(self::getValue());

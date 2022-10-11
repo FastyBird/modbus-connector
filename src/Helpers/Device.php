@@ -17,9 +17,12 @@ namespace FastyBird\ModbusConnector\Helpers;
 
 use FastyBird\DevicesModule\Models as DevicesModuleModels;
 use FastyBird\Metadata\Entities as MetadataEntities;
+use FastyBird\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\ModbusConnector\Types;
 use Nette;
 use Ramsey\Uuid;
+use function is_int;
+use function strval;
 
 /**
  * Useful device helpers
@@ -34,31 +37,23 @@ final class Device
 
 	use Nette\SmartObject;
 
-	/** @var DevicesModuleModels\DataStorage\IDevicePropertiesRepository */
-	private DevicesModuleModels\DataStorage\IDevicePropertiesRepository $propertiesRepository;
-
-	/**
-	 * @param DevicesModuleModels\DataStorage\IDevicePropertiesRepository $propertiesRepository
-	 */
 	public function __construct(
-		DevicesModuleModels\DataStorage\IDevicePropertiesRepository $propertiesRepository
-	) {
-		$this->propertiesRepository = $propertiesRepository;
+		private readonly DevicesModuleModels\DataStorage\DevicePropertiesRepository $propertiesRepository,
+	)
+	{
 	}
 
 	/**
-	 * @param Uuid\UuidInterface $deviceId
-	 * @param Types\DevicePropertyIdentifier $type
-	 *
-	 * @return float|bool|int|string|null
+	 * @throws MetadataExceptions\FileNotFound
 	 */
 	public function getConfiguration(
 		Uuid\UuidInterface $deviceId,
-		Types\DevicePropertyIdentifier $type
-	): float|bool|int|string|null {
+		Types\DevicePropertyIdentifier $type,
+	): float|bool|int|string|null
+	{
 		$configuration = $this->propertiesRepository->findByIdentifier($deviceId, strval($type->getValue()));
 
-		if ($configuration instanceof MetadataEntities\Modules\DevicesModule\IDeviceStaticPropertyEntity) {
+		if ($configuration instanceof MetadataEntities\DevicesModule\DeviceVariableProperty) {
 			if ($type->getValue() === Types\DevicePropertyIdentifier::IDENTIFIER_ADDRESS) {
 				return is_int($configuration->getValue()) ? $configuration->getValue() : null;
 			}

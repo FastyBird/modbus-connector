@@ -31,11 +31,6 @@ interface RtuFactory extends ClientFactory
 
 	public const MODE = Types\ClientMode::MODE_RTU;
 
-	/**
-	 * @param MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector
-	 *
-	 * @return Rtu
-	 */
-	public function create(MetadataEntities\Modules\DevicesModule\IConnectorEntity $connector): Rtu;
+	public function create(MetadataEntities\DevicesModule\Connector $connector): Rtu;
 
 }
