@@ -43,6 +43,10 @@ services:
         factory: IPub\SlimRouter\Routing\Router
         setup:
             - addMiddleware(@fbJsonApi.middlewares.jsonapi)
+    - {
+      create: React\EventLoop\Factory::create()
+      type: React\EventLoop\LoopInterface
+    }
 
 contributteTranslation:
     locales:
@@ -54,10 +58,10 @@ contributteTranslation:
         - %appDir%/../vendor/fastybird/devices-module/src/Translations
 
 contributeFlysystem:
-	filesystem:
-		default:
-			adapter: League\Flysystem\Local\LocalFilesystemAdapter(%tempDir%)
-			autowired: true
+    filesystem:
+        default:
+            adapter: League\Flysystem\Local\LocalFilesystemAdapter(%tempDir%)
+            autowired: true
 
 nettrineDbal:
     connection:

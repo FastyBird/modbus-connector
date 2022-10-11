@@ -43,6 +43,8 @@ use function sprintf;
 class Execute extends Console\Command\Command
 {
 
+	public const NAME = 'fb:modbus-connector:execute';
+
 	private Log\LoggerInterface $logger;
 
 	public function __construct(
@@ -59,7 +61,7 @@ class Execute extends Console\Command\Command
 	protected function configure(): void
 	{
 		$this
-			->setName('fb:modbus-connector:execute')
+			->setName(self::NAME)
 			->setDescription('Modbus connector service')
 			->setDefinition(
 				new Input\InputDefinition([
