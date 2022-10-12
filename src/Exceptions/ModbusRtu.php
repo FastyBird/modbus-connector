@@ -83,7 +83,7 @@ class ModbusRtu extends PhpException implements Exception
 	{
 		$output = '';
 
-		if ($this->previous) {
+		if ($this->previous !== null) {
 			$output .= $this->previous . "\n" . 'Next ';
 		}
 
@@ -104,7 +104,8 @@ class ModbusRtu extends PhpException implements Exception
 		}
 
 		$trace = $this->getTraceAsString();
-		if ($trace) {
+
+		if ($trace !== '') {
 			$output .= 'Stack trace:' . "\n" . $trace . "\n";
 		}
 

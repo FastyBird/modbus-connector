@@ -53,7 +53,7 @@ abstract class Serial
 			throw new Exceptions\InvalidState('The connection is already opened');
 		}
 
-		if (!preg_match('~^[raw]\+?b?$~', $mode)) {
+		if (preg_match('~^[raw]\+?b?$~', $mode) === false) {
 			throw new Exceptions\InvalidState(sprintf('Invalid opening mode: %s. Use fopen() modes.', $mode));
 		}
 	}

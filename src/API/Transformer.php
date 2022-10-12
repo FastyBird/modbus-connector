@@ -29,7 +29,6 @@ use function count;
 use function floatval;
 use function in_array;
 use function intval;
-use function is_array;
 use function is_bool;
 use function is_numeric;
 use function is_scalar;
@@ -301,8 +300,7 @@ final class Transformer
 
 			foreach ($format->getItems() as $enumItem) {
 				if (
-					is_array($enumItem)
-					&& count($enumItem) === 3
+					count($enumItem) === 3
 					&& $enumItem[1] instanceof MetadataValueObjects\CombinedEnumFormatItem
 					&& $enumItem[1]->getDataType() !== null
 				) {

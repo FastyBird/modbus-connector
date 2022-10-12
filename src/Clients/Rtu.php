@@ -571,7 +571,7 @@ class Rtu implements Client
 			// Property have to be writable
 			&& $property->isSettable()
 			&& $property->getExpectedValue() !== null
-			&& $property->isPending()
+			&& $property->isPending() === true
 		) {
 			if (!in_array($property->getDataType()->getValue(), [
 				MetadataTypes\DataType::DATA_TYPE_CHAR,
