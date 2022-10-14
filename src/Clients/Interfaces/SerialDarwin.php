@@ -38,6 +38,9 @@ use function utf8_encode;
 final class SerialDarwin extends Serial
 {
 
+	/**
+	 * @throws Exceptions\InvalidState
+	 */
 	public function open(string $mode = 'r+b'): void
 	{
 		parent::open($mode);
@@ -71,6 +74,8 @@ final class SerialDarwin extends Serial
 
 	/**
 	 * Sets and prepare the port for connection
+	 *
+	 * @throws Exceptions\InvalidState
 	 */
 	protected function setPortOptions(): void
 	{

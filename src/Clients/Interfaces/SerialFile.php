@@ -32,6 +32,9 @@ final class SerialFile extends Serial
 
 	private SerialDarwin|SerialLinux|SerialWindows $serialFile;
 
+	/**
+	 * @throws Exceptions\InvalidState
+	 */
 	public function __construct(string $port, Configuration $configuration)
 	{
 		parent::__construct($port, $configuration);
@@ -50,6 +53,8 @@ final class SerialFile extends Serial
 	 * Binds a named resource, specified by setDevice, to a stream
 	 *
 	 * @param string $mode The mode parameter specifies the type of access you require to the stream (as `fopen()`)
+	 *
+	 * @throws Exceptions\InvalidState
 	 */
 	public function open(string $mode = 'r+b'): void
 	{

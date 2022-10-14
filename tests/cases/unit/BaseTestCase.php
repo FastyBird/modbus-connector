@@ -5,12 +5,12 @@ namespace Tests\Cases\Unit;
 use FastyBird\ModbusConnector;
 use Nette;
 use Nette\DI;
-use Ninjify\Nunjuck\TestCase\BaseMockeryTestCase;
+use PHPUnit\Framework\TestCase;
 use function file_exists;
 use function md5;
 use function time;
 
-abstract class BaseTestCase extends BaseMockeryTestCase
+abstract class BaseTestCase extends TestCase
 {
 
 	protected DI\Container $container;
@@ -27,14 +27,14 @@ abstract class BaseTestCase extends BaseMockeryTestCase
 		$rootDir = __DIR__ . '/../../';
 
 		$config = new Nette\Configurator();
-		$config->setTempDirectory(TEMP_DIR);
+		$config->setTempDirectory(FB_TEMP_DIR);
 
 		$config->addParameters(['container' => ['class' => 'SystemContainer_' . md5((string) time())]]);
 		$config->addParameters(['appDir' => $rootDir, 'wwwDir' => $rootDir]);
 
 		$config->addConfig(__DIR__ . '/../../common.neon');
 
-		if ($additionalConfig && file_exists($additionalConfig)) {
+		if ($additionalConfig !== null && file_exists($additionalConfig)) {
 			$config->addConfig($additionalConfig);
 		}
 

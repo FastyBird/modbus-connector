@@ -37,6 +37,9 @@ use function stream_set_timeout;
 final class SerialDio extends Serial
 {
 
+	/**
+	 * @throws Exceptions\InvalidState
+	 */
 	public function open(string $mode = 'r+b'): void
 	{
 		parent::open($mode);
@@ -74,6 +77,8 @@ final class SerialDio extends Serial
 	 * Binds a named resource, specified by setDevice, to a raw stream
 	 *
 	 * @param string $mode The mode parameter specifies the type of access you require to the stream (as `fopen()`)
+	 *
+	 * @throws Exceptions\InvalidState
 	 */
 	public function openRaw(string $mode = 'r+b'): void
 	{

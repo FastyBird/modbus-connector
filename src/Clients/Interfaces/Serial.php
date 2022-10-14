@@ -46,6 +46,8 @@ abstract class Serial
 	 * Binds a named resource, specified by setDevice, to a stream
 	 *
 	 * @param string $mode The mode parameter specifies the type of access you require to the stream (as `fopen()`)
+	 *
+	 * @throws Exceptions\InvalidState
 	 */
 	public function open(string $mode = 'r+b'): void
 	{
@@ -58,6 +60,9 @@ abstract class Serial
 		}
 	}
 
+	/**
+	 * @throws Exceptions\InvalidState
+	 */
 	public function close(): void
 	{
 		if (is_resource($this->resource)) {
@@ -73,6 +78,8 @@ abstract class Serial
 	 * Writes data to the serial stream
 	 *
 	 * @return false|int Returns the number of bytes written, or `false` on error
+	 *
+	 * @throws Exceptions\InvalidState
 	 */
 	public function send(string $data): false|int
 	{
@@ -90,6 +97,8 @@ abstract class Serial
 	 * @param int $offset Seek to the specified offset before reading. If this number is negative,no seeking will occur and reading will start from the current position
 	 *
 	 * @return false|string Returns a received data or `false` on failure
+	 *
+	 * @throws Exceptions\InvalidState
 	 */
 	public function read(int $length = -1, int $offset = -1): false|string
 	{

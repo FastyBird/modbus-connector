@@ -153,6 +153,10 @@ class Rtu implements Client
 		$this->logger = $logger ?? new Log\NullLogger();
 	}
 
+	/**
+	 * @throws Exceptions\InvalidState
+	 * @throws MetadataExceptions\FileNotFound
+	 */
 	public function connect(): void
 	{
 		$configuration = new Clients\Interfaces\Configuration(
@@ -224,6 +228,9 @@ class Rtu implements Client
 		);
 	}
 
+	/**
+	 * @throws Exceptions\InvalidState
+	 */
 	public function disconnect(): void
 	{
 		$this->closed = true;
@@ -827,9 +834,12 @@ class Rtu implements Client
 
 	/**
 	 * @throws Exceptions\InvalidArgument
+	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
 	 * @throws Exceptions\NotReachable
 	 * @throws Exceptions\NotSupported
+	 * @throws Exceptions\Runtime
+	 * @throws MetadataExceptions\FileNotFound
 	 */
 	private function readProperty(
 		int $station,
@@ -1124,7 +1134,9 @@ class Rtu implements Client
 	 *    'status'   => [],
 	 * ]
 	 *
+	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
+	 * @throws Exceptions\Runtime
 	 */
 	private function readCoils(
 		int $station,
@@ -1183,7 +1195,9 @@ class Rtu implements Client
 	 *    'status'   => [],
 	 * ]
 	 *
+	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
+	 * @throws Exceptions\Runtime
 	 */
 	private function readDiscreteInputs(
 		int $station,
@@ -1242,7 +1256,9 @@ class Rtu implements Client
 	 *    'registers' => [],
 	 * ]
 	 *
+	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
+	 * @throws Exceptions\Runtime
 	 */
 	private function readHoldingRegisters(
 		int $station,
@@ -1315,7 +1331,9 @@ class Rtu implements Client
 	 *    'registers' => [],
 	 * ]
 	 *
+	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
+	 * @throws Exceptions\Runtime
 	 */
 	private function readInputRegisters(
 		int $station,
@@ -1382,7 +1400,9 @@ class Rtu implements Client
 	 *
 	 * @return Array<string, int|bool>|string|false
 	 *
+	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
+	 * @throws Exceptions\Runtime
 	 */
 	private function writeSingleCoil(
 		int $station,
@@ -1438,7 +1458,9 @@ class Rtu implements Client
 	 *
 	 * @return Array<string, int|float|null>|string|false
 	 *
+	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
+	 * @throws Exceptions\Runtime
 	 */
 	private function writeSingleRegister(
 		int $station,
@@ -1505,7 +1527,9 @@ class Rtu implements Client
 	 * @param int $startingAddress Starting Address (n1)
 	 * @param int $quantity Quantity of Outputs (n1)
 	 *
+	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
+	 * @throws Exceptions\Runtime
 	 */
 	private function writeMultipleCoils(
 		int $station,
@@ -1538,7 +1562,9 @@ class Rtu implements Client
 	 *
 	 * Registers Value (n*)
 	 *
+	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
+	 * @throws Exceptions\Runtime
 	 */
 	private function writeMultipleRegisters(
 		int $station,
@@ -1569,7 +1595,9 @@ class Rtu implements Client
 	 *
 	 * @return Array<string, string|int>|string|false
 	 *
+	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
+	 * @throws Exceptions\Runtime
 	 */
 	private function readExceptionStatus(
 		int $station,
@@ -1605,7 +1633,9 @@ class Rtu implements Client
 	 * @param int $station Station Address (C1)
 	 * @param int $subFunction Sub-function (n1)
 	 *
+	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
+	 * @throws Exceptions\Runtime
 	 */
 	private function diagnostics(int $station, int $subFunction): string|false
 	{
@@ -1634,7 +1664,9 @@ class Rtu implements Client
 	 *
 	 * @return Array<string, string|int>|string|false
 	 *
+	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
+	 * @throws Exceptions\Runtime
 	 */
 	private function getCommEventCounter(
 		int $station,
@@ -1669,7 +1701,9 @@ class Rtu implements Client
 	 *
 	 * @return Array<string, string|int>|string|false
 	 *
+	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
+	 * @throws Exceptions\Runtime
 	 */
 	private function getCommEventLog(
 		int $station,
@@ -1714,7 +1748,9 @@ class Rtu implements Client
 	 *
 	 * @param int $station Station Address (C1)
 	 *
+	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
+	 * @throws Exceptions\Runtime
 	 */
 	private function reportServerId(int $station = 0x00): string|false
 	{
@@ -1730,7 +1766,9 @@ class Rtu implements Client
 	}
 
 	/**
+	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
+	 * @throws Exceptions\Runtime
 	 */
 	private function sendRequest(string $request): string|false
 	{
@@ -1803,6 +1841,8 @@ class Rtu implements Client
 
 	/**
 	 * @param Array<int> $bytes
+	 *
+	 * @throws Exceptions\InvalidState
 	 */
 	private function unpackSignedInt(array $bytes, Types\ByteOrder $byteOrder): int|null
 	{
@@ -1858,6 +1898,8 @@ class Rtu implements Client
 
 	/**
 	 * Detect machine byte order configuration
+	 *
+	 * @throws Exceptions\InvalidState
 	 */
 	private function isLittleEndian(): bool
 	{

@@ -15,6 +15,7 @@
 
 namespace FastyBird\ModbusConnector\Fixtures;
 
+use BadMethodCallException;
 use Doctrine\Common\DataFixtures;
 use Doctrine\Persistence;
 use FastyBird\ModbusConnector\Entities;
@@ -30,6 +31,9 @@ use FastyBird\ModbusConnector\Entities;
 final class Connector extends DataFixtures\AbstractFixture implements DataFixtures\FixtureInterface
 {
 
+	/**
+	 * @throws BadMethodCallException
+	 */
 	public function load(Persistence\ObjectManager $manager): void
 	{
 		$connector = new Entities\ModbusConnector('modbus-rtu');

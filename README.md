@@ -3,6 +3,7 @@
 [![Build Status](https://badgen.net/github/checks/FastyBird/modbus-connector/master?cache=300&style=flat-square)](https://github.com/FastyBird/modbus-connector/actions)
 [![Licence](https://badgen.net/github/license/FastyBird/modbus-connector?cache=300&style=flat-square)](https://github.com/FastyBird/modbus-connector/blob/master/LICENSE.md)
 [![Code coverage](https://badgen.net/coveralls/c/github/FastyBird/modbus-connector?cache=300&style=flat-square)](https://coveralls.io/r/FastyBird/modbus-connector)
+[![Mutation testing](https://img.shields.io/endpoint?style=flat-square&url=https%3A%2F%2Fbadge-api.stryker-mutator.io%2Fgithub.com%2FFastyBird%2Fmodbus-connector%2Fmain)](https://dashboard.stryker-mutator.io/reports/github.com/FastyBird/modbus-connector/main)
 
 ![PHP](https://badgen.net/packagist/php/FastyBird/modbus-connector?cache=300&style=flat-square)
 [![PHP latest stable](https://badgen.net/packagist/v/FastyBird/modbus-connector/latest?cache=300&style=flat-square)](https://packagist.org/packages/FastyBird/modbus-connector)

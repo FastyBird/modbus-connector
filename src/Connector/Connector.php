@@ -18,6 +18,7 @@ namespace FastyBird\ModbusConnector\Connector;
 use FastyBird\DevicesModule\Connectors as DevicesModuleConnectors;
 use FastyBird\DevicesModule\Exceptions as DevicesModuleExceptions;
 use FastyBird\Metadata\Entities as MetadataEntities;
+use FastyBird\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\ModbusConnector\Clients;
 use FastyBird\ModbusConnector\Helpers;
 use FastyBird\ModbusConnector\Types;
@@ -53,6 +54,7 @@ final class Connector implements DevicesModuleConnectors\Connector
 
 	/**
 	 * @throws DevicesModuleExceptions\Terminate
+	 * @throws MetadataExceptions\FileNotFound
 	 */
 	public function execute(): void
 	{

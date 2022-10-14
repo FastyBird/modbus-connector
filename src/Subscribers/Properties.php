@@ -53,6 +53,9 @@ final class Properties implements Common\EventSubscriber
 		];
 	}
 
+	/**
+	 * @throws DevicesModuleExceptions\InvalidArgument
+	 */
 	public function postPersist(ORM\Event\LifecycleEventArgs $eventArgs): void
 	{
 		// onFlush was executed before, everything already initialized
