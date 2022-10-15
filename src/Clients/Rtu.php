@@ -17,6 +17,7 @@ namespace FastyBird\ModbusConnector\Clients;
 
 use DateTimeInterface;
 use FastyBird\DateTimeFactory;
+use FastyBird\DevicesModule\Exceptions as DevicesModuleExceptions;
 use FastyBird\DevicesModule\Models as DevicesModuleModels;
 use FastyBird\Metadata;
 use FastyBird\Metadata\Entities as MetadataEntities;
@@ -154,6 +155,7 @@ class Rtu implements Client
 	}
 
 	/**
+	 * @throws DevicesModuleExceptions\InvalidState
 	 * @throws Exceptions\InvalidState
 	 * @throws MetadataExceptions\FileNotFound
 	 */
@@ -833,6 +835,7 @@ class Rtu implements Client
 	}
 
 	/**
+	 * @throws DevicesModuleExceptions\InvalidState
 	 * @throws Exceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu

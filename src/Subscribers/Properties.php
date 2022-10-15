@@ -55,6 +55,7 @@ final class Properties implements Common\EventSubscriber
 
 	/**
 	 * @throws DevicesModuleExceptions\InvalidArgument
+	 * @throws DevicesModuleExceptions\InvalidState
 	 */
 	public function postPersist(ORM\Event\LifecycleEventArgs $eventArgs): void
 	{

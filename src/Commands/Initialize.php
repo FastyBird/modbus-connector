@@ -26,6 +26,7 @@ use FastyBird\Metadata\Types as MetadataTypes;
 use FastyBird\ModbusConnector\Entities;
 use FastyBird\ModbusConnector\Exceptions;
 use FastyBird\ModbusConnector\Types;
+use IPub\DoctrineOrmQuery\Exceptions as DoctrineOrmQueryExceptions;
 use Nette\Utils;
 use Psr\Log;
 use RuntimeException;
@@ -103,6 +104,8 @@ class Initialize extends Console\Command\Command
 
 	/**
 	 * @throws DBAL\Exception
+	 * @throws DoctrineOrmQueryExceptions\InvalidStateException
+	 * @throws DoctrineOrmQueryExceptions\QueryException
 	 * @throws Console\Exception\InvalidArgumentException
 	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\Runtime
@@ -254,6 +257,8 @@ class Initialize extends Console\Command\Command
 
 	/**
 	 * @throws DBAL\Exception
+	 * @throws DoctrineOrmQueryExceptions\InvalidStateException
+	 * @throws DoctrineOrmQueryExceptions\QueryException
 	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\Runtime
 	 * @throws MetadataExceptions\FileNotFound
@@ -441,6 +446,8 @@ class Initialize extends Console\Command\Command
 
 	/**
 	 * @throws DBAL\Exception
+	 * @throws DoctrineOrmQueryExceptions\InvalidStateException
+	 * @throws DoctrineOrmQueryExceptions\QueryException
 	 * @throws Exceptions\Runtime
 	 */
 	private function deleteExistingConfiguration(Style\SymfonyStyle $io): void
