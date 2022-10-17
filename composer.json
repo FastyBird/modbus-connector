@@ -1,15 +1,5 @@
 {
     "name": "fastybird/modbus-connector",
-    "conflict": {
-        "fastybird/web-server-plugin": "<2.1.0-dev",
-        "fastybird/redisdb-plugin": "<2.1.0-dev",
-        "fastybird/ws-exchange-plugin": "<2.1.0-dev",
-        "fastybird/exchange": "<2.1.0-dev",
-        "fastybird/homekit-connector": "<2.1.0-dev",
-        "fastybird/tuya-connector": "<2.1.0-dev",
-        "fastybird/fb-mqtt-connector": "<2.1.0-dev",
-        "fastybird/shelly-connector": "<2.1.0-dev"
-    },
     "type": "connector",
     "description": "FastyBird IoT connector for Modbus devices",
     "keywords": ["fastybird", "fb", "iot", "modbus", "connector"],
@@ -31,8 +21,8 @@
         "ext-pcntl": "*",
         "cweagans/composer-patches": "^1.7",
         "fastybird/datetime-factory": "^0.6",
-        "fastybird/devices-module": "^2.1",
-        "fastybird/metadata": "^2.1",
+        "fastybird/devices-module": "2.0",
+        "fastybird/metadata": "2.0",
         "nette/di": "^3.0",
         "nettrine/fixtures": "^0.6",
         "psr/log": "^1.1|^3.0",
@@ -81,6 +71,9 @@
         }
     },
     "extra": {
+        "branch-alias": {
+            "dev-main": "2.0-dev"
+        },
         "enable-patching": false,
         "patches": {
             "nettrine/orm": {
