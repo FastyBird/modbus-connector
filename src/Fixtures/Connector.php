@@ -13,12 +13,12 @@
  * @date           22.08.22
  */
 
-namespace FastyBird\ModbusConnector\Fixtures;
+namespace FastyBird\Connector\Modbus\Fixtures;
 
 use BadMethodCallException;
 use Doctrine\Common\DataFixtures;
 use Doctrine\Persistence;
-use FastyBird\ModbusConnector\Entities;
+use FastyBird\Connector\Modbus\Entities;
 
 /**
  * Connector database fixture

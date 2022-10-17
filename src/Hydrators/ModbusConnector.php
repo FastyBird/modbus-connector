@@ -1,7 +1,7 @@
 <?php declare(strict_types = 1);
 
 /**
- * ModbusConnector.php
+ * Modbus.php
  *
  * @license        More in LICENSE.md
  * @copyright      https://www.fastybird.com
@@ -13,10 +13,10 @@
  * @date           07.12.21
  */
 
-namespace FastyBird\ModbusConnector\Hydrators;
+namespace FastyBird\Connector\Modbus\Hydrators;
 
+use FastyBird\Connector\Modbus\Entities;
 use FastyBird\DevicesModule\Hydrators as DevicesModuleHydrators;
-use FastyBird\ModbusConnector\Entities;
 
 /**
  * Modbus connector entity hydrator

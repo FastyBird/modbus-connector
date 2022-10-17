@@ -13,16 +13,17 @@
  * @date           04.08.22
  */
 
-namespace FastyBird\ModbusConnector\Subscribers;
+namespace FastyBird\Connector\Modbus\Subscribers;
 
 use Doctrine\Common;
 use Doctrine\ORM;
+use FastyBird\Connector\Modbus\Entities;
+use FastyBird\Connector\Modbus\Types;
 use FastyBird\DevicesModule\Entities as DevicesModuleEntities;
 use FastyBird\DevicesModule\Exceptions as DevicesModuleExceptions;
 use FastyBird\DevicesModule\Models as DevicesModuleModels;
+use FastyBird\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Metadata\Types as MetadataTypes;
-use FastyBird\ModbusConnector\Entities;
-use FastyBird\ModbusConnector\Types;
 use Nette;
 use Nette\Utils;
 use function sprintf;
@@ -56,6 +57,8 @@ final class Properties implements Common\EventSubscriber
 	/**
 	 * @throws DevicesModuleExceptions\InvalidArgument
 	 * @throws DevicesModuleExceptions\InvalidState
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidState
 	 */
 	public function postPersist(ORM\Event\LifecycleEventArgs $eventArgs): void
 	{

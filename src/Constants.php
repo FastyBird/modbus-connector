@@ -13,7 +13,7 @@
  * @date           01.08.22
  */
 
-namespace FastyBird\ModbusConnector;
+namespace FastyBird\Connector\Modbus;
 
 /**
  * Connector constants

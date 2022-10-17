@@ -1,7 +1,7 @@
 <?php declare(strict_types = 1);
 
 /**
- * ModbusConnectorExtension.php
+ * Connector\ModbusExtension.php
  *
  * @license        More in license.md
  * @copyright      https://www.fastybird.com
@@ -13,20 +13,20 @@
  * @date           30.01.22
  */
 
-namespace FastyBird\ModbusConnector\DI;
+namespace FastyBird\Connector\Modbus\DI;
 
 use Doctrine\Persistence;
+use FastyBird\Connector\Modbus\API;
+use FastyBird\Connector\Modbus\Clients;
+use FastyBird\Connector\Modbus\Commands;
+use FastyBird\Connector\Modbus\Connector;
+use FastyBird\Connector\Modbus\Entities;
+use FastyBird\Connector\Modbus\Fixtures;
+use FastyBird\Connector\Modbus\Helpers;
+use FastyBird\Connector\Modbus\Hydrators;
+use FastyBird\Connector\Modbus\Schemas;
+use FastyBird\Connector\Modbus\Subscribers;
 use FastyBird\DevicesModule\DI as DevicesModuleDI;
-use FastyBird\ModbusConnector\API;
-use FastyBird\ModbusConnector\Clients;
-use FastyBird\ModbusConnector\Commands;
-use FastyBird\ModbusConnector\Connector;
-use FastyBird\ModbusConnector\Entities;
-use FastyBird\ModbusConnector\Fixtures;
-use FastyBird\ModbusConnector\Helpers;
-use FastyBird\ModbusConnector\Hydrators;
-use FastyBird\ModbusConnector\Schemas;
-use FastyBird\ModbusConnector\Subscribers;
 use Nette;
 use Nette\DI;
 use Nettrine\Fixtures as NettrineFixtures;
@@ -40,7 +40,7 @@ use const DIRECTORY_SEPARATOR;
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-class ModbusConnectorExtension extends DI\CompilerExtension
+class ModbusExtension extends DI\CompilerExtension
 {
 
 	public const NAME = 'fbModbusConnector';
@@ -54,7 +54,7 @@ class ModbusConnectorExtension extends DI\CompilerExtension
 			Nette\Configurator $config,
 			DI\Compiler $compiler,
 		) use ($extensionName): void {
-			$compiler->addExtension($extensionName, new ModbusConnectorExtension());
+			$compiler->addExtension($extensionName, new ModbusExtension());
 		};
 	}
 
@@ -156,7 +156,7 @@ class ModbusConnectorExtension extends DI\CompilerExtension
 		if ($ormAnnotationDriverChainService instanceof DI\Definitions\ServiceDefinition) {
 			$ormAnnotationDriverChainService->addSetup('addDriver', [
 				$ormAnnotationDriverService,
-				'FastyBird\ModbusConnector\Entities',
+				'FastyBird\Connector\Modbus\Entities',
 			]);
 		}
 

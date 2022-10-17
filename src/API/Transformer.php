@@ -13,12 +13,13 @@
  * @date           02.08.22
  */
 
-namespace FastyBird\ModbusConnector\API;
+namespace FastyBird\Connector\Modbus\API;
 
 use DateTimeInterface;
+use FastyBird\Connector\Modbus\ValueObjects;
+use FastyBird\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Metadata\Types as MetadataTypes;
 use FastyBird\Metadata\ValueObjects as MetadataValueObjects;
-use FastyBird\ModbusConnector\ValueObjects;
 use Nette;
 use Nette\Utils;
 use function array_filter;
@@ -47,6 +48,9 @@ final class Transformer
 
 	use Nette\SmartObject;
 
+	/**
+	 * @throws MetadataExceptions\InvalidState
+	 */
 	public function transformValueFromDevice(
 		MetadataTypes\DataType $dataType,
 		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|null $format,
@@ -171,6 +175,9 @@ final class Transformer
 		return null;
 	}
 
+	/**
+	 * @throws MetadataExceptions\InvalidState
+	 */
 	public function transformValueToDevice(
 		MetadataTypes\DataType $dataType,
 		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|null $format,

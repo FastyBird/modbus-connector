@@ -13,7 +13,7 @@
  * @date           31.07.22
  */
 
-namespace FastyBird\ModbusConnector\Clients;
+namespace FastyBird\Connector\Modbus\Clients;
 
 /**
  * Modbus device client interface

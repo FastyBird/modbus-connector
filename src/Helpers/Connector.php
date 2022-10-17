@@ -13,14 +13,14 @@
  * @date           01.08.22
  */
 
-namespace FastyBird\ModbusConnector\Helpers;
+namespace FastyBird\Connector\Modbus\Helpers;
 
+use FastyBird\Connector\Modbus;
+use FastyBird\Connector\Modbus\Types;
 use FastyBird\DevicesModule\Exceptions as DevicesModuleExceptions;
 use FastyBird\DevicesModule\Models as DevicesModuleModels;
 use FastyBird\Metadata\Entities as MetadataEntities;
 use FastyBird\Metadata\Exceptions as MetadataExceptions;
-use FastyBird\ModbusConnector;
-use FastyBird\ModbusConnector\Types;
 use Nette;
 use Ramsey\Uuid;
 use function strval;
@@ -47,6 +47,11 @@ final class Connector
 	/**
 	 * @throws DevicesModuleExceptions\InvalidState
 	 * @throws MetadataExceptions\FileNotFound
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidData
+	 * @throws MetadataExceptions\InvalidState
+	 * @throws MetadataExceptions\Logic
+	 * @throws MetadataExceptions\MalformedInput
 	 */
 	public function getConfiguration(
 		Uuid\UuidInterface $connectorId,
@@ -92,7 +97,7 @@ final class Connector
 		}
 
 		if ($type->getValue() === Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_INTERFACE) {
-			return ModbusConnector\Constants::DEFAULT_RTU_SERIAL_INTERFACE;
+			return Modbus\Constants::DEFAULT_RTU_SERIAL_INTERFACE;
 		}
 
 		if ($type->getValue() === Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_BYTE_SIZE) {

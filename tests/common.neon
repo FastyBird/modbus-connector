@@ -54,8 +54,7 @@ contributteTranslation:
         fallback: [en_US, en]
     localeResolvers: []
     dirs:
-        - %appDir%/../vendor/fastybird/json-api/src/Translations
-        - %appDir%/../vendor/fastybird/devices-module/src/Translations
+        - %vendorDir%/fastybird/json-api/src/Translations
 
 contributeFlysystem:
     filesystem:
@@ -74,7 +73,7 @@ nettrineDbal:
         user: root
         password: root
         charset: utf8
-        wrapperClass: \Tests\Tools\ConnectionWrapper
+        wrapperClass: \FastyBird\Connector\Modbus\Tests\Tools\ConnectionWrapper
 
         types:
             uuid_binary:
@@ -107,7 +106,7 @@ nettrineOrmAnnotations:
 
 nettrineFixtures:
     paths:
-        - %appDir%/Fixtures
+        - %appDir%/../src/Fixtures
 
 fbSimpleAuth:
     token:

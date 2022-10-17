@@ -1,19 +1,21 @@
 <?php declare(strict_types = 1);
 
-namespace Tests\Cases\Unit;
+namespace FastyBird\Connector\Modbus\Tests\Cases\Unit;
 
 use DateTimeImmutable;
 use Doctrine\DBAL;
 use Doctrine\ORM;
+use FastyBird\Connector\Modbus\DI;
+use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\DateTimeFactory;
-use FastyBird\ModbusConnector\DI;
-use FastyBird\ModbusConnector\Exceptions;
 use Nette;
 use Nettrine\ORM as NettrineORM;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use function array_reverse;
 use function assert;
+use function constant;
+use function defined;
 use function fclose;
 use function feof;
 use function fgets;
@@ -110,12 +112,13 @@ abstract class DbTestCase extends TestCase
 	private function createContainer(): Nette\DI\Container
 	{
 		$rootDir = __DIR__ . '/../..';
+		$vendorDir = defined('FB_VENDOR_DIR') ? constant('FB_VENDOR_DIR') : $rootDir . '/../vendor';
 
 		$config = new Nette\Configurator();
 		$config->setTempDirectory(FB_TEMP_DIR);
 
 		$config->addParameters(['container' => ['class' => 'SystemContainer_' . md5((string) time())]]);
-		$config->addParameters(['appDir' => $rootDir, 'wwwDir' => $rootDir]);
+		$config->addParameters(['appDir' => $rootDir, 'wwwDir' => $rootDir, 'vendorDir' => $vendorDir]);
 
 		$config->addConfig(__DIR__ . '/../../common.neon');
 
@@ -123,7 +126,7 @@ abstract class DbTestCase extends TestCase
 			$config->addConfig($neonFile);
 		}
 
-		DI\ModbusConnectorExtension::register($config);
+		DI\ModbusExtension::register($config);
 
 		$this->container = $config->createContainer();
 

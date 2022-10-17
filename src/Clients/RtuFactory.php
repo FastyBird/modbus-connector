@@ -13,10 +13,10 @@
  * @date           31.07.22
  */
 
-namespace FastyBird\ModbusConnector\Clients;
+namespace FastyBird\Connector\Modbus\Clients;
 
+use FastyBird\Connector\Modbus\Types;
 use FastyBird\Metadata\Entities as MetadataEntities;
-use FastyBird\ModbusConnector\Types;
 
 /**
  * Modbus RTU devices client factory

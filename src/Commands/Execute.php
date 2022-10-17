@@ -13,12 +13,12 @@
  * @date           04.08.22
  */
 
-namespace FastyBird\ModbusConnector\Commands;
+namespace FastyBird\Connector\Modbus\Commands;
 
+use FastyBird\Connector\Modbus\Entities;
 use FastyBird\DevicesModule\Models as DevicesModuleModels;
 use FastyBird\Metadata;
 use FastyBird\Metadata\Exceptions as MetadataExceptions;
-use FastyBird\ModbusConnector\Entities;
 use Psr\Log;
 use Ramsey\Uuid;
 use Symfony\Component\Console;
@@ -88,6 +88,11 @@ class Execute extends Console\Command\Command
 	/**
 	 * @throws Console\Exception\ExceptionInterface
 	 * @throws MetadataExceptions\FileNotFound
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidData
+	 * @throws MetadataExceptions\InvalidState
+	 * @throws MetadataExceptions\Logic
+	 * @throws MetadataExceptions\MalformedInput
 	 */
 	protected function execute(Input\InputInterface $input, Output\OutputInterface $output): int
 	{

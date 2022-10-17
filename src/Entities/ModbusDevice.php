@@ -13,7 +13,7 @@
  * @date           30.01.22
  */
 
-namespace FastyBird\ModbusConnector\Entities;
+namespace FastyBird\Connector\Modbus\Entities;
 
 use Doctrine\ORM\Mapping as ORM;
 use FastyBird\DevicesModule\Entities as DevicesModuleEntities;

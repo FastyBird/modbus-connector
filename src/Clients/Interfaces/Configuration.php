@@ -13,9 +13,9 @@
  * @date           31.07.22
  */
 
-namespace FastyBird\ModbusConnector\Clients\Interfaces;
+namespace FastyBird\Connector\Modbus\Clients\Interfaces;
 
-use FastyBird\ModbusConnector\Types;
+use FastyBird\Connector\Modbus\Types;
 use Nette;
 use function intval;
 

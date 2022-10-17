@@ -13,7 +13,7 @@
  * @date           01.08.22
  */
 
-namespace FastyBird\ModbusConnector\Types;
+namespace FastyBird\Connector\Modbus\Types;
 
 use Consistence;
 use FastyBird\Metadata\Types as MetadataTypes;

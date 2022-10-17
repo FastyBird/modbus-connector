@@ -13,13 +13,13 @@
  * @date           02.08.22
  */
 
-namespace FastyBird\ModbusConnector\Helpers;
+namespace FastyBird\Connector\Modbus\Helpers;
 
+use FastyBird\Connector\Modbus\Types;
 use FastyBird\DevicesModule\Exceptions as DevicesModuleExceptions;
 use FastyBird\DevicesModule\Models as DevicesModuleModels;
 use FastyBird\Metadata\Entities as MetadataEntities;
 use FastyBird\Metadata\Exceptions as MetadataExceptions;
-use FastyBird\ModbusConnector\Types;
 use Nette;
 use Ramsey\Uuid;
 use function is_int;
@@ -47,6 +47,11 @@ final class Device
 	/**
 	 * @throws DevicesModuleExceptions\InvalidState
 	 * @throws MetadataExceptions\FileNotFound
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidData
+	 * @throws MetadataExceptions\InvalidState
+	 * @throws MetadataExceptions\Logic
+	 * @throws MetadataExceptions\MalformedInput
 	 */
 	public function getConfiguration(
 		Uuid\UuidInterface $deviceId,

@@ -13,11 +13,11 @@
  * @date           22.01.22
  */
 
-namespace FastyBird\ModbusConnector\Schemas;
+namespace FastyBird\Connector\Modbus\Schemas;
 
+use FastyBird\Connector\Modbus\Entities;
 use FastyBird\DevicesModule\Schemas as DevicesModuleSchemas;
 use FastyBird\Metadata\Types as MetadataTypes;
-use FastyBird\ModbusConnector\Entities;
 
 /**
  * Modbus connector entity schema

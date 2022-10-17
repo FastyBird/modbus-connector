@@ -1,7 +1,7 @@
 <?php declare(strict_types = 1);
 
 /**
- * ModbusConnector.php
+ * Modbus.php
  *
  * @license        More in LICENSE.md
  * @copyright      https://www.fastybird.com
@@ -13,11 +13,11 @@
  * @date           07.12.21
  */
 
-namespace FastyBird\ModbusConnector\Schemas;
+namespace FastyBird\Connector\Modbus\Schemas;
 
+use FastyBird\Connector\Modbus\Entities;
 use FastyBird\DevicesModule\Schemas as DevicesModuleSchemas;
 use FastyBird\Metadata\Types as MetadataTypes;
-use FastyBird\ModbusConnector\Entities;
 
 /**
  * Modbus connector entity schema

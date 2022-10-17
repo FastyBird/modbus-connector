@@ -13,14 +13,14 @@
  * @date           22.08.22
  */
 
-namespace FastyBird\ModbusConnector\Fixtures;
+namespace FastyBird\Connector\Modbus\Fixtures;
 
 use Doctrine\Common\DataFixtures;
 use Doctrine\Persistence;
+use FastyBird\Connector\Modbus\Exceptions;
+use FastyBird\Connector\Modbus\Types\ChannelPropertyIdentifier;
 use FastyBird\DevicesModule\Entities as DevicesModuleEntities;
 use FastyBird\Metadata\Types as MetadataTypes;
-use FastyBird\ModbusConnector\Exceptions;
-use FastyBird\ModbusConnector\Types\ChannelPropertyIdentifier;
 use Throwable;
 use function strval;
 

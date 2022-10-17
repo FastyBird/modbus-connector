@@ -13,7 +13,7 @@
  * @date           01.08.22
  */
 
-namespace FastyBird\ModbusConnector\Helpers;
+namespace FastyBird\Connector\Modbus\Helpers;
 
 use FastyBird\DevicesModule\Exceptions as DevicesModuleExceptions;
 use FastyBird\DevicesModule\Models as DevicesModuleModels;
@@ -45,6 +45,11 @@ final class Property
 	/**
 	 * @throws DevicesModuleExceptions\InvalidState
 	 * @throws MetadataExceptions\FileNotFound
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidData
+	 * @throws MetadataExceptions\InvalidState
+	 * @throws MetadataExceptions\Logic
+	 * @throws MetadataExceptions\MalformedInput
 	 */
 	public function setValue(
 		MetadataEntities\DevicesModule\DeviceDynamicProperty|MetadataEntities\DevicesModule\ChannelDynamicProperty $property,

@@ -17,9 +17,9 @@
     <rule ref="SlevomatCodingStandard.Files.TypeNameMatchesFileName">
         <properties>
             <property name="rootNamespaces" type="array">
-                <element key="src" value="FastyBird\ModbusConnector"/>
-                <element key="tests/cases/unit" value="Tests\Cases\Unit"/>
-                <element key="tests/tools" value="Tests\Tools"/>
+                <element key="src" value="FastyBird\Connector\Modbus"/>
+                <element key="tests/cases/unit" value="FastyBird\Connector\Modbus\Tests\Cases\Unit"/>
+                <element key="tests/tools" value="FastyBird\Connector\Modbus\Tests\Tools"/>
             </property>
         </properties>
     </rule>

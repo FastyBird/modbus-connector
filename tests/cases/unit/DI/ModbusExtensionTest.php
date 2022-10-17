@@ -1,13 +1,13 @@
 <?php declare(strict_types = 1);
 
-namespace Tests\Cases\Unit\DI;
+namespace FastyBird\Connector\Modbus\Tests\Cases\Unit\DI;
 
-use FastyBird\ModbusConnector\Hydrators;
-use FastyBird\ModbusConnector\Schemas;
+use FastyBird\Connector\Modbus\Hydrators;
+use FastyBird\Connector\Modbus\Schemas;
+use FastyBird\Connector\Modbus\Tests\Cases\Unit\BaseTestCase;
 use Nette;
-use Tests\Cases\Unit\BaseTestCase;
 
-final class ServicesTest extends BaseTestCase
+final class ModbusExtensionTest extends BaseTestCase
 {
 
 	/**

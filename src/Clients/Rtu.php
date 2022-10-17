@@ -13,9 +13,14 @@
  * @date           31.07.22
  */
 
-namespace FastyBird\ModbusConnector\Clients;
+namespace FastyBird\Connector\Modbus\Clients;
 
 use DateTimeInterface;
+use FastyBird\Connector\Modbus\API;
+use FastyBird\Connector\Modbus\Clients;
+use FastyBird\Connector\Modbus\Exceptions;
+use FastyBird\Connector\Modbus\Helpers;
+use FastyBird\Connector\Modbus\Types;
 use FastyBird\DateTimeFactory;
 use FastyBird\DevicesModule\Exceptions as DevicesModuleExceptions;
 use FastyBird\DevicesModule\Models as DevicesModuleModels;
@@ -23,12 +28,6 @@ use FastyBird\Metadata;
 use FastyBird\Metadata\Entities as MetadataEntities;
 use FastyBird\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Metadata\Types as MetadataTypes;
-use FastyBird\ModbusConnector;
-use FastyBird\ModbusConnector\API;
-use FastyBird\ModbusConnector\Clients;
-use FastyBird\ModbusConnector\Exceptions;
-use FastyBird\ModbusConnector\Helpers;
-use FastyBird\ModbusConnector\Types;
 use Nette;
 use Nette\Utils;
 use Psr\Log;
@@ -129,8 +128,6 @@ class Rtu implements Client
 
 	private Clients\Interfaces\Serial|null $interface;
 
-	private ModbusConnector\API\Transformer $transformer;
-
 	private Log\LoggerInterface $logger;
 
 	public function __construct(
@@ -139,7 +136,7 @@ class Rtu implements Client
 		private readonly Helpers\Device $deviceHelper,
 		private readonly Helpers\Channel $channelHelper,
 		private readonly Helpers\Property $propertyStateHelper,
-		API\Transformer $transformer,
+		private readonly API\Transformer $transformer,
 		private readonly DevicesModuleModels\DataStorage\DevicesRepository $devicesRepository,
 		private readonly DevicesModuleModels\DataStorage\ChannelsRepository $channelsRepository,
 		private readonly DevicesModuleModels\DataStorage\ChannelPropertiesRepository $channelPropertiesRepository,
@@ -149,8 +146,6 @@ class Rtu implements Client
 		Log\LoggerInterface|null $logger = null,
 	)
 	{
-		$this->transformer = $transformer;
-
 		$this->logger = $logger ?? new Log\NullLogger();
 	}
 
@@ -158,6 +153,11 @@ class Rtu implements Client
 	 * @throws DevicesModuleExceptions\InvalidState
 	 * @throws Exceptions\InvalidState
 	 * @throws MetadataExceptions\FileNotFound
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidData
+	 * @throws MetadataExceptions\InvalidState
+	 * @throws MetadataExceptions\Logic
+	 * @throws MetadataExceptions\MalformedInput
 	 */
 	public function connect(): void
 	{
@@ -843,6 +843,11 @@ class Rtu implements Client
 	 * @throws Exceptions\NotSupported
 	 * @throws Exceptions\Runtime
 	 * @throws MetadataExceptions\FileNotFound
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidData
+	 * @throws MetadataExceptions\InvalidState
+	 * @throws MetadataExceptions\Logic
+	 * @throws MetadataExceptions\MalformedInput
 	 */
 	private function readProperty(
 		int $station,

@@ -44,8 +44,8 @@
     "fastybird/devices-module" : "dev-main as 0.75.0",
     "fastybird/metadata" : "^1.1",
     "nette/di" : "^3.0",
-    "nettrine/fixtures" : "^0.6.3",
-    "psr/log" : "^1.1",
+    "nettrine/fixtures" : "^0.6",
+    "psr/log" : "^1.1|^3.0",
     "react/event-loop" : "^1.3"
   },
 
@@ -75,14 +75,14 @@
 
   "autoload" : {
     "psr-4" : {
-      "FastyBird\\ModbusConnector\\" : "src/"
+      "FastyBird\\Connector\\Modbus\\" : "src/"
     }
   },
 
   "autoload-dev" : {
     "psr-4" : {
-      "Tests\\Cases\\Unit\\" : "tests/cases/unit",
-      "Tests\\Tools\\" : "tests/tools"
+      "FastyBird\\Connector\\Modbus\\Tests\\Cases\\Unit\\" : "tests/cases/unit",
+      "FastyBird\\Connector\\Modbus\\Tests\\Tools\\" : "tests/tools"
     }
   },
 

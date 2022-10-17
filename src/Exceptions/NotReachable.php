@@ -13,7 +13,7 @@
  * @date           02.08.22
  */
 
-namespace FastyBird\ModbusConnector\Exceptions;
+namespace FastyBird\Connector\Modbus\Exceptions;
 
 use InvalidArgumentException as PHPInvalidArgumentException;
 

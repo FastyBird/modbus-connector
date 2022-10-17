@@ -13,9 +13,9 @@
  * @date           31.07.22
  */
 
-namespace FastyBird\ModbusConnector\Clients\Interfaces;
+namespace FastyBird\Connector\Modbus\Clients\Interfaces;
 
-use FastyBird\ModbusConnector\Exceptions;
+use FastyBird\Connector\Modbus\Exceptions;
 use function dio_raw;
 use function dio_serial;
 use function error_clear_last;

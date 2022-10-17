@@ -13,7 +13,7 @@
  * @date           31.07.22
  */
 
-namespace FastyBird\ModbusConnector\Types;
+namespace FastyBird\Connector\Modbus\Types;
 
 use Consistence;
 use function strval;

@@ -13,7 +13,7 @@
  * @date           20.08.22
  */
 
-namespace FastyBird\ModbusConnector\ValueObjects;
+namespace FastyBird\Connector\Modbus\ValueObjects;
 
 use FastyBird\Metadata\Types as MetadataTypes;
 use Nette;

@@ -1,7 +1,7 @@
 <?php declare(strict_types = 1);
 
 /**
- * ModbusConnector.php
+ * Modbus.php
  *
  * @license        More in LICENSE.md
  * @copyright      https://www.fastybird.com
@@ -13,7 +13,7 @@
  * @date           07.12.21
  */
 
-namespace FastyBird\ModbusConnector\Entities;
+namespace FastyBird\Connector\Modbus\Entities;
 
 use Doctrine\ORM\Mapping as ORM;
 use FastyBird\DevicesModule\Entities as DevicesModuleEntities;

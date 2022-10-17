@@ -13,10 +13,10 @@
  * @date           30.01.22
  */
 
-namespace FastyBird\ModbusConnector\Hydrators;
+namespace FastyBird\Connector\Modbus\Hydrators;
 
+use FastyBird\Connector\Modbus\Entities;
 use FastyBird\DevicesModule\Hydrators as DevicesModuleHydrators;
-use FastyBird\ModbusConnector\Entities;
 
 /**
  * Modbus device entity hydrator

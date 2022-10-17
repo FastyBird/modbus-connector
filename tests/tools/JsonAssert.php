@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1);
 
-namespace Tests\Tools;
+namespace FastyBird\Connector\Modbus\Tests\Tools;
 
 use Closure;
 use Nette\StaticClass;

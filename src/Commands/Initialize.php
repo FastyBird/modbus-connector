@@ -13,19 +13,19 @@
  * @date           04.08.22
  */
 
-namespace FastyBird\ModbusConnector\Commands;
+namespace FastyBird\Connector\Modbus\Commands;
 
 use Doctrine\DBAL;
 use Doctrine\Persistence;
+use FastyBird\Connector\Modbus\Entities;
+use FastyBird\Connector\Modbus\Exceptions;
+use FastyBird\Connector\Modbus\Types;
 use FastyBird\DevicesModule\Entities as DevicesModuleEntities;
 use FastyBird\DevicesModule\Models as DevicesModuleModels;
 use FastyBird\DevicesModule\Queries as DevicesModuleQueries;
 use FastyBird\Metadata;
 use FastyBird\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Metadata\Types as MetadataTypes;
-use FastyBird\ModbusConnector\Entities;
-use FastyBird\ModbusConnector\Exceptions;
-use FastyBird\ModbusConnector\Types;
 use IPub\DoctrineOrmQuery\Exceptions as DoctrineOrmQueryExceptions;
 use Nette\Utils;
 use Psr\Log;
@@ -110,6 +110,11 @@ class Initialize extends Console\Command\Command
 	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\Runtime
 	 * @throws MetadataExceptions\FileNotFound
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidData
+	 * @throws MetadataExceptions\InvalidState
+	 * @throws MetadataExceptions\Logic
+	 * @throws MetadataExceptions\MalformedInput
 	 */
 	protected function execute(Input\InputInterface $input, Output\OutputInterface $output): int
 	{
@@ -163,6 +168,11 @@ class Initialize extends Console\Command\Command
 	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\Runtime
 	 * @throws MetadataExceptions\FileNotFound
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidData
+	 * @throws MetadataExceptions\InvalidState
+	 * @throws MetadataExceptions\Logic
+	 * @throws MetadataExceptions\MalformedInput
 	 */
 	private function createNewConfiguration(Style\SymfonyStyle $io): void
 	{
@@ -262,6 +272,11 @@ class Initialize extends Console\Command\Command
 	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\Runtime
 	 * @throws MetadataExceptions\FileNotFound
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidData
+	 * @throws MetadataExceptions\InvalidState
+	 * @throws MetadataExceptions\Logic
+	 * @throws MetadataExceptions\MalformedInput
 	 */
 	private function editExistingConfiguration(Style\SymfonyStyle $io): void
 	{

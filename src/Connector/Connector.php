@@ -13,15 +13,15 @@
  * @date           31.07.22
  */
 
-namespace FastyBird\ModbusConnector\Connector;
+namespace FastyBird\Connector\Modbus\Connector;
 
+use FastyBird\Connector\Modbus\Clients;
+use FastyBird\Connector\Modbus\Helpers;
+use FastyBird\Connector\Modbus\Types;
 use FastyBird\DevicesModule\Connectors as DevicesModuleConnectors;
 use FastyBird\DevicesModule\Exceptions as DevicesModuleExceptions;
 use FastyBird\Metadata\Entities as MetadataEntities;
 use FastyBird\Metadata\Exceptions as MetadataExceptions;
-use FastyBird\ModbusConnector\Clients;
-use FastyBird\ModbusConnector\Helpers;
-use FastyBird\ModbusConnector\Types;
 use Nette;
 use ReflectionClass;
 use function array_key_exists;
@@ -56,6 +56,11 @@ final class Connector implements DevicesModuleConnectors\Connector
 	 * @throws DevicesModuleExceptions\InvalidState
 	 * @throws DevicesModuleExceptions\Terminate
 	 * @throws MetadataExceptions\FileNotFound
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidData
+	 * @throws MetadataExceptions\InvalidState
+	 * @throws MetadataExceptions\Logic
+	 * @throws MetadataExceptions\MalformedInput
 	 */
 	public function execute(): void
 	{

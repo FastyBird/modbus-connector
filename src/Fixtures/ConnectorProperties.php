@@ -13,15 +13,15 @@
  * @date           22.08.22
  */
 
-namespace FastyBird\ModbusConnector\Fixtures;
+namespace FastyBird\Connector\Modbus\Fixtures;
 
 use Doctrine\Common\DataFixtures;
 use Doctrine\Persistence;
+use FastyBird\Connector\Modbus\Entities;
+use FastyBird\Connector\Modbus\Exceptions;
+use FastyBird\Connector\Modbus\Types;
 use FastyBird\DevicesModule\Entities as DevicesModuleEntities;
 use FastyBird\Metadata\Types as MetadataTypes;
-use FastyBird\ModbusConnector\Entities;
-use FastyBird\ModbusConnector\Exceptions;
-use FastyBird\ModbusConnector\Types;
 use Throwable;
 
 /**

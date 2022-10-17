@@ -13,12 +13,12 @@
  * @date           31.07.22
  */
 
-namespace FastyBird\ModbusConnector\Helpers;
+namespace FastyBird\Connector\Modbus\Helpers;
 
 use Doctrine\DBAL;
 use Doctrine\ORM;
 use Doctrine\Persistence;
-use FastyBird\ModbusConnector\Exceptions;
+use FastyBird\Connector\Modbus\Exceptions;
 use Nette;
 use Throwable;
 use function gc_collect_cycles;

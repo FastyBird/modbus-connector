@@ -13,11 +13,11 @@
  * @date           31.07.22
  */
 
-namespace FastyBird\ModbusConnector\Connector;
+namespace FastyBird\Connector\Modbus\Connector;
 
+use FastyBird\Connector\Modbus\Connector;
 use FastyBird\DevicesModule\Connectors as DevicesModuleConnectors;
 use FastyBird\Metadata\Entities as MetadataEntities;
-use FastyBird\ModbusConnector\Connector;
 
 /**
  * Connector service executor factory
