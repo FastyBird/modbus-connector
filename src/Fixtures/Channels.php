@@ -19,7 +19,7 @@ use Doctrine\Common\DataFixtures;
 use Doctrine\Persistence;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Exceptions;
-use FastyBird\DevicesModule\Entities as DevicesModuleEntities;
+use FastyBird\Module\Devices\Entities as DevicesEntities;
 use Throwable;
 
 /**
@@ -45,7 +45,7 @@ final class Channels extends DataFixtures\AbstractFixture implements DataFixture
 		}
 
 		for ($i = 1; $i <= 4; $i++) {
-			$channel = new DevicesModuleEntities\Channels\Channel(
+			$channel = new DevicesEntities\Channels\Channel(
 				$device,
 				'channel-' . $i,
 			);

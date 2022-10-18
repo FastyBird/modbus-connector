@@ -26,7 +26,7 @@ use FastyBird\Connector\Modbus\Helpers;
 use FastyBird\Connector\Modbus\Hydrators;
 use FastyBird\Connector\Modbus\Schemas;
 use FastyBird\Connector\Modbus\Subscribers;
-use FastyBird\DevicesModule\DI as DevicesModuleDI;
+use FastyBird\Module\Devices\DI as DevicesDI;
 use Nette;
 use Nette\DI;
 use Nettrine\Fixtures as NettrineFixtures;
@@ -110,7 +110,7 @@ class ModbusExtension extends DI\CompilerExtension
 		$builder->addFactoryDefinition($this->prefix('executor.factory'))
 			->setImplement(Connector\ConnectorFactory::class)
 			->addTag(
-				DevicesModuleDI\DevicesModuleExtension::CONNECTOR_TYPE_TAG,
+				DevicesDI\DevicesExtension::CONNECTOR_TYPE_TAG,
 				Entities\ModbusConnector::CONNECTOR_TYPE,
 			)
 			->getResultDefinition()

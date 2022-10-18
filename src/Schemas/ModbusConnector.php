@@ -16,19 +16,19 @@
 namespace FastyBird\Connector\Modbus\Schemas;
 
 use FastyBird\Connector\Modbus\Entities;
-use FastyBird\DevicesModule\Schemas as DevicesModuleSchemas;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
+use FastyBird\Module\Devices\Schemas as DevicesSchemas;
 
 /**
  * Modbus connector entity schema
  *
- * @phpstan-extends DevicesModuleSchemas\Connectors\Connector<Entities\ModbusConnector>
+ * @phpstan-extends DevicesSchemas\Connectors\Connector<Entities\ModbusConnector>
  *
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Schemas
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-final class ModbusConnector extends DevicesModuleSchemas\Connectors\Connector
+final class ModbusConnector extends DevicesSchemas\Connectors\Connector
 {
 
 	/**

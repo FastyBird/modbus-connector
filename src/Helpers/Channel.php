@@ -16,10 +16,10 @@
 namespace FastyBird\Connector\Modbus\Helpers;
 
 use FastyBird\Connector\Modbus\Types;
-use FastyBird\DevicesModule\Exceptions as DevicesModuleExceptions;
-use FastyBird\DevicesModule\Models as DevicesModuleModels;
 use FastyBird\Library\Metadata\Entities as MetadataEntities;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
+use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
+use FastyBird\Module\Devices\Models as DevicesModels;
 use Nette;
 use Ramsey\Uuid;
 use function is_int;
@@ -39,13 +39,13 @@ final class Channel
 	use Nette\SmartObject;
 
 	public function __construct(
-		private readonly DevicesModuleModels\DataStorage\ChannelPropertiesRepository $propertiesRepository,
+		private readonly DevicesModels\DataStorage\ChannelPropertiesRepository $propertiesRepository,
 	)
 	{
 	}
 
 	/**
-	 * @throws DevicesModuleExceptions\InvalidState
+	 * @throws DevicesExceptions\InvalidState
 	 * @throws MetadataExceptions\FileNotFound
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidData

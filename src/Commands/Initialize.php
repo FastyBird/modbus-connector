@@ -20,12 +20,12 @@ use Doctrine\Persistence;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Types;
-use FastyBird\DevicesModule\Entities as DevicesModuleEntities;
-use FastyBird\DevicesModule\Models as DevicesModuleModels;
-use FastyBird\DevicesModule\Queries as DevicesModuleQueries;
 use FastyBird\Library\Metadata;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
+use FastyBird\Module\Devices\Entities as DevicesEntities;
+use FastyBird\Module\Devices\Models as DevicesModels;
+use FastyBird\Module\Devices\Queries as DevicesQueries;
 use IPub\DoctrineOrmQuery\Exceptions as DoctrineOrmQueryExceptions;
 use Nette\Utils;
 use Psr\Log;
@@ -66,12 +66,12 @@ class Initialize extends Console\Command\Command
 	private Log\LoggerInterface $logger;
 
 	public function __construct(
-		private readonly DevicesModuleModels\Connectors\ConnectorsRepository $connectorsRepository,
-		private readonly DevicesModuleModels\Connectors\ConnectorsManager $connectorsManager,
-		private readonly DevicesModuleModels\Connectors\Properties\PropertiesRepository $propertiesRepository,
-		private readonly DevicesModuleModels\Connectors\Properties\PropertiesManager $propertiesManager,
-		private readonly DevicesModuleModels\Connectors\Controls\ControlsManager $controlsManager,
-		private readonly DevicesModuleModels\DataStorage\ConnectorsRepository $connectorsDataStorageRepository,
+		private readonly DevicesModels\Connectors\ConnectorsRepository $connectorsRepository,
+		private readonly DevicesModels\Connectors\ConnectorsManager $connectorsManager,
+		private readonly DevicesModels\Connectors\Properties\PropertiesRepository $propertiesRepository,
+		private readonly DevicesModels\Connectors\Properties\PropertiesManager $propertiesManager,
+		private readonly DevicesModels\Connectors\Controls\ControlsManager $controlsManager,
+		private readonly DevicesModels\DataStorage\ConnectorsRepository $connectorsDataStorageRepository,
 		private readonly Persistence\ManagerRegistry $managerRegistry,
 		Log\LoggerInterface|null $logger = null,
 		string|null $name = null,
@@ -223,7 +223,7 @@ class Initialize extends Console\Command\Command
 			]));
 
 			$this->propertiesManager->create(Utils\ArrayHash::from([
-				'entity' => DevicesModuleEntities\Connectors\Properties\Variable::class,
+				'entity' => DevicesEntities\Connectors\Properties\Variable::class,
 				'identifier' => Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE,
 				'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING),
 				'value' => $mode->getValue(),
@@ -333,7 +333,7 @@ class Initialize extends Console\Command\Command
 			return;
 		}
 
-		$findConnectorQuery = new DevicesModuleQueries\FindConnectors();
+		$findConnectorQuery = new DevicesQueries\FindConnectors();
 		$findConnectorQuery->byIdentifier($connectorIdentifier);
 
 		$connector = $this->connectorsRepository->findOneBy($findConnectorQuery);
@@ -352,7 +352,7 @@ class Initialize extends Console\Command\Command
 			return;
 		}
 
-		$findPropertyQuery = new DevicesModuleQueries\FindConnectorProperties();
+		$findPropertyQuery = new DevicesQueries\FindConnectorProperties();
 		$findPropertyQuery->forConnector($connector);
 		$findPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE);
 
@@ -417,7 +417,7 @@ class Initialize extends Console\Command\Command
 				}
 
 				$this->propertiesManager->create(Utils\ArrayHash::from([
-					'entity' => DevicesModuleEntities\Connectors\Properties\Variable::class,
+					'entity' => DevicesEntities\Connectors\Properties\Variable::class,
 					'identifier' => Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE,
 					'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING),
 					'value' => $mode->getValue(),
@@ -509,7 +509,7 @@ class Initialize extends Console\Command\Command
 			return;
 		}
 
-		$findConnectorQuery = new DevicesModuleQueries\FindConnectors();
+		$findConnectorQuery = new DevicesQueries\FindConnectors();
 		$findConnectorQuery->byIdentifier($connectorIdentifier);
 
 		$connector = $this->connectorsRepository->findOneBy($findConnectorQuery);

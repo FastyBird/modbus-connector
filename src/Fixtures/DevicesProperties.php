@@ -20,8 +20,8 @@ use Doctrine\Persistence;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Types;
-use FastyBird\DevicesModule\Entities as DevicesModuleEntities;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
+use FastyBird\Module\Devices\Entities as DevicesEntities;
 use Throwable;
 
 /**
@@ -46,7 +46,7 @@ final class DevicesProperties extends DataFixtures\AbstractFixture implements Da
 			throw new Exceptions\InvalidState('Device reference could not be loaded');
 		}
 
-		$addressProperty = new DevicesModuleEntities\Devices\Properties\Variable(
+		$addressProperty = new DevicesEntities\Devices\Properties\Variable(
 			$device,
 			Types\DevicePropertyIdentifier::IDENTIFIER_ADDRESS,
 		);

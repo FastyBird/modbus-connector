@@ -15,10 +15,10 @@
 
 namespace FastyBird\Connector\Modbus\Helpers;
 
-use FastyBird\DevicesModule\Exceptions as DevicesModuleExceptions;
-use FastyBird\DevicesModule\Models as DevicesModuleModels;
 use FastyBird\Library\Metadata\Entities as MetadataEntities;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
+use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
+use FastyBird\Module\Devices\Models as DevicesModels;
 use Nette;
 use Nette\Utils;
 
@@ -36,14 +36,14 @@ final class Property
 	use Nette\SmartObject;
 
 	public function __construct(
-		private readonly DevicesModuleModels\States\DevicePropertyStateManager $devicePropertyStateManager,
-		private readonly DevicesModuleModels\States\ChannelPropertyStateManager $channelPropertyStateManager,
+		private readonly DevicesModels\States\DevicePropertyStateManager $devicePropertyStateManager,
+		private readonly DevicesModels\States\ChannelPropertyStateManager $channelPropertyStateManager,
 	)
 	{
 	}
 
 	/**
-	 * @throws DevicesModuleExceptions\InvalidState
+	 * @throws DevicesExceptions\InvalidState
 	 * @throws MetadataExceptions\FileNotFound
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidData

@@ -20,8 +20,8 @@ use Doctrine\Persistence;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Types;
-use FastyBird\DevicesModule\Entities as DevicesModuleEntities;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
+use FastyBird\Module\Devices\Entities as DevicesEntities;
 use Throwable;
 
 /**
@@ -46,14 +46,14 @@ final class ConnectorProperties extends DataFixtures\AbstractFixture implements 
 			throw new Exceptions\InvalidState('Connector reference could not be loaded');
 		}
 
-		$clientModeProperty = new DevicesModuleEntities\Connectors\Properties\Variable(
+		$clientModeProperty = new DevicesEntities\Connectors\Properties\Variable(
 			$connector,
 			Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE,
 		);
 		$clientModeProperty->setDataType(MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING));
 		$clientModeProperty->setValue(Types\ClientMode::MODE_RTU);
 
-		$interfaceProperty = new DevicesModuleEntities\Connectors\Properties\Variable(
+		$interfaceProperty = new DevicesEntities\Connectors\Properties\Variable(
 			$connector,
 			Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_INTERFACE,
 		);

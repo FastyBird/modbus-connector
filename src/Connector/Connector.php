@@ -18,10 +18,10 @@ namespace FastyBird\Connector\Modbus\Connector;
 use FastyBird\Connector\Modbus\Clients;
 use FastyBird\Connector\Modbus\Helpers;
 use FastyBird\Connector\Modbus\Types;
-use FastyBird\DevicesModule\Connectors as DevicesModuleConnectors;
-use FastyBird\DevicesModule\Exceptions as DevicesModuleExceptions;
 use FastyBird\Library\Metadata\Entities as MetadataEntities;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
+use FastyBird\Module\Devices\Connectors as DevicesConnectors;
+use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
 use Nette;
 use ReflectionClass;
 use function array_key_exists;
@@ -34,7 +34,7 @@ use function array_key_exists;
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-final class Connector implements DevicesModuleConnectors\Connector
+final class Connector implements DevicesConnectors\Connector
 {
 
 	use Nette\SmartObject;
@@ -53,8 +53,8 @@ final class Connector implements DevicesModuleConnectors\Connector
 	}
 
 	/**
-	 * @throws DevicesModuleExceptions\InvalidState
-	 * @throws DevicesModuleExceptions\Terminate
+	 * @throws DevicesExceptions\InvalidState
+	 * @throws DevicesExceptions\Terminate
 	 * @throws MetadataExceptions\FileNotFound
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidData
@@ -70,7 +70,7 @@ final class Connector implements DevicesModuleConnectors\Connector
 		);
 
 		if ($mode === null) {
-			throw new DevicesModuleExceptions\Terminate('Connector client mode is not configured');
+			throw new DevicesExceptions\Terminate('Connector client mode is not configured');
 		}
 
 		foreach ($this->clientsFactories as $clientFactory) {
@@ -87,7 +87,7 @@ final class Connector implements DevicesModuleConnectors\Connector
 		}
 
 		if ($this->client === null) {
-			throw new DevicesModuleExceptions\Terminate('Connector client is not configured');
+			throw new DevicesExceptions\Terminate('Connector client is not configured');
 		}
 
 		$this->client->connect();

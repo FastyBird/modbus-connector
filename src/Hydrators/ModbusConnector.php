@@ -16,18 +16,18 @@
 namespace FastyBird\Connector\Modbus\Hydrators;
 
 use FastyBird\Connector\Modbus\Entities;
-use FastyBird\DevicesModule\Hydrators as DevicesModuleHydrators;
+use FastyBird\Module\Devices\Hydrators as DevicesHydrators;
 
 /**
  * Modbus connector entity hydrator
  *
- * @phpstan-extends DevicesModuleHydrators\Connectors\Connector<Entities\ModbusConnector>
+ * @phpstan-extends DevicesHydrators\Connectors\Connector<Entities\ModbusConnector>
  *
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Hydrators
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-final class ModbusConnector extends DevicesModuleHydrators\Connectors\Connector
+final class ModbusConnector extends DevicesHydrators\Connectors\Connector
 {
 
 	public function getEntityName(): string

@@ -19,11 +19,11 @@ use Doctrine\Common;
 use Doctrine\ORM;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Types;
-use FastyBird\DevicesModule\Entities as DevicesModuleEntities;
-use FastyBird\DevicesModule\Exceptions as DevicesModuleExceptions;
-use FastyBird\DevicesModule\Models as DevicesModuleModels;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
+use FastyBird\Module\Devices\Entities as DevicesEntities;
+use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
+use FastyBird\Module\Devices\Models as DevicesModels;
 use Nette;
 use Nette\Utils;
 use function sprintf;
@@ -42,7 +42,7 @@ final class Properties implements Common\EventSubscriber
 	use Nette\SmartObject;
 
 	public function __construct(
-		private readonly DevicesModuleModels\Devices\Properties\PropertiesManager $propertiesManager,
+		private readonly DevicesModels\Devices\Properties\PropertiesManager $propertiesManager,
 	)
 	{
 	}
@@ -55,8 +55,8 @@ final class Properties implements Common\EventSubscriber
 	}
 
 	/**
-	 * @throws DevicesModuleExceptions\InvalidArgument
-	 * @throws DevicesModuleExceptions\InvalidState
+	 * @throws DevicesExceptions\InvalidArgument
+	 * @throws DevicesExceptions\InvalidState
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
 	 */
@@ -75,7 +75,7 @@ final class Properties implements Common\EventSubscriber
 
 			$this->propertiesManager->create(Utils\ArrayHash::from([
 				'device' => $entity,
-				'entity' => DevicesModuleEntities\Devices\Properties\Dynamic::class,
+				'entity' => DevicesEntities\Devices\Properties\Dynamic::class,
 				'identifier' => Types\DevicePropertyIdentifier::IDENTIFIER_STATE,
 				'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_ENUM),
 				'unit' => null,
@@ -91,7 +91,7 @@ final class Properties implements Common\EventSubscriber
 			]));
 
 		} elseif (
-			$entity instanceof DevicesModuleEntities\Connectors\Properties\Variable
+			$entity instanceof DevicesEntities\Connectors\Properties\Variable
 			&& $entity->getConnector() instanceof Entities\ModbusConnector
 		) {
 			if (
@@ -112,13 +112,13 @@ final class Properties implements Common\EventSubscriber
 					&& !Types\StopBits::isValidValue($entity->getValue())
 				)
 			) {
-				throw new DevicesModuleExceptions\InvalidArgument(sprintf(
+				throw new DevicesExceptions\InvalidArgument(sprintf(
 					'Provided value for connector property: %s is not in valid range',
 					$entity->getIdentifier(),
 				));
 			}
 		} elseif (
-			$entity instanceof DevicesModuleEntities\Devices\Properties\Variable
+			$entity instanceof DevicesEntities\Devices\Properties\Variable
 			&& $entity->getDevice() instanceof Entities\ModbusDevice
 		) {
 			if (
@@ -127,7 +127,7 @@ final class Properties implements Common\EventSubscriber
 					&& !Types\ByteOrder::isValidValue($entity->getValue())
 				)
 			) {
-				throw new DevicesModuleExceptions\InvalidArgument(sprintf(
+				throw new DevicesExceptions\InvalidArgument(sprintf(
 					'Provided value for device property: %s is not in valid range',
 					$entity->getIdentifier(),
 				));
