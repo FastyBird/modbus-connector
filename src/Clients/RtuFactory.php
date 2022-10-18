@@ -16,7 +16,7 @@
 namespace FastyBird\Connector\Modbus\Clients;
 
 use FastyBird\Connector\Modbus\Types;
-use FastyBird\Metadata\Entities as MetadataEntities;
+use FastyBird\Library\Metadata\Entities as MetadataEntities;
 
 /**
  * Modbus RTU devices client factory

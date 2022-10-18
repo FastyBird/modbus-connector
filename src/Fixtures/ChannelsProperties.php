@@ -20,7 +20,7 @@ use Doctrine\Persistence;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Types\ChannelPropertyIdentifier;
 use FastyBird\DevicesModule\Entities as DevicesModuleEntities;
-use FastyBird\Metadata\Types as MetadataTypes;
+use FastyBird\Library\Metadata\Types as MetadataTypes;
 use Throwable;
 use function strval;
 

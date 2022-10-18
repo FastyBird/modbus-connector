@@ -15,7 +15,7 @@
 
 namespace FastyBird\Connector\Modbus\ValueObjects;
 
-use FastyBird\Metadata\Types as MetadataTypes;
+use FastyBird\Library\Metadata\Types as MetadataTypes;
 use Nette;
 
 /**

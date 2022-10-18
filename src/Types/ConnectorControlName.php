@@ -16,7 +16,7 @@
 namespace FastyBird\Connector\Modbus\Types;
 
 use Consistence;
-use FastyBird\Metadata\Types as MetadataTypes;
+use FastyBird\Library\Metadata\Types as MetadataTypes;
 use function strval;
 
 /**

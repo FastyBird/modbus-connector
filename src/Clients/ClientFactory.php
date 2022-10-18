@@ -15,7 +15,7 @@
 
 namespace FastyBird\Connector\Modbus\Clients;
 
-use FastyBird\Metadata\Entities as MetadataEntities;
+use FastyBird\Library\Metadata\Entities as MetadataEntities;
 
 /**
  * Base client factory
