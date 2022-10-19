@@ -18,7 +18,7 @@ Modbus connector is extension for [FastyBird](https://www.fastybird.com) [IoT](h
 which is integrating [Modbus](https://www.modbus.org) devices.
 
 Modbus connector is an [Apache2 licensed](http://www.apache.org/licenses/LICENSE-2.0) distributed extension, developed
-in [PHP](https://www.php.net) with [Nette framework](https://nette.org).
+in [PHP](https://www.php.net) on top of the [Nette framework](https://nette.org) and [Symfony framework](https://symfony.com).
 
 ### Features:
 
@@ -44,7 +44,8 @@ composer require fastybird/modbus-connector
 
 ### Marketplace installation [WIP]
 
-You could install this connector in your [FastyBird](https://www.fastybird.com) [IoT](https://en.wikipedia.org/wiki/Internet_of_things) application under marketplace section
+You could install this connector in your [FastyBird](https://www.fastybird.com) [IoT](https://en.wikipedia.org/wiki/Internet_of_things)
+application under marketplace section
 
 ## Documentation
 
@@ -53,14 +54,19 @@ in [documentation](https://github.com/FastyBird/modbus-connector/blob/master/.do
 
 ## Feedback
 
-Use the [issue tracker](https://github.com/FastyBird/modbus-connector/issues) for bugs
-or [mail](mailto:code@fastybird.com) or [Tweet](https://twitter.com/fastybird) us for any idea that can improve the project.
+Use the [issue tracker](https://github.com/FastyBird/fastybird/issues) for bugs
+or [mail](mailto:code@fastybird.com) or [Tweet](https://twitter.com/fastybird) us for any idea that can improve the
+project.
 
 Thank you for testing, reporting and contributing.
 
 ## Changelog
 
-For release info check [release page](https://github.com/FastyBird/modbus-connector/releases)
+For release info check [release page](https://github.com/FastyBird/fastybird/releases)
+
+## Contribute
+
+The sources of this package are contained in the [FastyBird monorepo](https://github.com/FastyBird/fastybird). We welcome contributions for this package on [FastyBird/fastybird](https://github.com/FastyBird/).
 
 ## Maintainers
 

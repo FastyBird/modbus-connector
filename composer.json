@@ -1,86 +1,97 @@
 {
-    "name": "fastybird/modbus-connector",
-    "type": "connector",
-    "description": "FastyBird IoT connector for Modbus devices",
-    "keywords": ["fastybird", "fb", "iot", "modbus", "connector"],
-    "homepage": "https://www.fastybird.com",
-    "license": "Apache-2.0",
-    "authors": [
-        {
-            "name": "FastyBird s.r.o.",
-            "email": "code@fastybird.com",
-            "homepage": "https://www.fastybird.com"
-        },
-        {
-            "name": "Adam Kadlec",
-            "email": "adam.kadlec@fastybird.com"
-        }
-    ],
-    "require": {
-        "php": ">=8.1.0",
-        "ext-pcntl": "*",
-        "cweagans/composer-patches": "^1.7",
-        "fastybird/datetime-factory": "^0.6",
-        "fastybird/devices-module": "dev-main",
-        "fastybird/metadata": "dev-main",
-        "nette/di": "^3.0",
-        "nettrine/fixtures": "^0.6",
-        "psr/log": "^1.1|^3.0",
-        "react/event-loop": "^1.3"
+  "name": "fastybird/modbus-connector",
+  "type": "connector",
+  "description": "FastyBird IoT connector for Modbus devices",
+  "keywords": [
+    "fastybird",
+    "fb",
+    "iot",
+    "modbus",
+    "connector"
+  ],
+  "homepage": "https://www.fastybird.com",
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "FastyBird s.r.o.",
+      "email": "code@fastybird.com",
+      "homepage": "https://www.fastybird.com"
     },
-    "require-dev": {
-        "brianium/paratest": "^6.6",
-        "contributte/translation": "^0.9",
-        "dg/bypass-finals": "^1.4",
-        "infection/infection": "^0.26",
-        "orisai/coding-standard": "^3.2",
-        "pds/skeleton": "^1.0",
-        "php-parallel-lint/php-parallel-lint": "^1.3",
-        "phpstan/extension-installer": "^1.1",
-        "phpstan/phpstan": "^1.8",
-        "phpstan/phpstan-deprecation-rules": "^1.0",
-        "phpstan/phpstan-doctrine": "^1.3",
-        "phpstan/phpstan-nette": "^1.1",
-        "phpstan/phpstan-phpunit": "^1.1",
-        "phpstan/phpstan-strict-rules": "^1.4",
-        "phpunit/phpunit": "^9.5",
-        "staabm/annotate-pull-request-from-checkstyle": "^1.8",
-        "tracy/tracy": "^2.9"
+    {
+      "name": "Adam Kadlec",
+      "email": "adam.kadlec@fastybird.com"
+    }
+  ],
+  "support" : {
+    "email" : "code@fastybird.com",
+    "issues" : "https://github.com/FastyBird/fastybird/issues",
+    "source" : "https://github.com/FastyBird/modbus-connector"
+  },
+  "require": {
+    "php": ">=8.1.0",
+    "ext-pcntl": "*",
+    "cweagans/composer-patches": "^1.7",
+    "fastybird/datetime-factory": "^0.6",
+    "fastybird/devices-module": "dev-main",
+    "fastybird/metadata-library": "dev-main",
+    "nette/di": "^3.0",
+    "nettrine/fixtures": "^0.6",
+    "psr/log": "^1.1|^3.0",
+    "react/event-loop": "^1.3"
+  },
+  "require-dev": {
+    "brianium/paratest": "^6.6",
+    "contributte/translation": "^0.9",
+    "dg/bypass-finals": "^1.4",
+    "infection/infection": "^0.26",
+    "orisai/coding-standard": "^3.2",
+    "pds/skeleton": "^1.0",
+    "php-parallel-lint/php-parallel-lint": "^1.3",
+    "phpstan/extension-installer": "^1.1",
+    "phpstan/phpstan": "^1.8",
+    "phpstan/phpstan-deprecation-rules": "^1.0",
+    "phpstan/phpstan-doctrine": "^1.3",
+    "phpstan/phpstan-nette": "^1.1",
+    "phpstan/phpstan-phpunit": "^1.1",
+    "phpstan/phpstan-strict-rules": "^1.4",
+    "phpunit/phpunit": "^9.5",
+    "staabm/annotate-pull-request-from-checkstyle": "^1.8",
+    "tracy/tracy": "^2.9"
+  },
+  "suggest": {
+    "ext-dio": "To use integrated serial interface"
+  },
+  "autoload": {
+    "psr-4": {
+      "FastyBird\\Connector\\Modbus\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "FastyBird\\Connector\\Modbus\\Tests\\Cases\\Unit\\": "tests/cases/unit",
+      "FastyBird\\Connector\\Modbus\\Tests\\Tools\\": "tests/tools"
+    }
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {
+      "cweagans/composer-patches": true,
+      "dealerdirect/phpcodesniffer-composer-installer": true,
+      "phpstan/extension-installer": true,
+      "infection/extension-installer": true
+    }
+  },
+  "extra": {
+    "branch-alias": {
+      "dev-main": "2.0-dev"
     },
-    "suggest": {
-        "ext-dio": "To use integrated serial interface"
-    },
-    "autoload": {
-        "psr-4": {
-            "FastyBird\\Connector\\Modbus\\": "src/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "FastyBird\\Connector\\Modbus\\Tests\\Cases\\Unit\\": "tests/cases/unit",
-            "FastyBird\\Connector\\Modbus\\Tests\\Tools\\": "tests/tools"
-        }
-    },
-    "config": {
-        "sort-packages": true,
-        "allow-plugins": {
-            "cweagans/composer-patches": true,
-            "dealerdirect/phpcodesniffer-composer-installer": true,
-            "phpstan/extension-installer": true,
-            "infection/extension-installer": true
-        }
-    },
-    "extra": {
-        "branch-alias": {
-            "dev-main": "2.0-dev"
-        },
-        "enable-patching": false,
-        "patches": {
-            "nettrine/orm": {
-                "Enable connection overrides": "https://raw.githubusercontent.com/FastyBird/libraries-patches/master/nettrine.orm.mangerRegistry.diff"
-            }
-        }
-    },
-    "minimum-stability": "dev",
-    "prefer-stable": true
+    "enable-patching": false,
+    "patches": {
+      "nettrine/orm": {
+        "Enable connection overrides": "https://raw.githubusercontent.com/FastyBird/libraries-patches/master/nettrine.orm.mangerRegistry.diff"
+      }
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
 }
