@@ -20,7 +20,6 @@ use Doctrine\Persistence;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
-use Throwable;
 
 /**
  * Devices channels database fixture
@@ -34,7 +33,7 @@ final class Channels extends DataFixtures\AbstractFixture implements DataFixture
 {
 
 	/**
-	 * @throws Throwable
+	 * @throws Exceptions\InvalidState
 	 */
 	public function load(Persistence\ObjectManager $manager): void
 	{

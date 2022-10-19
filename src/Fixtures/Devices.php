@@ -15,11 +15,11 @@
 
 namespace FastyBird\Connector\Modbus\Fixtures;
 
+use BadMethodCallException;
 use Doctrine\Common\DataFixtures;
 use Doctrine\Persistence;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Exceptions;
-use Throwable;
 
 /**
  * Connector devices database fixture
@@ -33,7 +33,8 @@ final class Devices extends DataFixtures\AbstractFixture implements DataFixtures
 {
 
 	/**
-	 * @throws Throwable
+	 * @throws Exceptions\InvalidState
+	 * @throws BadMethodCallException
 	 */
 	public function load(Persistence\ObjectManager $manager): void
 	{

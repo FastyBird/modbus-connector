@@ -16,6 +16,7 @@
 namespace FastyBird\Connector\Modbus\Clients;
 
 use DateTimeInterface;
+use Exception;
 use FastyBird\Connector\Modbus\API;
 use FastyBird\Connector\Modbus\Clients;
 use FastyBird\Connector\Modbus\Exceptions;
@@ -32,7 +33,6 @@ use Nette;
 use Nette\Utils;
 use Psr\Log;
 use React\EventLoop;
-use Throwable;
 use function array_chunk;
 use function array_key_exists;
 use function array_map;
@@ -245,8 +245,14 @@ class Rtu implements Client
 	}
 
 	/**
+	 * @throws DevicesExceptions\InvalidState
+	 * @throws Exception
 	 * @throws MetadataExceptions\FileNotFound
-	 * @throws Throwable
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidData
+	 * @throws MetadataExceptions\InvalidState
+	 * @throws MetadataExceptions\Logic
+	 * @throws MetadataExceptions\MalformedInput
 	 */
 	private function handleCommunication(): void
 	{
@@ -356,8 +362,16 @@ class Rtu implements Client
 	}
 
 	/**
+	 * @throws DevicesExceptions\InvalidState
+	 * @throws Exception
+	 * @throws Exceptions\InvalidState
+	 * @throws Exceptions\Runtime
 	 * @throws MetadataExceptions\FileNotFound
-	 * @throws Throwable
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidData
+	 * @throws MetadataExceptions\InvalidState
+	 * @throws MetadataExceptions\Logic
+	 * @throws MetadataExceptions\MalformedInput
 	 */
 	private function processDevice(MetadataEntities\DevicesModule\Device $device): bool
 	{
@@ -554,11 +568,20 @@ class Rtu implements Client
 	}
 
 	/**
+	 * @throws DevicesExceptions\InvalidState
+	 * @throws Exception
 	 * @throws Exceptions\InvalidArgument
+	 * @throws Exceptions\InvalidState
+	 * @throws Exceptions\Runtime
 	 * @throws Exceptions\ModbusRtu
 	 * @throws Exceptions\NotReachable
 	 * @throws Exceptions\NotSupported
-	 * @throws Throwable
+	 * @throws MetadataExceptions\FileNotFound
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidData
+	 * @throws MetadataExceptions\InvalidState
+	 * @throws MetadataExceptions\Logic
+	 * @throws MetadataExceptions\MalformedInput
 	 */
 	private function writeProperty(
 		int $station,

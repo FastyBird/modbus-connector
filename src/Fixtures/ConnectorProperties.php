@@ -22,7 +22,7 @@ use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Types;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
-use Throwable;
+use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
 
 /**
  * Connector properties database fixture
@@ -36,7 +36,8 @@ final class ConnectorProperties extends DataFixtures\AbstractFixture implements 
 {
 
 	/**
-	 * @throws Throwable
+	 * @throws Exceptions\InvalidState
+	 * @throws DevicesExceptions\InvalidState
 	 */
 	public function load(Persistence\ObjectManager $manager): void
 	{

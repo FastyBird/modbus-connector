@@ -19,9 +19,10 @@ use Doctrine\Common\DataFixtures;
 use Doctrine\Persistence;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Types\ChannelPropertyIdentifier;
+use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
-use Throwable;
+use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
 use function strval;
 
 /**
@@ -36,7 +37,10 @@ final class ChannelsProperties extends DataFixtures\AbstractFixture implements D
 {
 
 	/**
-	 * @throws Throwable
+	 * @throws Exceptions\InvalidState
+	 * @throws DevicesExceptions\InvalidArgument
+	 * @throws DevicesExceptions\InvalidState
+	 * @throws MetadataExceptions\InvalidArgument
 	 */
 	public function load(Persistence\ObjectManager $manager): void
 	{
