@@ -18,7 +18,7 @@ namespace FastyBird\Connector\Modbus\Helpers;
 use FastyBird\Library\Metadata\Entities as MetadataEntities;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
-use FastyBird\Module\Devices\Models as DevicesModels;
+use FastyBird\Module\Devices\Utilities as DevicesUtilities;
 use Nette;
 use Nette\Utils;
 
@@ -36,8 +36,8 @@ final class Property
 	use Nette\SmartObject;
 
 	public function __construct(
-		private readonly DevicesModels\States\DevicePropertyStateManager $devicePropertyStateManager,
-		private readonly DevicesModels\States\ChannelPropertyStateManager $channelPropertyStateManager,
+		private readonly DevicesUtilities\DevicePropertiesStates $devicePropertiesStateManager,
+		private readonly DevicesUtilities\ChannelPropertiesStates $channelPropertiesStateManager,
 	)
 	{
 	}
@@ -57,9 +57,9 @@ final class Property
 	): void
 	{
 		if ($property instanceof MetadataEntities\DevicesModule\DeviceDynamicProperty) {
-			$this->devicePropertyStateManager->setValue($property, $data);
+			$this->devicePropertiesStateManager->setValue($property, $data);
 		} else {
-			$this->channelPropertyStateManager->setValue($property, $data);
+			$this->channelPropertiesStateManager->setValue($property, $data);
 		}
 	}
 

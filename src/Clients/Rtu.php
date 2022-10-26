@@ -29,6 +29,7 @@ use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
 use FastyBird\Module\Devices\Models as DevicesModels;
+use FastyBird\Module\Devices\Utilities as DevicesUtilities;
 use Nette;
 use Nette\Utils;
 use Psr\Log;
@@ -140,7 +141,7 @@ class Rtu implements Client
 		private readonly DevicesModels\DataStorage\DevicesRepository $devicesRepository,
 		private readonly DevicesModels\DataStorage\ChannelsRepository $channelsRepository,
 		private readonly DevicesModels\DataStorage\ChannelPropertiesRepository $channelPropertiesRepository,
-		private readonly DevicesModels\States\DeviceConnectionStateManager $deviceConnectionStateManager,
+		private readonly DevicesUtilities\DeviceConnection $deviceConnectionManager,
 		private readonly DateTimeFactory\Factory $dateTimeFactory,
 		private readonly EventLoop\LoopInterface $eventLoop,
 		Log\LoggerInterface|null $logger = null,
@@ -270,7 +271,7 @@ class Rtu implements Client
 		foreach ($this->devicesRepository->findAllByConnector($this->connector->getId()) as $device) {
 			if (
 				!in_array($device->getId()->toString(), $this->processedDevices, true)
-				&& !$this->deviceConnectionStateManager->getState($device)
+				&& !$this->deviceConnectionManager->getState($device)
 					->equalsValue(MetadataTypes\ConnectionState::STATE_STOPPED)
 			) {
 				$deviceAddress = $this->deviceHelper->getConfiguration(
@@ -281,7 +282,7 @@ class Rtu implements Client
 				);
 
 				if (!is_int($deviceAddress)) {
-					$this->deviceConnectionStateManager->setState(
+					$this->deviceConnectionManager->setState(
 						$device,
 						MetadataTypes\ConnectionState::get(MetadataTypes\ConnectionState::STATE_STOPPED),
 					);
@@ -291,7 +292,7 @@ class Rtu implements Client
 
 				// Check if device is lost or not
 				if (array_key_exists($device->getId()->toString(), $this->lostDevices)) {
-					if ($this->deviceConnectionStateManager->getState($device)
+					if ($this->deviceConnectionManager->getState($device)
 						->equalsValue(MetadataTypes\ConnectionState::STATE_LOST)) {
 						$this->logger->debug(
 							'Device is still lost',
@@ -322,7 +323,7 @@ class Rtu implements Client
 							],
 						);
 
-						$this->deviceConnectionStateManager->setState(
+						$this->deviceConnectionManager->setState(
 							$device,
 							MetadataTypes\ConnectionState::get(MetadataTypes\ConnectionState::STATE_LOST),
 						);
@@ -336,11 +337,11 @@ class Rtu implements Client
 
 				// Check device state...
 				if (
-					!$this->deviceConnectionStateManager->getState($device)
+					!$this->deviceConnectionManager->getState($device)
 						->equalsValue(Metadata\Types\ConnectionState::STATE_CONNECTED)
 				) {
 					// ... and if it is not ready, set it to ready
-					$this->deviceConnectionStateManager->setState(
+					$this->deviceConnectionManager->setState(
 						$device,
 						Metadata\Types\ConnectionState::get(Metadata\Types\ConnectionState::STATE_CONNECTED),
 					);
@@ -1120,10 +1121,12 @@ class Rtu implements Client
 				$this->propertyStateHelper->setValue(
 					$property,
 					Utils\ArrayHash::from([
-						'actualValue' => $this->transformer->transformValueFromDevice(
-							$property->getDataType(),
-							$property->getFormat(),
-							$value,
+						'actualValue' => DevicesUtilities\ValueHelper::flattenValue(
+							$this->transformer->transformValueFromDevice(
+								$property->getDataType(),
+								$property->getFormat(),
+								$value,
+							),
 						),
 						'valid' => true,
 					]),
