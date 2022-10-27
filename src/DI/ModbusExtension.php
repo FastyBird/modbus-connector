@@ -91,9 +91,6 @@ class ModbusExtension extends DI\CompilerExtension
 			->setType(Hydrators\ModbusDevice::class);
 
 		// Helpers
-		$builder->addDefinition($this->prefix('helpers.database'), new DI\Definitions\ServiceDefinition())
-			->setType(Helpers\Database::class);
-
 		$builder->addDefinition($this->prefix('helpers.connector'), new DI\Definitions\ServiceDefinition())
 			->setType(Helpers\Connector::class);
 
