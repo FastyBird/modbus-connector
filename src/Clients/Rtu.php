@@ -297,7 +297,7 @@ class Rtu implements Client
 						$this->logger->debug(
 							'Device is still lost',
 							[
-								'source' => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
+								'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 								'type' => 'rtu-client',
 								'connector' => [
 									'id' => $this->connector->getId()->toString(),
@@ -312,7 +312,7 @@ class Rtu implements Client
 						$this->logger->debug(
 							'Device is lost',
 							[
-								'source' => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
+								'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 								'type' => 'rtu-client',
 								'connector' => [
 									'id' => $this->connector->getId()->toString(),
@@ -409,7 +409,7 @@ class Rtu implements Client
 				$this->logger->warning(
 					'Channel address is missing',
 					[
-						'source' => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
+						'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 						'type' => 'rtu-client',
 						'connector' => [
 							'id' => $this->connector->getId()->toString(),
@@ -431,7 +431,7 @@ class Rtu implements Client
 				MetadataEntities\DevicesModule\ChannelDynamicProperty::class,
 			) as $property) {
 				$logContext = [
-					'source' => Metadata\Constants::CONNECTOR_MODBUS_SOURCE,
+					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 					'type' => 'rtu-client',
 					'connector' => [
 						'id' => $this->connector->getId()->toString(),

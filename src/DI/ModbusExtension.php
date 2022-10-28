@@ -62,35 +62,29 @@ class ModbusExtension extends DI\CompilerExtension
 	{
 		$builder = $this->getContainerBuilder();
 
-		// Clients
 		$builder->addFactoryDefinition($this->prefix('client.rtu'))
 			->setImplement(Clients\RtuFactory::class)
 			->getResultDefinition()
 			->setType(Clients\Rtu::class);
 
-		// Messages API
 		$builder->addDefinition($this->prefix('api.transformer'), new DI\Definitions\ServiceDefinition())
 			->setType(API\Transformer::class);
 
-		// Events subscribers
 		$builder->addDefinition($this->prefix('subscribers.properties'), new DI\Definitions\ServiceDefinition())
 			->setType(Subscribers\Properties::class);
 
-		// API schemas
 		$builder->addDefinition($this->prefix('schemas.connector.modbus'), new DI\Definitions\ServiceDefinition())
 			->setType(Schemas\ModbusConnector::class);
 
 		$builder->addDefinition($this->prefix('schemas.device.modbus'), new DI\Definitions\ServiceDefinition())
 			->setType(Schemas\ModbusDevice::class);
 
-		// API hydrators
 		$builder->addDefinition($this->prefix('hydrators.connector.modbus'), new DI\Definitions\ServiceDefinition())
 			->setType(Hydrators\ModbusConnector::class);
 
 		$builder->addDefinition($this->prefix('hydrators.device.modbus'), new DI\Definitions\ServiceDefinition())
 			->setType(Hydrators\ModbusDevice::class);
 
-		// Helpers
 		$builder->addDefinition($this->prefix('helpers.connector'), new DI\Definitions\ServiceDefinition())
 			->setType(Helpers\Connector::class);
 
@@ -103,7 +97,6 @@ class ModbusExtension extends DI\CompilerExtension
 		$builder->addDefinition($this->prefix('helpers.property'), new DI\Definitions\ServiceDefinition())
 			->setType(Helpers\Property::class);
 
-		// Service factory
 		$builder->addFactoryDefinition($this->prefix('executor.factory'))
 			->setImplement(Connector\ConnectorFactory::class)
 			->addTag(
@@ -116,7 +109,6 @@ class ModbusExtension extends DI\CompilerExtension
 				'clientsFactories' => $builder->findByType(Clients\ClientFactory::class),
 			]);
 
-		// Console commands
 		$builder->addDefinition($this->prefix('commands.initialize'), new DI\Definitions\ServiceDefinition())
 			->setType(Commands\Initialize::class);
 
