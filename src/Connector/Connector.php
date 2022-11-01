@@ -16,15 +16,17 @@
 namespace FastyBird\Connector\Modbus\Connector;
 
 use FastyBird\Connector\Modbus\Clients;
+use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Helpers;
 use FastyBird\Connector\Modbus\Types;
-use FastyBird\Library\Metadata\Entities as MetadataEntities;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Module\Devices\Connectors as DevicesConnectors;
+use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
 use Nette;
 use ReflectionClass;
 use function array_key_exists;
+use function assert;
 
 /**
  * Connector service executor
@@ -45,7 +47,7 @@ final class Connector implements DevicesConnectors\Connector
 	 * @param Array<Clients\ClientFactory> $clientsFactories
 	 */
 	public function __construct(
-		private readonly MetadataEntities\DevicesModule\Connector $connector,
+		private readonly DevicesEntities\Connectors\Connector $connector,
 		private readonly array $clientsFactories,
 		private readonly Helpers\Connector $connectorHelper,
 	)
@@ -55,17 +57,15 @@ final class Connector implements DevicesConnectors\Connector
 	/**
 	 * @throws DevicesExceptions\InvalidState
 	 * @throws DevicesExceptions\Terminate
-	 * @throws MetadataExceptions\FileNotFound
 	 * @throws MetadataExceptions\InvalidArgument
-	 * @throws MetadataExceptions\InvalidData
 	 * @throws MetadataExceptions\InvalidState
-	 * @throws MetadataExceptions\Logic
-	 * @throws MetadataExceptions\MalformedInput
 	 */
 	public function execute(): void
 	{
+		assert($this->connector instanceof Entities\ModbusConnector);
+
 		$mode = $this->connectorHelper->getConfiguration(
-			$this->connector->getId(),
+			$this->connector,
 			Types\ConnectorPropertyIdentifier::get(Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE),
 		);
 

@@ -20,7 +20,6 @@ use Doctrine\Persistence;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Types;
-use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
@@ -28,7 +27,6 @@ use FastyBird\Module\Devices\Models as DevicesModels;
 use FastyBird\Module\Devices\Queries as DevicesQueries;
 use Nette\Utils;
 use Psr\Log;
-use RuntimeException;
 use Symfony\Component\Console;
 use Symfony\Component\Console\Input;
 use Symfony\Component\Console\Output;
@@ -36,6 +34,7 @@ use Symfony\Component\Console\Style;
 use Throwable;
 use function array_search;
 use function array_values;
+use function assert;
 use function count;
 use function sprintf;
 
@@ -67,10 +66,8 @@ class Initialize extends Console\Command\Command
 	public function __construct(
 		private readonly DevicesModels\Connectors\ConnectorsRepository $connectorsRepository,
 		private readonly DevicesModels\Connectors\ConnectorsManager $connectorsManager,
-		private readonly DevicesModels\Connectors\Properties\PropertiesRepository $propertiesRepository,
 		private readonly DevicesModels\Connectors\Properties\PropertiesManager $propertiesManager,
 		private readonly DevicesModels\Connectors\Controls\ControlsManager $controlsManager,
-		private readonly DevicesModels\DataStorage\ConnectorsRepository $connectorsDataStorageRepository,
 		private readonly Persistence\ManagerRegistry $managerRegistry,
 		Log\LoggerInterface|null $logger = null,
 		string|null $name = null,
@@ -107,12 +104,6 @@ class Initialize extends Console\Command\Command
 	 * @throws DevicesExceptions\InvalidState
 	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\Runtime
-	 * @throws MetadataExceptions\FileNotFound
-	 * @throws MetadataExceptions\InvalidArgument
-	 * @throws MetadataExceptions\InvalidData
-	 * @throws MetadataExceptions\InvalidState
-	 * @throws MetadataExceptions\Logic
-	 * @throws MetadataExceptions\MalformedInput
 	 */
 	protected function execute(Input\InputInterface $input, Output\OutputInterface $output): int
 	{
@@ -163,14 +154,9 @@ class Initialize extends Console\Command\Command
 
 	/**
 	 * @throws DBAL\Exception
+	 * @throws DevicesExceptions\InvalidState
 	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\Runtime
-	 * @throws MetadataExceptions\FileNotFound
-	 * @throws MetadataExceptions\InvalidArgument
-	 * @throws MetadataExceptions\InvalidData
-	 * @throws MetadataExceptions\InvalidState
-	 * @throws MetadataExceptions\Logic
-	 * @throws MetadataExceptions\MalformedInput
 	 */
 	private function createNewConfiguration(Style\SymfonyStyle $io): void
 	{
@@ -179,8 +165,16 @@ class Initialize extends Console\Command\Command
 		$question = new Console\Question\Question('Provide connector identifier');
 
 		$question->setValidator(function ($answer) {
-			if ($answer !== null && $this->connectorsDataStorageRepository->findByIdentifier($answer) !== null) {
-				throw new RuntimeException('This identifier is already used');
+			if ($answer !== null) {
+				$findConnectorQuery = new DevicesQueries\FindConnectors();
+				$findConnectorQuery->byIdentifier($answer);
+
+				if ($this->connectorsRepository->findOneBy(
+					$findConnectorQuery,
+					Entities\ModbusConnector::class,
+				) !== null) {
+					throw new Exceptions\Runtime('This identifier is already used');
+				}
 			}
 
 			return $answer;
@@ -194,7 +188,13 @@ class Initialize extends Console\Command\Command
 			for ($i = 1; $i <= 100; $i++) {
 				$identifier = sprintf($identifierPattern, $i);
 
-				if ($this->connectorsDataStorageRepository->findByIdentifier($identifier) === null) {
+				$findConnectorQuery = new DevicesQueries\FindConnectors();
+				$findConnectorQuery->byIdentifier($identifier);
+
+				if ($this->connectorsRepository->findOneBy(
+					$findConnectorQuery,
+					Entities\ModbusConnector::class,
+				) === null) {
 					break;
 				}
 			}
@@ -268,12 +268,6 @@ class Initialize extends Console\Command\Command
 	 * @throws DevicesExceptions\InvalidState
 	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\Runtime
-	 * @throws MetadataExceptions\FileNotFound
-	 * @throws MetadataExceptions\InvalidArgument
-	 * @throws MetadataExceptions\InvalidData
-	 * @throws MetadataExceptions\InvalidState
-	 * @throws MetadataExceptions\Logic
-	 * @throws MetadataExceptions\MalformedInput
 	 */
 	private function editExistingConfiguration(Style\SymfonyStyle $io): void
 	{
@@ -281,10 +275,13 @@ class Initialize extends Console\Command\Command
 
 		$connectors = [];
 
-		foreach ($this->connectorsDataStorageRepository as $connector) {
-			if ($connector->getType() !== Entities\ModbusConnector::CONNECTOR_TYPE) {
-				continue;
-			}
+		$findConnectorsQuery = new DevicesQueries\FindConnectors();
+
+		foreach ($this->connectorsRepository->findAllBy(
+			$findConnectorsQuery,
+			Entities\ModbusConnector::class,
+		) as $connector) {
+			assert($connector instanceof Entities\ModbusConnector);
 
 			$connectors[$connector->getIdentifier()] = $connector->getIdentifier()
 				. ($connector->getName() !== null ? ' [' . $connector->getName() . ']' : '');
@@ -333,7 +330,7 @@ class Initialize extends Console\Command\Command
 		$findConnectorQuery = new DevicesQueries\FindConnectors();
 		$findConnectorQuery->byIdentifier($connectorIdentifier);
 
-		$connector = $this->connectorsRepository->findOneBy($findConnectorQuery);
+		$connector = $this->connectorsRepository->findOneBy($findConnectorQuery, Entities\ModbusConnector::class);
 
 		if ($connector === null) {
 			$io->error('Something went wrong, connector could not be loaded');
@@ -349,11 +346,7 @@ class Initialize extends Console\Command\Command
 			return;
 		}
 
-		$findPropertyQuery = new DevicesQueries\FindConnectorProperties();
-		$findPropertyQuery->forConnector($connector);
-		$findPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE);
-
-		$modeProperty = $this->propertiesRepository->findOneBy($findPropertyQuery);
+		$modeProperty = $connector->findProperty(Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE);
 
 		if ($modeProperty === null) {
 			$changeMode = true;
@@ -467,10 +460,13 @@ class Initialize extends Console\Command\Command
 
 		$connectors = [];
 
-		foreach ($this->connectorsDataStorageRepository as $connector) {
-			if ($connector->getType() !== Entities\ModbusConnector::CONNECTOR_TYPE) {
-				continue;
-			}
+		$findConnectorsQuery = new DevicesQueries\FindConnectors();
+
+		foreach ($this->connectorsRepository->findAllBy(
+			$findConnectorsQuery,
+			Entities\ModbusConnector::class,
+		) as $connector) {
+			assert($connector instanceof Entities\ModbusConnector);
 
 			$connectors[$connector->getIdentifier()] = $connector->getIdentifier()
 				. ($connector->getName() !== null ? ' [' . $connector->getName() . ']' : '');
@@ -508,7 +504,7 @@ class Initialize extends Console\Command\Command
 		$findConnectorQuery = new DevicesQueries\FindConnectors();
 		$findConnectorQuery->byIdentifier($connectorIdentifier);
 
-		$connector = $this->connectorsRepository->findOneBy($findConnectorQuery);
+		$connector = $this->connectorsRepository->findOneBy($findConnectorQuery, Entities\ModbusConnector::class);
 
 		if ($connector === null) {
 			$io->error('Something went wrong, connector could not be loaded');

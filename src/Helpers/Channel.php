@@ -15,13 +15,13 @@
 
 namespace FastyBird\Connector\Modbus\Helpers;
 
+use DateTimeInterface;
 use FastyBird\Connector\Modbus\Types;
-use FastyBird\Library\Metadata\Entities as MetadataEntities;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
+use FastyBird\Library\Metadata\Types as MetadataTypes;
+use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
-use FastyBird\Module\Devices\Models as DevicesModels;
 use Nette;
-use Ramsey\Uuid;
 use function is_int;
 use function strval;
 
@@ -38,29 +38,19 @@ final class Channel
 
 	use Nette\SmartObject;
 
-	public function __construct(
-		private readonly DevicesModels\DataStorage\ChannelPropertiesRepository $propertiesRepository,
-	)
-	{
-	}
-
 	/**
 	 * @throws DevicesExceptions\InvalidState
-	 * @throws MetadataExceptions\FileNotFound
 	 * @throws MetadataExceptions\InvalidArgument
-	 * @throws MetadataExceptions\InvalidData
 	 * @throws MetadataExceptions\InvalidState
-	 * @throws MetadataExceptions\Logic
-	 * @throws MetadataExceptions\MalformedInput
 	 */
 	public function getConfiguration(
-		Uuid\UuidInterface $channelId,
+		DevicesEntities\Channels\Channel $channel,
 		Types\DevicePropertyIdentifier $type,
-	): float|bool|int|string|null
+	): float|bool|int|string|MetadataTypes\ButtonPayload|MetadataTypes\SwitchPayload|DateTimeInterface|null
 	{
-		$configuration = $this->propertiesRepository->findByIdentifier($channelId, strval($type->getValue()));
+		$configuration = $channel->findProperty(strval($type->getValue()));
 
-		if ($configuration instanceof MetadataEntities\DevicesModule\ChannelVariableProperty) {
+		if ($configuration instanceof DevicesEntities\Channels\Properties\Variable) {
 			if ($type->getValue() === Types\ChannelPropertyIdentifier::IDENTIFIER_ADDRESS) {
 				return is_int($configuration->getValue()) ? $configuration->getValue() : null;
 			}

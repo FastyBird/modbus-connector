@@ -15,8 +15,8 @@
 
 namespace FastyBird\Connector\Modbus\Helpers;
 
-use FastyBird\Library\Metadata\Entities as MetadataEntities;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
+use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
 use FastyBird\Module\Devices\Utilities as DevicesUtilities;
 use Nette;
@@ -44,19 +44,15 @@ final class Property
 
 	/**
 	 * @throws DevicesExceptions\InvalidState
-	 * @throws MetadataExceptions\FileNotFound
 	 * @throws MetadataExceptions\InvalidArgument
-	 * @throws MetadataExceptions\InvalidData
 	 * @throws MetadataExceptions\InvalidState
-	 * @throws MetadataExceptions\Logic
-	 * @throws MetadataExceptions\MalformedInput
 	 */
 	public function setValue(
-		MetadataEntities\DevicesModule\DeviceDynamicProperty|MetadataEntities\DevicesModule\ChannelDynamicProperty $property,
+		DevicesEntities\Devices\Properties\Dynamic|DevicesEntities\Channels\Properties\Dynamic $property,
 		Utils\ArrayHash $data,
 	): void
 	{
-		if ($property instanceof MetadataEntities\DevicesModule\DeviceDynamicProperty) {
+		if ($property instanceof DevicesEntities\Devices\Properties\Dynamic) {
 			$this->devicePropertiesStateManager->setValue($property, $data);
 		} else {
 			$this->channelPropertiesStateManager->setValue($property, $data);

@@ -15,7 +15,7 @@
 
 namespace FastyBird\Connector\Modbus\Clients;
 
-use FastyBird\Library\Metadata\Entities as MetadataEntities;
+use FastyBird\Connector\Modbus\Entities;
 
 /**
  * Base client factory
@@ -30,6 +30,6 @@ interface ClientFactory
 
 	public const MODE_CONSTANT_NAME = 'MODE';
 
-	public function create(MetadataEntities\DevicesModule\Connector $connector): Client;
+	public function create(Entities\ModbusConnector $connector): Client;
 
 }
