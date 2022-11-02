@@ -22,7 +22,7 @@ use FastyBird\Module\Devices\Schemas as DevicesSchemas;
 /**
  * Modbus connector entity schema
  *
- * @phpstan-extends DevicesSchemas\Devices\Device<Entities\ModbusDevice>
+ * @extends DevicesSchemas\Devices\Device<Entities\ModbusDevice>
  *
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Schemas

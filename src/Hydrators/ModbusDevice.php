@@ -21,7 +21,7 @@ use FastyBird\Module\Devices\Hydrators as DevicesHydrators;
 /**
  * Modbus device entity hydrator
  *
- * @phpstan-extends DevicesHydrators\Devices\Device<Entities\ModbusDevice>
+ * @extends DevicesHydrators\Devices\Device<Entities\ModbusDevice>
  *
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Hydrators
