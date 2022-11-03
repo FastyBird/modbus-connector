@@ -17,6 +17,7 @@ namespace FastyBird\Connector\Modbus\Clients\Interfaces;
 
 use FastyBird\Connector\Modbus\Exceptions;
 use function array_values;
+use function boolval;
 use function error_clear_last;
 use function error_get_last;
 use function exec;
@@ -96,7 +97,7 @@ final class SerialWindows extends Serial
 
 		$message = exec($command, $output, $resultCode);
 
-		if ($resultCode) {
+		if (boolval($resultCode)) {
 			throw new Exceptions\InvalidState(utf8_encode((string) $message), $resultCode);
 		}
 	}
