@@ -26,6 +26,7 @@ use FastyBird\Connector\Modbus\Helpers;
 use FastyBird\Connector\Modbus\Hydrators;
 use FastyBird\Connector\Modbus\Schemas;
 use FastyBird\Connector\Modbus\Subscribers;
+use FastyBird\Library\Bootstrap\Boot as BootstrapBoot;
 use FastyBird\Module\Devices\DI as DevicesDI;
 use Nette;
 use Nette\DI;
@@ -46,12 +47,12 @@ class ModbusExtension extends DI\CompilerExtension
 	public const NAME = 'fbModbusConnector';
 
 	public static function register(
-		Nette\Configurator $config,
+		Nette\Configurator|BootstrapBoot\Configurator $config,
 		string $extensionName = self::NAME,
 	): void
 	{
 		$config->onCompile[] = static function (
-			Nette\Configurator $config,
+			Nette\Configurator|BootstrapBoot\Configurator $config,
 			DI\Compiler $compiler,
 		) use ($extensionName): void {
 			$compiler->addExtension($extensionName, new ModbusExtension());
