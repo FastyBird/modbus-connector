@@ -7,6 +7,7 @@
     "fb",
     "iot",
     "modbus",
+    "rtu",
     "connector"
   ],
   "homepage": "https://www.fastybird.com",
@@ -84,7 +85,7 @@
   },
   "extra": {
     "branch-alias": {
-      "dev-main": "2.0-dev"
+      "dev-main": "1.0-dev"
     },
     "enable-patching": false,
     "patches": {
