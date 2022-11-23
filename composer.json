@@ -1,14 +1,17 @@
 {
   "name": "fastybird/modbus-connector",
-  "type": "connector",
+  "type": "fastybird-connector",
   "description": "FastyBird IoT connector for Modbus devices",
   "keywords": [
-    "fastybird",
-    "fb",
+    "php",
     "iot",
+    "connector",
+    "nette",
     "modbus",
-    "rtu",
-    "connector"
+    "fb",
+    "modbus-tcp",
+    "modbus-rtu",
+    "fastybird"
   ],
   "homepage": "https://www.fastybird.com",
   "license": "Apache-2.0",
