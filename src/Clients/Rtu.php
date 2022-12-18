@@ -653,17 +653,12 @@ class Rtu implements Client
 				return false;
 			}
 
-			$pending = is_string($state->getPending())
-				? Utils\DateTime::createFromFormat(
-					DateTimeInterface::ATOM,
-					$state->getPending(),
-				)
-				: true;
+			$pending = $state->getPending();
 
 			if (
 				$pending === true
 				|| (
-					$pending !== false
+					$pending instanceof DateTimeInterface
 					&& (float) $now->format('Uv') - (float) $pending->format('Uv') > self::WRITE_PENDING_DELAY
 				)
 			) {
