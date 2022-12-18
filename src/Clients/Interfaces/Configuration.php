@@ -63,7 +63,7 @@ final class Configuration
 	}
 
 	/**
-	 * @return Array<string, string|int>
+	 * @return array<string, string|int>
 	 */
 	public function toArray(): array
 	{

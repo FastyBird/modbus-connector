@@ -114,16 +114,16 @@ class Rtu implements Client
 
 	private bool $closed = true;
 
-	/** @var Array<string> */
+	/** @var array<string> */
 	private array $processedDevices = [];
 
-	/** @var Array<string, DateTimeInterface> */
+	/** @var array<string, DateTimeInterface> */
 	private array $lostDevices = [];
 
-	/** @var Array<string, DateTimeInterface|int> */
+	/** @var array<string, DateTimeInterface|int> */
 	private array $processedWrittenProperties = [];
 
-	/** @var Array<string, DateTimeInterface|int> */
+	/** @var array<string, DateTimeInterface|int> */
 	private array $processedReadProperties = [];
 
 	private bool|null $machineUsingLittleEndian = null;
@@ -1133,7 +1133,7 @@ class Rtu implements Client
 	 * @param int $startingAddress Starting Address (n1)
 	 * @param int $quantity Quantity of coils (n1)
 	 *
-	 * @return Array<string, int|Array<int, int>>|string|false
+	 * @return array<string, int|array<int, int>>|string|false
 	 * [
 	 *    'station'  => $station,
 	 *    'function' => 0x01,
@@ -1194,7 +1194,7 @@ class Rtu implements Client
 	 * @param int $startingAddress Starting Address (n1)
 	 * @param int $quantity Quantity of Inputs (n1)
 	 *
-	 * @return Array<string, int|Array<int, int>>|string|false
+	 * @return array<string, int|array<int, int>>|string|false
 	 * [
 	 *    'station'  => $station,
 	 *    'function' => 0x02,
@@ -1255,7 +1255,7 @@ class Rtu implements Client
 	 * @param int $startingAddress Starting Address (n1)
 	 * @param int $quantity Quantity of Registers (n1)
 	 *
-	 * @return Array<string, int|Array<int, int|float|null>>|string|false
+	 * @return array<string, int|array<int, int|float|null>>|string|false
 	 * [
 	 *    'station'   => $station,
 	 *    'function'  => 0x03,
@@ -1330,7 +1330,7 @@ class Rtu implements Client
 	 * @param int $startingAddress Starting Address (n1)
 	 * @param int $quantity Quantity of Input Registers
 	 *
-	 * @return Array<string, int|Array<int, int|float|null>>|string|false
+	 * @return array<string, int|array<int, int|float|null>>|string|false
 	 * [
 	 *    'station'   => $station,
 	 *    'function'  => 0x04,
@@ -1405,7 +1405,7 @@ class Rtu implements Client
 	 * @param int $coilAddress Coil Address (n1)
 	 * @param bool $value Output Value (n1)
 	 *
-	 * @return Array<string, int|bool>|string|false
+	 * @return array<string, int|bool>|string|false
 	 *
 	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
@@ -1463,7 +1463,7 @@ class Rtu implements Client
 	 * @param int $registerAddress Register Address (n1)
 	 * @param int|float $value Register Value (n1)
 	 *
-	 * @return Array<string, int|float|null>|string|false
+	 * @return array<string, int|float|null>|string|false
 	 *
 	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
@@ -1600,7 +1600,7 @@ class Rtu implements Client
 	 *
 	 * @param int $station Station Address (C1)
 	 *
-	 * @return Array<string, string|int>|string|false
+	 * @return array<string, string|int>|string|false
 	 *
 	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
@@ -1669,7 +1669,7 @@ class Rtu implements Client
 	 *
 	 * @param int $station Station Address (C1)
 	 *
-	 * @return Array<string, string|int>|string|false
+	 * @return array<string, string|int>|string|false
 	 *
 	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
@@ -1706,7 +1706,7 @@ class Rtu implements Client
 	 *
 	 * @param int $station Station Address (C1)
 	 *
-	 * @return Array<string, string|int>|string|false
+	 * @return array<string, string|int>|string|false
 	 *
 	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
@@ -1847,7 +1847,7 @@ class Rtu implements Client
 	}
 
 	/**
-	 * @param Array<int> $bytes
+	 * @param array<int> $bytes
 	 *
 	 * @throws Exceptions\InvalidState
 	 */
@@ -1889,7 +1889,7 @@ class Rtu implements Client
 	}
 
 	/**
-	 * @param Array<int> $bytes
+	 * @param array<int> $bytes
 	 */
 	private function unpackUnsignedInt(array $bytes, Types\ByteOrder $byteOrder): int|null
 	{
