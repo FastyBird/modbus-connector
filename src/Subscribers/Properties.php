@@ -17,6 +17,7 @@ namespace FastyBird\Connector\Modbus\Subscribers;
 
 use Doctrine\Common;
 use Doctrine\ORM;
+use Doctrine\Persistence;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Types;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
@@ -55,12 +56,14 @@ final class Properties implements Common\EventSubscriber
 	}
 
 	/**
+	 * @param Persistence\Event\LifecycleEventArgs<ORM\EntityManagerInterface> $eventArgs
+	 *
 	 * @throws DevicesExceptions\InvalidArgument
 	 * @throws DevicesExceptions\InvalidState
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
 	 */
-	public function postPersist(ORM\Event\LifecycleEventArgs $eventArgs): void
+	public function postPersist(Persistence\Event\LifecycleEventArgs $eventArgs): void
 	{
 		// onFlush was executed before, everything already initialized
 		$entity = $eventArgs->getObject();
