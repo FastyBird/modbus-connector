@@ -1,7 +1,7 @@
 # FastyBird IoT Modbus connector
 
-[![Build Status](https://badgen.net/github/checks/FastyBird/modbus-connector/master?cache=300&style=flat-square)](https://github.com/FastyBird/modbus-connector/actions)
-[![Licence](https://badgen.net/github/license/FastyBird/modbus-connector?cache=300&style=flat-square)](https://github.com/FastyBird/modbus-connector/blob/master/LICENSE.md)
+[![Build Status](https://badgen.net/github/checks/FastyBird/modbus-connector/main?cache=300&style=flat-square)](https://github.com/FastyBird/modbus-connector/actions)
+[![Licence](https://badgen.net/github/license/FastyBird/modbus-connector?cache=300&style=flat-square)](https://github.com/FastyBird/modbus-connector/blob/main/LICENSE.md)
 [![Code coverage](https://badgen.net/coveralls/c/github/FastyBird/modbus-connector?cache=300&style=flat-square)](https://coveralls.io/r/FastyBird/modbus-connector)
 [![Mutation testing](https://img.shields.io/endpoint?style=flat-square&url=https%3A%2F%2Fbadge-api.stryker-mutator.io%2Fgithub.com%2FFastyBird%2Fmodbus-connector%2Fmain)](https://dashboard.stryker-mutator.io/reports/github.com/FastyBird/modbus-connector/main)
 
@@ -50,7 +50,7 @@ application under marketplace section.
 ## Documentation
 
 Learn how to connect Modbus devices and manage them with [FastyBird](https://www.fastybird.com) [IoT](https://en.wikipedia.org/wiki/Internet_of_things) system
-in [documentation](https://github.com/FastyBird/modbus-connector/blob/master/docs/index.md).
+in [documentation](https://github.com/FastyBird/modbus-connector/blob/main/docs/index.md).
 
 ## Feedback
 
