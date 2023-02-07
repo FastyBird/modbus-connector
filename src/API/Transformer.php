@@ -63,7 +63,6 @@ final class Transformer
 		MetadataTypes\DataType $dataType,
 		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|null $format,
 		string|int|float|bool|null $value,
-		int|null $numberOfDecimals = null,
 	): float|int|string|bool|MetadataTypes\SwitchPayload|MetadataTypes\ButtonPayload|null
 	{
 		if ($value === null) {
@@ -191,7 +190,6 @@ final class Transformer
 		MetadataTypes\DataType $dataType,
 		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|null $format,
 		bool|float|int|string|DateTimeInterface|MetadataTypes\ButtonPayload|MetadataTypes\SwitchPayload|null $value,
-		int|null $numberOfDecimals = null,
 	): ValueObjects\DeviceData|null
 	{
 		if ($value === null) {

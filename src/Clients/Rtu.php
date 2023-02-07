@@ -240,7 +240,6 @@ class Rtu implements Client
 				$property->getDataType(),
 				$property->getFormat(),
 				$state->getExpectedValue(),
-				$property->getNumberOfDecimals(),
 			);
 
 			if ($valueToWrite === null) {
@@ -599,7 +598,6 @@ class Rtu implements Client
 												$property->getDataType(),
 												$property->getFormat(),
 												$value,
-												$property->getNumberOfDecimals(),
 											),
 										),
 										DevicesStates\Property::VALID_KEY => true,
