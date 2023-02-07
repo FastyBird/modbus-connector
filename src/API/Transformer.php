@@ -8,7 +8,7 @@
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  * @package        FastyBird:ModbusConnector!
  * @subpackage     API
- * @since          0.34.0
+ * @since          1.0.0
  *
  * @date           02.08.22
  */
@@ -16,6 +16,8 @@
 namespace FastyBird\Connector\Modbus\API;
 
 use DateTimeInterface;
+use FastyBird\Connector\Modbus\Exceptions;
+use FastyBird\Connector\Modbus\Types;
 use FastyBird\Connector\Modbus\ValueObjects;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
@@ -23,17 +25,21 @@ use FastyBird\Library\Metadata\ValueObjects as MetadataValueObjects;
 use Nette;
 use Nette\Utils;
 use function array_filter;
+use function array_reverse;
 use function array_unique;
 use function array_values;
 use function boolval;
 use function count;
+use function current;
 use function floatval;
 use function in_array;
 use function intval;
 use function is_bool;
 use function is_numeric;
 use function is_scalar;
+use function pack;
 use function strval;
+use function unpack;
 
 /**
  * Value transformers
@@ -48,6 +54,8 @@ final class Transformer
 
 	use Nette\SmartObject;
 
+	private bool|null $machineUsingLittleEndian = null;
+
 	/**
 	 * @throws MetadataExceptions\InvalidState
 	 */
@@ -55,6 +63,7 @@ final class Transformer
 		MetadataTypes\DataType $dataType,
 		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|null $format,
 		string|int|float|bool|null $value,
+		int|null $numberOfDecimals = null,
 	): float|int|string|bool|MetadataTypes\SwitchPayload|MetadataTypes\ButtonPayload|null
 	{
 		if ($value === null) {
@@ -182,6 +191,7 @@ final class Transformer
 		MetadataTypes\DataType $dataType,
 		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|null $format,
 		bool|float|int|string|DateTimeInterface|MetadataTypes\ButtonPayload|MetadataTypes\SwitchPayload|null $value,
+		int|null $numberOfDecimals = null,
 	): ValueObjects\DeviceData|null
 	{
 		if ($value === null) {
@@ -329,6 +339,157 @@ final class Transformer
 		return $deviceExpectedDataType;
 	}
 
+	public function determineDeviceWriteDataType(
+		MetadataTypes\DataType $dataType,
+		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|null $format,
+	): MetadataTypes\DataType
+	{
+		$deviceExpectedDataType = $dataType;
+
+		if ($format instanceof MetadataValueObjects\CombinedEnumFormat) {
+			$enumDataTypes = [];
+
+			foreach ($format->getItems() as $enumItem) {
+				if (
+					count($enumItem) === 3
+					&& $enumItem[2] instanceof MetadataValueObjects\CombinedEnumFormatItem
+					&& $enumItem[2]->getDataType() !== null
+				) {
+					$enumDataTypes[] = $enumItem[2]->getDataType();
+				}
+			}
+
+			$enumDataTypes = array_unique($enumDataTypes);
+
+			if (count($enumDataTypes) === 1) {
+				$enumDataType = $this->shortDataTypeToLong($enumDataTypes[0]);
+
+				if ($enumDataType instanceof MetadataTypes\DataType) {
+					$deviceExpectedDataType = $enumDataType;
+				}
+			}
+		}
+
+		return $deviceExpectedDataType;
+	}
+
+	/**
+	 * @param array<int> $bytes
+	 *
+	 * @throws Exceptions\InvalidState
+	 */
+	public function unpackSignedInt(array $bytes, Types\ByteOrder $byteOrder): int|null
+	{
+		$bytes = array_values($bytes);
+
+		if (count($bytes) === 2) {
+			$value = $this->unpackNumber('s', $bytes, $byteOrder);
+
+		} elseif (count($bytes) === 4) {
+			$value = $this->unpackNumber('l', $bytes, $byteOrder);
+
+		} else {
+			return null;
+		}
+
+		if ($value !== null) {
+			return intval($value);
+		}
+
+		return null;
+	}
+
+	/**
+	 * @param array<int> $bytes
+	 *
+	 * @throws Exceptions\InvalidState
+	 */
+	public function unpackUnsignedInt(array $bytes, Types\ByteOrder $byteOrder): int|null
+	{
+		$bytes = array_values($bytes);
+
+		if (count($bytes) === 2) {
+			$value = $this->unpackNumber('S', $bytes, $byteOrder);
+
+		} elseif (count($bytes) === 4) {
+			$value = $this->unpackNumber('L', $bytes, $byteOrder);
+
+		} else {
+			return null;
+		}
+
+		if ($value !== null) {
+			return intval($value);
+		}
+
+		return null;
+	}
+
+	/**
+	 * @param array<int> $bytes
+	 *
+	 * @throws Exceptions\InvalidState
+	 */
+	public function unpackFloat(array $bytes, Types\ByteOrder $byteOrder): float|null
+	{
+		$bytes = array_values($bytes);
+
+		if (count($bytes) === 4) {
+			$value = $this->unpackNumber('f', $bytes, $byteOrder);
+
+		} else {
+			return null;
+		}
+
+		if ($value !== null) {
+			return floatval($value);
+		}
+
+		return null;
+	}
+
+	/**
+	 * @return array<int>|null
+	 *
+	 * @throws Exceptions\InvalidState
+	 */
+	public function packSignedInt(int $value, int $bytes, Types\ByteOrder $byteOrder): array|null
+	{
+		if ($bytes === 2) {
+			return $this->packNumber('s', $value, $bytes, $byteOrder);
+		} elseif ($bytes === 4) {
+			return $this->packNumber('l', $value, $bytes, $byteOrder);
+		}
+
+		return null;
+	}
+
+	/**
+	 * @return array<int>|null
+	 *
+	 * @throws Exceptions\InvalidState
+	 */
+	public function packUnsignedInt(int $value, int $bytes, Types\ByteOrder $byteOrder): array|null
+	{
+		if ($bytes === 2) {
+			return $this->packNumber('S', $value, $bytes, $byteOrder);
+		} elseif ($bytes === 4) {
+			return $this->packNumber('L', $value, $bytes, $byteOrder);
+		}
+
+		return null;
+	}
+
+	/**
+	 * @return array<int>|null
+	 *
+	 * @throws Exceptions\InvalidState
+	 */
+	public function packFloat(float $value, Types\ByteOrder $byteOrder): array|null
+	{
+		return $this->packNumber('f', $value, 4, $byteOrder);
+	}
+
 	private function shortDataTypeToLong(MetadataTypes\DataTypeShort|null $dataType): MetadataTypes\DataType|null
 	{
 		if ($dataType === null) {
@@ -371,6 +532,161 @@ final class Transformer
 			),
 			default => null,
 		};
+	}
+
+	/**
+	 * @param array<int> $bytes
+	 *
+	 * @throws Exceptions\InvalidState
+	 */
+	private function unpackNumber(string $format, array $bytes, Types\ByteOrder $byteOrder): int|float|null
+	{
+		if (count($bytes) === 2) {
+			if (
+				$byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_BIG_SWAP)
+				|| $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_BIG_LOW_WORD_FIRST)
+			) {
+				$byteOrder = Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_BIG);
+			} elseif (
+				$byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE_SWAP)
+				|| $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE_LOW_WORD_FIRST)
+			) {
+				$byteOrder = Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_LITTLE);
+			}
+		} elseif (count($bytes) === 4) {
+			if (
+				$byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_BIG_SWAP)
+				|| $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE_SWAP)
+			) {
+				$bytes = [$bytes[1], $bytes[0], $bytes[3], $bytes[2]];
+
+			} elseif (
+				$byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_BIG_LOW_WORD_FIRST)
+				|| $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE_LOW_WORD_FIRST)
+			) {
+				$bytes = [$bytes[2], $bytes[3], $bytes[0], $bytes[1]];
+			}
+
+			if (
+				$byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_BIG_SWAP)
+				|| $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_BIG_LOW_WORD_FIRST)
+			) {
+				$byteOrder = Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_BIG);
+			} elseif (
+				$byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE_SWAP)
+				|| $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE_LOW_WORD_FIRST)
+			) {
+				$byteOrder = Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_LITTLE);
+			}
+		}
+
+		if (
+			(
+				$this->isLittleEndian()
+				&& $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE)
+			) || (
+				!$this->isLittleEndian()
+				&& $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_BIG)
+			)
+		) {
+			// If machine is using same byte order as device
+			$value = unpack($format, pack('C*', ...array_values($bytes)));
+
+		} elseif (
+			(
+				!$this->isLittleEndian()
+				&& $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE)
+			) || (
+				$this->isLittleEndian()
+				&& $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_BIG)
+			)
+		) {
+			// If machine is using different byte order than device, do byte order swap
+			$value = unpack($format, pack('C*', ...array_reverse(array_values($bytes))));
+
+		} else {
+			return null;
+		}
+
+		if ($value === false) {
+			return null;
+		}
+
+		return current($value);
+	}
+
+	/**
+	 * @return array<int>|null
+	 *
+	 * @throws Exceptions\InvalidState
+	 */
+	private function packNumber(string $format, int|float $value, int $bytes, Types\ByteOrder $byteOrder): array|null
+	{
+		$bytearray = unpack("C{$bytes}", pack($format, $value));
+
+		if ($bytearray === false) {
+			return null;
+		}
+
+		$bytearray = array_values($bytearray);
+
+		// Check if machine is using little or big endian...
+		if ($this->isLittleEndian()) {
+			// If machine is using little, change byte order to be big
+			$bytearray = array_reverse($bytearray);
+		}
+
+		// For all little byte orders, perform bytes order swap
+		if (
+			$byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE)
+			|| $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE_SWAP)
+			|| $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE_LOW_WORD_FIRST)
+		) {
+			$bytearray = array_reverse($bytearray);
+		}
+
+		if (
+			$bytes === 4
+			&& (
+				$byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_BIG_SWAP)
+				|| $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE_SWAP)
+			)
+		) {
+			$bytearray = [$bytearray[1], $bytearray[0], $bytearray[3], $bytearray[2]];
+
+		} elseif (
+			$bytes === 4
+			&& (
+				$byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_BIG_LOW_WORD_FIRST)
+				|| $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE_LOW_WORD_FIRST)
+			)
+		) {
+			$bytearray = [$bytearray[2], $bytearray[3], $bytearray[0], $bytearray[1]];
+		}
+
+		return $bytearray;
+	}
+
+	/**
+	 * Detect machine byte order configuration
+	 *
+	 * @throws Exceptions\InvalidState
+	 */
+	private function isLittleEndian(): bool
+	{
+		if ($this->machineUsingLittleEndian !== null) {
+			return $this->machineUsingLittleEndian;
+		}
+
+		$testUnpacked = unpack('S', "\x01\x00");
+
+		if ($testUnpacked === false) {
+			throw new Exceptions\InvalidState('Machine endian order could not be determined');
+		}
+
+		$this->machineUsingLittleEndian = current($testUnpacked) === 1;
+
+		return $this->machineUsingLittleEndian;
 	}
 
 }

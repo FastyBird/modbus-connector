@@ -8,7 +8,7 @@
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Types
- * @since          0.34.0
+ * @since          1.0.0
  *
  * @date           31.07.22
  */
@@ -41,6 +41,17 @@ class ByteSize extends Consistence\Enum\Enum
 	public const SIZE_7 = 7;
 
 	public const SIZE_8 = 8;
+
+	/**
+	 * @return array<int>
+	 */
+	public static function getValues(): array
+	{
+		/** @var iterable<int> $availableValues */
+		$availableValues = parent::getAvailableValues();
+
+		return (array) $availableValues;
+	}
 
 	public function __toString(): string
 	{

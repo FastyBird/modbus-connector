@@ -7,13 +7,13 @@
  * @copyright      https://www.fastybird.com
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  * @package        FastyBird:ModbusConnector!
- * @subpackage     Clients
- * @since          0.34.0
+ * @subpackage     API
+ * @since          1.0.0
  *
  * @date           31.07.22
  */
 
-namespace FastyBird\Connector\Modbus\Clients\Interfaces;
+namespace FastyBird\Connector\Modbus\API\Interfaces;
 
 use FastyBird\Connector\Modbus\Types;
 use Nette;
@@ -23,7 +23,7 @@ use function intval;
  * Base serial interface configuration
  *
  * @package        FastyBird:ModbusConnector!
- * @subpackage     Clients
+ * @subpackage     API
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */

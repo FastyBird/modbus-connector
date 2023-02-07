@@ -8,12 +8,16 @@
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Clients
- * @since          0.34.0
+ * @since          1.0.0
  *
  * @date           31.07.22
  */
 
 namespace FastyBird\Connector\Modbus\Clients;
+
+use FastyBird\Connector\Modbus\Entities;
+use FastyBird\Module\Devices\Entities as DevicesEntities;
+use React\Promise;
 
 /**
  * Modbus device client interface
@@ -35,5 +39,14 @@ interface Client
 	 * Destroy servers/clients
 	 */
 	public function disconnect(): void;
+
+	/**
+	 * Write data to DPS
+	 */
+	public function writeChannelProperty(
+		Entities\ModbusDevice $device,
+		Entities\ModbusChannel $channel,
+		DevicesEntities\Channels\Properties\Dynamic $property,
+	): Promise\PromiseInterface;
 
 }

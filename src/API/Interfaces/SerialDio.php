@@ -1,42 +1,40 @@
 <?php declare(strict_types = 1);
 
 /**
- * SerialWindows.php
+ * SerialDio.php
  *
  * @license        More in LICENSE.md
  * @copyright      https://www.fastybird.com
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  * @package        FastyBird:ModbusConnector!
- * @subpackage     Clients
- * @since          0.34.0
+ * @subpackage     API
+ * @since          1.0.0
  *
  * @date           31.07.22
  */
 
-namespace FastyBird\Connector\Modbus\Clients\Interfaces;
+namespace FastyBird\Connector\Modbus\API\Interfaces;
 
 use FastyBird\Connector\Modbus\Exceptions;
-use function array_values;
-use function boolval;
+use function dio_raw;
+use function dio_serial;
 use function error_clear_last;
 use function error_get_last;
-use function exec;
-use function fopen;
 use function is_array;
 use function is_resource;
 use function sprintf;
 use function stream_set_blocking;
-use function utf8_encode;
+use function stream_set_timeout;
 
 /**
- * Serial interface using Windows file stream
+ * Serial interface using php-dio extension
  *
  * @package        FastyBird:ModbusConnector!
- * @subpackage     Clients
+ * @subpackage     API
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-final class SerialWindows extends Serial
+final class SerialDio extends Serial
 {
 
 	/**
@@ -46,11 +44,9 @@ final class SerialWindows extends Serial
 	{
 		parent::open($mode);
 
-		$this->setPortOptions();
-
 		error_clear_last();
 
-		$this->resource = @fopen($this->port, $mode);
+		$this->resource = @dio_serial($this->port, $mode, $this->configuration->toArray());
 
 		if (!is_resource($this->resource)) {
 			$error = error_get_last();
@@ -71,34 +67,41 @@ final class SerialWindows extends Serial
 		if (!stream_set_blocking($this->resource, false)) {
 			throw new Exceptions\InvalidState('Setting blocking error');
 		}
+
+		if (!stream_set_timeout($this->resource, 0, 2_000)) {
+			throw new Exceptions\InvalidState('Setting timeout error');
+		}
 	}
 
 	/**
-	 * Sets and prepare the port for connection
+	 * Binds a named resource, specified by setDevice, to a raw stream
+	 *
+	 * @param string $mode The mode parameter specifies the type of access you require to the stream (as `fopen()`)
 	 *
 	 * @throws Exceptions\InvalidState
 	 */
-	protected function setPortOptions(): void
+	public function openRaw(string $mode = 'r+b'): void
 	{
-		$params = ['device' => $this->port] + $this->configuration->toArray();
-		unset($params['is_canonical']);
+		parent::open($mode);
 
-		$paramsFormats = [
-			'parity' => [0 => 'n', 1 => 'o', 2 => 'e'],
-			'flow_control' => [0 => 'off', 1 => 'on'],
-		];
+		error_clear_last();
 
-		foreach ($paramsFormats as $param => $values) {
-			$params[$param] = $values[$params[$param]];
-		}
+		$this->resource = @dio_raw($this->port, $mode, $this->configuration->toArray());
 
-		$command = 'mode %s baud=%s data=%s stop=%s parity=%s xon=%s';
-		$command = sprintf($command, ...array_values($params));
+		if (!is_resource($this->resource)) {
+			$error = error_get_last();
 
-		$message = exec($command, $output, $resultCode);
+			if (is_array($error)) {
+				$error = new Exceptions\InvalidState($error['message'], 0);
 
-		if (boolval($resultCode)) {
-			throw new Exceptions\InvalidState(utf8_encode((string) $message), $resultCode);
+				throw new Exceptions\InvalidState(
+					sprintf('Unable to open the connection %s', $this->port),
+					0,
+					$error,
+				);
+			}
+
+			throw new Exceptions\InvalidState(sprintf('Unable to open the connection %s', $this->port));
 		}
 	}
 

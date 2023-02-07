@@ -8,7 +8,7 @@
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Schemas
- * @since          0.1.0
+ * @since          1.0.0
  *
  * @date           22.01.22
  */
@@ -20,7 +20,7 @@ use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Schemas as DevicesSchemas;
 
 /**
- * Modbus connector entity schema
+ * Modbus device entity schema
  *
  * @extends DevicesSchemas\Devices\Device<Entities\ModbusDevice>
  *

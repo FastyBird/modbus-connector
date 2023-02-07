@@ -8,7 +8,7 @@
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Fixtures
- * @since          0.34.0
+ * @since          1.0.0
  *
  * @date           22.08.22
  */
@@ -19,7 +19,6 @@ use Doctrine\Common\DataFixtures;
 use Doctrine\Persistence;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Exceptions;
-use FastyBird\Module\Devices\Entities as DevicesEntities;
 
 /**
  * Devices channels database fixture
@@ -44,10 +43,7 @@ final class Channels extends DataFixtures\AbstractFixture implements DataFixture
 		}
 
 		for ($i = 1; $i <= 4; $i++) {
-			$channel = new DevicesEntities\Channels\Channel(
-				$device,
-				'channel-' . $i,
-			);
+			$channel = new Entities\ModbusChannel($device, 'channel-' . $i);
 
 			$manager->persist($channel);
 

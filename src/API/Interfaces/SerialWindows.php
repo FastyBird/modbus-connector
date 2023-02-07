@@ -1,19 +1,19 @@
 <?php declare(strict_types = 1);
 
 /**
- * SerialLinux.php
+ * SerialWindows.php
  *
  * @license        More in LICENSE.md
  * @copyright      https://www.fastybird.com
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  * @package        FastyBird:ModbusConnector!
- * @subpackage     Clients
- * @since          0.34.0
+ * @subpackage     API
+ * @since          1.0.0
  *
  * @date           31.07.22
  */
 
-namespace FastyBird\Connector\Modbus\Clients\Interfaces;
+namespace FastyBird\Connector\Modbus\API\Interfaces;
 
 use FastyBird\Connector\Modbus\Exceptions;
 use function array_values;
@@ -29,14 +29,14 @@ use function stream_set_blocking;
 use function utf8_encode;
 
 /**
- * Serial interface using Linux file stream
+ * Serial interface using Windows file stream
  *
  * @package        FastyBird:ModbusConnector!
- * @subpackage     Clients
+ * @subpackage     API
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-final class SerialLinux extends Serial
+final class SerialWindows extends Serial
 {
 
 	/**
@@ -84,16 +84,15 @@ final class SerialLinux extends Serial
 		unset($params['is_canonical']);
 
 		$paramsFormats = [
-			'stop_bits' => [1 => '-cstopb', 2 => 'cstopb'],
-			'parity' => [0 => '-parenb', 1 => 'parenb parodd', 2 => 'parenb -parodd'],
-			'flow_control' => [0 => 'clocal -crtscts -ixon -ixoff', 1 => '-clocal -crtscts ixon ixoff'],
+			'parity' => [0 => 'n', 1 => 'o', 2 => 'e'],
+			'flow_control' => [0 => 'off', 1 => 'on'],
 		];
 
 		foreach ($paramsFormats as $param => $values) {
 			$params[$param] = $values[$params[$param]];
 		}
 
-		$command = 'stty -F %s %s cs%s %s %s %s';
+		$command = 'mode %s baud=%s data=%s stop=%s parity=%s xon=%s';
 		$command = sprintf($command, ...array_values($params));
 
 		$message = exec($command, $output, $resultCode);

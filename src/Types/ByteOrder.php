@@ -8,7 +8,7 @@
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Types
- * @since          0.34.0
+ * @since          1.0.0
  *
  * @date           21.08.22
  */
@@ -36,9 +36,13 @@ class ByteOrder extends Consistence\Enum\Enum
 
 	public const BYTE_ORDER_BIG_SWAP = 'big_swap';
 
+	public const BYTE_ORDER_BIG_LOW_WORD_FIRST = 'big_lwf';
+
 	public const BYTE_ORDER_LITTLE = 'little';
 
 	public const BYTE_ORDER_LITTLE_SWAP = 'little_swap';
+
+	public const BYTE_ORDER_LITTLE_LOW_WORD_FIRST = 'little_lwf';
 
 	public function __toString(): string
 	{

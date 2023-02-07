@@ -8,7 +8,7 @@
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Entities
- * @since          0.1.0
+ * @since          1.0.0
  *
  * @date           07.12.21
  */
@@ -16,8 +16,15 @@
 namespace FastyBird\Connector\Modbus\Entities;
 
 use Doctrine\ORM\Mapping as ORM;
+use FastyBird\Connector\Modbus;
+use FastyBird\Connector\Modbus\Exceptions;
+use FastyBird\Connector\Modbus\Types;
+use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
+use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
+use function is_numeric;
+use function is_string;
 
 /**
  * @ORM\Entity
@@ -40,6 +47,155 @@ class ModbusConnector extends DevicesEntities\Connectors\Connector
 	public function getSource(): MetadataTypes\ConnectorSource
 	{
 		return MetadataTypes\ConnectorSource::get(MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS);
+	}
+
+	/**
+	 * @throws DevicesExceptions\InvalidState
+	 * @throws Exceptions\InvalidState
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidState
+	 */
+	public function getClientMode(): Types\ClientMode
+	{
+		$property = $this->properties
+			->filter(
+				// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
+				static fn (DevicesEntities\Connectors\Properties\Property $property): bool => $property->getIdentifier() === Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE
+			)
+			->first();
+
+		if (
+			$property instanceof DevicesEntities\Connectors\Properties\Variable
+			&& Types\ClientMode::isValidValue($property->getValue())
+		) {
+			return Types\ClientMode::get($property->getValue());
+		}
+
+		throw new Exceptions\InvalidState('Connector mode is not configured');
+	}
+
+	/**
+	 * @throws DevicesExceptions\InvalidState
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidState
+	 */
+	public function getByteSize(): Types\ByteSize
+	{
+		$property = $this->properties
+			->filter(
+			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
+				static fn (DevicesEntities\Connectors\Properties\Property $property): bool => $property->getIdentifier() === Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_BYTE_SIZE
+			)
+			->first();
+
+		if (
+			$property instanceof DevicesEntities\Connectors\Properties\Variable
+			&& is_numeric($property->getValue())
+			&& Types\ByteSize::isValidValue($property->getValue())
+		) {
+			return Types\ByteSize::get($property->getValue());
+		}
+
+		return Types\ByteSize::get(Types\ByteSize::SIZE_8);
+	}
+
+	/**
+	 * @throws DevicesExceptions\InvalidState
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidState
+	 */
+	public function getBaudRate(): Types\BaudRate
+	{
+		$property = $this->properties
+			->filter(
+			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
+				static fn (DevicesEntities\Connectors\Properties\Property $property): bool => $property->getIdentifier() === Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_BAUD_RATE
+			)
+			->first();
+
+		if (
+			$property instanceof DevicesEntities\Connectors\Properties\Variable
+			&& is_numeric($property->getValue())
+			&& Types\BaudRate::isValidValue($property->getValue())
+		) {
+			return Types\BaudRate::get($property->getValue());
+		}
+
+		return Types\BaudRate::get(Types\BaudRate::BAUD_RATE_9600);
+	}
+
+	/**
+	 * @throws DevicesExceptions\InvalidState
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidState
+	 */
+	public function getParity(): Types\Parity
+	{
+		$property = $this->properties
+			->filter(
+			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
+				static fn (DevicesEntities\Connectors\Properties\Property $property): bool => $property->getIdentifier() === Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_PARITY
+			)
+			->first();
+
+		if (
+			$property instanceof DevicesEntities\Connectors\Properties\Variable
+			&& is_numeric($property->getValue())
+			&& Types\Parity::isValidValue($property->getValue())
+		) {
+			return Types\Parity::get($property->getValue());
+		}
+
+		return Types\Parity::get(Types\Parity::PARITY_NONE);
+	}
+
+	/**
+	 * @throws DevicesExceptions\InvalidState
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidState
+	 */
+	public function getStopBits(): Types\StopBits
+	{
+		$property = $this->properties
+			->filter(
+			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
+				static fn (DevicesEntities\Connectors\Properties\Property $property): bool => $property->getIdentifier() === Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_STOP_BITS
+			)
+			->first();
+
+		if (
+			$property instanceof DevicesEntities\Connectors\Properties\Variable
+			&& is_numeric($property->getValue())
+			&& Types\StopBits::isValidValue($property->getValue())
+		) {
+			return Types\StopBits::get($property->getValue());
+		}
+
+		return Types\StopBits::get(Types\StopBits::STOP_BIT_ONE);
+	}
+
+	/**
+	 * @throws DevicesExceptions\InvalidState
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidState
+	 */
+	public function getRtuInterface(): string
+	{
+		$property = $this->properties
+			->filter(
+			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
+				static fn (DevicesEntities\Connectors\Properties\Property $property): bool => $property->getIdentifier() === Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_INTERFACE
+			)
+			->first();
+
+		if (
+			$property instanceof DevicesEntities\Connectors\Properties\Variable
+			&& is_string($property->getValue())
+		) {
+			return $property->getValue();
+		}
+
+		return Modbus\Constants::DEFAULT_RTU_SERIAL_INTERFACE;
 	}
 
 }

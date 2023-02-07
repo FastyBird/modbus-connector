@@ -8,7 +8,7 @@
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Helpers
- * @since          0.34.0
+ * @since          1.0.0
  *
  * @date           24.08.22
  */
@@ -45,7 +45,7 @@ final class Channel
 	 */
 	public function getConfiguration(
 		DevicesEntities\Channels\Channel $channel,
-		Types\DevicePropertyIdentifier $type,
+		Types\ChannelPropertyIdentifier $type,
 	): float|bool|int|string|MetadataTypes\ButtonPayload|MetadataTypes\SwitchPayload|DateTimeInterface|null
 	{
 		$configuration = $channel->findProperty(strval($type->getValue()));
@@ -53,6 +53,14 @@ final class Channel
 		if ($configuration instanceof DevicesEntities\Channels\Properties\Variable) {
 			if ($type->getValue() === Types\ChannelPropertyIdentifier::IDENTIFIER_ADDRESS) {
 				return is_int($configuration->getValue()) ? $configuration->getValue() : null;
+			}
+
+			if ($type->getValue() === Types\ChannelPropertyIdentifier::IDENTIFIER_TYPE) {
+				if (Types\ChannelType::isValidValue($configuration->getValue())) {
+					return strval($configuration->getValue());
+				}
+
+				return null;
 			}
 
 			return $configuration->getValue();

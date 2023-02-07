@@ -8,7 +8,7 @@
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Helpers
- * @since          0.34.0
+ * @since          1.0.0
  *
  * @date           01.08.22
  */

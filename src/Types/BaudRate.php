@@ -8,7 +8,7 @@
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  * @package        FastyBird:ModbusConnector!
  * @subpackage     Types
- * @since          0.34.0
+ * @since          1.0.0
  *
  * @date           31.07.22
  */
@@ -77,6 +77,17 @@ class BaudRate extends Consistence\Enum\Enum
 	public const BAUD_RATE_230400 = 230_400; // posix
 
 	public const BAUD_RATE_460800 = 460_800; // posix
+
+	/**
+	 * @return array<int>
+	 */
+	public static function getValues(): array
+	{
+		/** @var iterable<int> $availableValues */
+		$availableValues = parent::getAvailableValues();
+
+		return (array) $availableValues;
+	}
 
 	public function __toString(): string
 	{

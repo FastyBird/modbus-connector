@@ -8,7 +8,7 @@
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  * @package        FastyBird:ModbusConnector!
  * @subpackage     DI
- * @since          0.1.0
+ * @since          1.0.0
  *
  * @date           30.01.22
  */
@@ -20,17 +20,21 @@ use FastyBird\Connector\Modbus\API;
 use FastyBird\Connector\Modbus\Clients;
 use FastyBird\Connector\Modbus\Commands;
 use FastyBird\Connector\Modbus\Connector;
+use FastyBird\Connector\Modbus\Consumers;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Fixtures;
 use FastyBird\Connector\Modbus\Helpers;
 use FastyBird\Connector\Modbus\Hydrators;
 use FastyBird\Connector\Modbus\Schemas;
 use FastyBird\Connector\Modbus\Subscribers;
+use FastyBird\Connector\Modbus\Writers;
 use FastyBird\Library\Bootstrap\Boot as BootstrapBoot;
 use FastyBird\Module\Devices\DI as DevicesDI;
-use Nette;
 use Nette\DI;
+use Nette\Schema;
 use Nettrine\Fixtures as NettrineFixtures;
+use stdClass;
+use function assert;
 use const DIRECTORY_SEPARATOR;
 
 /**
@@ -60,17 +64,70 @@ class ModbusExtension extends DI\CompilerExtension
 		};
 	}
 
+	public function getConfigSchema(): Schema\Schema
+	{
+		return Schema\Expect::structure([
+			'writer' => Schema\Expect::anyOf(
+				Writers\Event::NAME,
+				Writers\Exchange::NAME,
+				Writers\Periodic::NAME,
+			)->default(
+				Writers\Periodic::NAME,
+			),
+		]);
+	}
+
 	public function loadConfiguration(): void
 	{
 		$builder = $this->getContainerBuilder();
+		$configuration = $this->getConfig();
+		assert($configuration instanceof stdClass);
+
+		if ($configuration->writer === Writers\Event::NAME) {
+			$builder->addDefinition($this->prefix('writers.event'), new DI\Definitions\ServiceDefinition())
+				->setType(Writers\Event::class);
+		} elseif ($configuration->writer === Writers\Exchange::NAME) {
+			$builder->addDefinition($this->prefix('writers.exchange'), new DI\Definitions\ServiceDefinition())
+				->setType(Writers\Exchange::class);
+		} elseif ($configuration->writer === Writers\Periodic::NAME) {
+			$builder->addDefinition($this->prefix('writers.periodic'), new DI\Definitions\ServiceDefinition())
+				->setType(Writers\Periodic::class);
+		}
 
 		$builder->addFactoryDefinition($this->prefix('client.rtu'))
 			->setImplement(Clients\RtuFactory::class)
 			->getResultDefinition()
 			->setType(Clients\Rtu::class);
 
+		$builder->addFactoryDefinition($this->prefix('client.tcp'))
+			->setImplement(Clients\TcpFactory::class)
+			->getResultDefinition()
+			->setType(Clients\Tcp::class);
+
+		$builder->addFactoryDefinition($this->prefix('api.rtu'))
+			->setImplement(API\RtuFactory::class)
+			->getResultDefinition()
+			->setType(API\Rtu::class);
+
+		$builder->addFactoryDefinition($this->prefix('api.tcp'))
+			->setImplement(API\TcpFactory::class)
+			->getResultDefinition()
+			->setType(API\Tcp::class);
+
 		$builder->addDefinition($this->prefix('api.transformer'), new DI\Definitions\ServiceDefinition())
 			->setType(API\Transformer::class);
+
+		$builder->addDefinition(
+			$this->prefix('consumers.messages.device.state'),
+			new DI\Definitions\ServiceDefinition(),
+		)
+			->setType(Consumers\Messages\State::class);
+
+		$builder->addDefinition($this->prefix('consumers.messages'), new DI\Definitions\ServiceDefinition())
+			->setType(Consumers\Messages::class)
+			->setArguments([
+				'consumers' => $builder->findByType(Consumers\Consumer::class),
+			]);
 
 		$builder->addDefinition($this->prefix('subscribers.properties'), new DI\Definitions\ServiceDefinition())
 			->setType(Subscribers\Properties::class);
@@ -81,20 +138,17 @@ class ModbusExtension extends DI\CompilerExtension
 		$builder->addDefinition($this->prefix('schemas.device.modbus'), new DI\Definitions\ServiceDefinition())
 			->setType(Schemas\ModbusDevice::class);
 
+		$builder->addDefinition($this->prefix('schemas.channel.modbus'), new DI\Definitions\ServiceDefinition())
+			->setType(Schemas\ModbusChannel::class);
+
 		$builder->addDefinition($this->prefix('hydrators.connector.modbus'), new DI\Definitions\ServiceDefinition())
 			->setType(Hydrators\ModbusConnector::class);
 
 		$builder->addDefinition($this->prefix('hydrators.device.modbus'), new DI\Definitions\ServiceDefinition())
 			->setType(Hydrators\ModbusDevice::class);
 
-		$builder->addDefinition($this->prefix('helpers.connector'), new DI\Definitions\ServiceDefinition())
-			->setType(Helpers\Connector::class);
-
-		$builder->addDefinition($this->prefix('helpers.device'), new DI\Definitions\ServiceDefinition())
-			->setType(Helpers\Device::class);
-
-		$builder->addDefinition($this->prefix('helpers.channel'), new DI\Definitions\ServiceDefinition())
-			->setType(Helpers\Channel::class);
+		$builder->addDefinition($this->prefix('hydrators.channel.modbus'), new DI\Definitions\ServiceDefinition())
+			->setType(Hydrators\ModbusChannel::class);
 
 		$builder->addDefinition($this->prefix('helpers.property'), new DI\Definitions\ServiceDefinition())
 			->setType(Helpers\Property::class);
@@ -116,10 +170,13 @@ class ModbusExtension extends DI\CompilerExtension
 
 		$builder->addDefinition($this->prefix('commands.execute'), new DI\Definitions\ServiceDefinition())
 			->setType(Commands\Execute::class);
+
+		$builder->addDefinition($this->prefix('commands.devices'), new DI\Definitions\ServiceDefinition())
+			->setType(Commands\Devices::class);
 	}
 
 	/**
-	 * @throws Nette\DI\MissingServiceException
+	 * @throws DI\MissingServiceException
 	 */
 	public function beforeCompile(): void
 	{

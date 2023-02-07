@@ -17,11 +17,13 @@ final class ModbusExtensionTest extends BaseTestCase
 	{
 		$container = $this->createContainer();
 
-		self::assertNotNull($container->getByType(Schemas\ModbusDevice::class, false));
 		self::assertNotNull($container->getByType(Schemas\ModbusConnector::class, false));
+		self::assertNotNull($container->getByType(Schemas\ModbusDevice::class, false));
+		self::assertNotNull($container->getByType(Schemas\ModbusChannel::class, false));
 
-		self::assertNotNull($container->getByType(Hydrators\ModbusDevice::class, false));
 		self::assertNotNull($container->getByType(Hydrators\ModbusConnector::class, false));
+		self::assertNotNull($container->getByType(Hydrators\ModbusDevice::class, false));
+		self::assertNotNull($container->getByType(Hydrators\ModbusChannel::class, false));
 	}
 
 }
