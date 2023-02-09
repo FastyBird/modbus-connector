@@ -65,6 +65,8 @@ class Tcp
 
 	private const MAX_TRANSACTION_ID = 0xFFFF; // 65535 as dec
 
+	private const CONNECTION_TIMEOUT = 0.2;
+
 	public function __construct(
 		private readonly EventLoop\LoopInterface $eventLoop,
 	)
@@ -518,7 +520,7 @@ class Tcp
 
 		$connector = new Socket\Connector($this->eventLoop, [
 			'dns' => false,
-			'timeout' => 0.2,
+			'timeout' => self::CONNECTION_TIMEOUT,
 		]);
 
 		$connector->connect($uri)

@@ -376,8 +376,8 @@ class Tcp implements Client
 					}
 
 					if (
-						$this->dateTimeFactory->getNow()->getTimestamp() - $this->lostDevices[$device->getId()
-							->toString()]->getTimestamp() < self::LOST_DELAY
+						// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
+						$this->dateTimeFactory->getNow()->getTimestamp() - $this->lostDevices[$device->getPlainId()]->getTimestamp() < self::LOST_DELAY
 					) {
 						continue;
 					}
@@ -686,34 +686,31 @@ class Tcp implements Client
 										]),
 									);
 								}
-
-								$this->logger->error(
-									'Could not handle register reading',
-									[
-										'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
-										'type' => 'tcp-client',
-										'group' => 'client',
-										'exception' => [
-											'message' => $ex->getMessage(),
-											'code' => $ex->getCode(),
-										],
-										'connector' => [
-											'id' => $this->connector->getPlainId(),
-										],
-										'device' => [
-											'id' => $device->getPlainId(),
-										],
-										'channel' => [
-											'id' => $channel->getPlainId(),
-										],
-									],
-								);
 							}
 						}
+
+						$this->logger->error(
+							'Could not handle register reading',
+							[
+								'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+								'type' => 'tcp-client',
+								'group' => 'client',
+								'exception' => [
+									'message' => $ex->getMessage(),
+									'code' => $ex->getCode(),
+								],
+								'connector' => [
+									'id' => $this->connector->getPlainId(),
+								],
+								'device' => [
+									'id' => $device->getPlainId(),
+								],
+							],
+						);
 					} else {
 						$this->lostDevices[$device->getPlainId()] = $now;
 
-						$this->logger->debug(
+						$this->logger->warning(
 							'Device is lost',
 							[
 								'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,

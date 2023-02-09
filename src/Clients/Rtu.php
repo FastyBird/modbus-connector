@@ -377,7 +377,7 @@ class Rtu implements Client
 						!$this->deviceConnectionManager->getState($device)
 							->equalsValue(MetadataTypes\ConnectionState::STATE_LOST)
 					) {
-						$this->logger->debug(
+						$this->logger->warning(
 							'Device is lost',
 							[
 								'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
@@ -400,8 +400,8 @@ class Rtu implements Client
 					}
 
 					if (
-						$this->dateTimeFactory->getNow()->getTimestamp() - $this->lostDevices[$device->getId()
-							->toString()]->getTimestamp() < self::LOST_DELAY
+						// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
+						$this->dateTimeFactory->getNow()->getTimestamp() - $this->lostDevices[$device->getPlainId()]->getTimestamp() < self::LOST_DELAY
 					) {
 						continue;
 					}
@@ -545,39 +545,7 @@ class Rtu implements Client
 			return false;
 		}
 
-		$now = $this->dateTimeFactory->getNow();
-
 		foreach ($requests as $request) {
-			foreach ($request->getAddresses() as $requestAddress) {
-				if ($request instanceof Entities\Clients\ReadCoilsRequest) {
-					$channel = $device->findChannelByType(
-						$requestAddress->getAddress(),
-						Types\ChannelType::get(Types\ChannelType::COIL),
-					);
-				} elseif ($request instanceof Entities\Clients\ReadDiscreteInputsRequest) {
-					$channel = $device->findChannelByType(
-						$requestAddress->getAddress(),
-						Types\ChannelType::get(Types\ChannelType::DISCRETE_INPUT),
-					);
-				} elseif ($request instanceof Entities\Clients\ReadHoldingsRegistersRequest) {
-					$channel = $device->findChannelByType(
-						$requestAddress->getAddress(),
-						Types\ChannelType::get(Types\ChannelType::HOLDING_REGISTER),
-					);
-				} elseif ($request instanceof Entities\Clients\ReadInputsRegistersRequest) {
-					$channel = $device->findChannelByType(
-						$requestAddress->getAddress(),
-						Types\ChannelType::get(Types\ChannelType::INPUT_REGISTER),
-					);
-				} else {
-					continue;
-				}
-
-				if ($channel !== null) {
-					$this->processedReadRegister[$channel->getIdentifier()] = $now;
-				}
-			}
-
 			try {
 				if ($request instanceof Entities\Clients\ReadCoilsRequest) {
 					$response = $this->rtu?->readCoils(
@@ -650,6 +618,26 @@ class Rtu implements Client
 						}
 					} else {
 						$this->processAnalogRegistersResponse($request, $response, $device);
+
+						foreach ($response->getRegisters() as $address => $value) {
+							if ($request instanceof Entities\Clients\ReadHoldingsRegistersRequest) {
+								$channel = $device->findChannelByType(
+									$address,
+									Types\ChannelType::get(Types\ChannelType::HOLDING_REGISTER),
+								);
+							} elseif ($request instanceof Entities\Clients\ReadInputsRegistersRequest) {
+								$channel = $device->findChannelByType(
+									$address,
+									Types\ChannelType::get(Types\ChannelType::INPUT_REGISTER),
+								);
+							} else {
+								continue;
+							}
+
+							if ($channel !== null) {
+								$this->processedReadRegister[$channel->getIdentifier()] = $now;
+							}
+						}
 					}
 				}
 			} catch (Exceptions\ModbusRtu $ex) {
@@ -698,30 +686,27 @@ class Rtu implements Client
 								? $this->processedReadRegister[$channel->getIdentifier()] + 1
 								: 1;
 						}
-
-						$this->logger->error(
-							'Could not handle register reading',
-							[
-								'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
-								'type' => 'tcp-client',
-								'group' => 'client',
-								'exception' => [
-									'message' => $ex->getMessage(),
-									'code' => $ex->getCode(),
-								],
-								'connector' => [
-									'id' => $this->connector->getPlainId(),
-								],
-								'device' => [
-									'id' => $device->getPlainId(),
-								],
-								'channel' => [
-									'id' => $channel->getPlainId(),
-								],
-							],
-						);
 					}
 				}
+
+				$this->logger->error(
+					'Could not handle register reading',
+					[
+						'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+						'type' => 'tcp-client',
+						'group' => 'client',
+						'exception' => [
+							'message' => $ex->getMessage(),
+							'code' => $ex->getCode(),
+						],
+						'connector' => [
+							'id' => $this->connector->getPlainId(),
+						],
+						'device' => [
+							'id' => $device->getPlainId(),
+						],
+					],
+				);
 
 				// Something wrong during communication
 				return true;
@@ -766,13 +751,6 @@ class Rtu implements Client
 			unset($this->processedReadRegister[$channel->getIdentifier()]);
 
 			$this->lostDevices[$device->getPlainId()] = $now;
-
-			$this->propertyStateHelper->setValue(
-				$property,
-				Utils\ArrayHash::from([
-					DevicesStates\Property::VALID_KEY => false,
-				]),
-			);
 
 			$this->consumer->append(new Entities\Messages\DeviceState(
 				$this->connector->getId(),
