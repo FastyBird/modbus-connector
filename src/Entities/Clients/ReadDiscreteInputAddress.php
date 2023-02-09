@@ -26,9 +26,4 @@ namespace FastyBird\Connector\Modbus\Entities\Clients;
 final class ReadDiscreteInputAddress extends ReadAddress
 {
 
-	public function getSize(): int
-	{
-		return 1;
-	}
-
 }

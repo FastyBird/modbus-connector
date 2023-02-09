@@ -26,9 +26,4 @@ namespace FastyBird\Connector\Modbus\Entities\Clients;
 final class ReadCoilAddress extends ReadAddress
 {
 
-	public function getSize(): int
-	{
-		return 1;
-	}
-
 }

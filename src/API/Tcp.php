@@ -16,18 +16,15 @@
 namespace FastyBird\Connector\Modbus\API;
 
 use Exception;
-use FastyBird\Connector\Modbus\API;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Types;
-use FastyBird\Library\Metadata\Types as MetadataTypes;
 use InvalidArgumentException;
 use Nette;
 use React\EventLoop;
 use React\Promise;
 use React\Socket;
 use Throwable;
-use function array_chunk;
 use function array_combine;
 use function array_fill;
 use function array_keys;
@@ -37,8 +34,6 @@ use function array_values;
 use function count;
 use function current;
 use function decbin;
-use function floatval;
-use function intval;
 use function pack;
 use function random_int;
 use function sprintf;
@@ -71,7 +66,6 @@ class Tcp
 	private const MAX_TRANSACTION_ID = 0xFFFF; // 65535 as dec
 
 	public function __construct(
-		private readonly API\Transformer $transformer,
 		private readonly EventLoop\LoopInterface $eventLoop,
 	)
 	{
@@ -143,8 +137,6 @@ class Tcp
 		int $station,
 		int $startingAddress,
 		int $quantity,
-		MetadataTypes\DataType $dataType,
-		Types\ByteOrder|null $byteOrder = null,
 		int|null $transactionId = null,
 		bool $raw = false,
 	): Promise\PromiseInterface
@@ -155,8 +147,6 @@ class Tcp
 			$station,
 			$startingAddress,
 			$quantity,
-			$dataType,
-			$byteOrder,
 			$transactionId,
 			$raw,
 		);
@@ -174,8 +164,6 @@ class Tcp
 		int $station,
 		int $startingAddress,
 		int $quantity,
-		MetadataTypes\DataType $dataType,
-		Types\ByteOrder|null $byteOrder = null,
 		int|null $transactionId = null,
 		bool $raw = false,
 	): Promise\PromiseInterface
@@ -186,8 +174,6 @@ class Tcp
 			$station,
 			$startingAddress,
 			$quantity,
-			$dataType,
-			$byteOrder,
 			$transactionId,
 			$raw,
 		);
@@ -274,6 +260,8 @@ class Tcp
 	/**
 	 * (0x06) Write Single Register
 	 *
+	 * @param array<int> $value
+	 *
 	 * @throws Exception
 	 * @throws Exceptions\InvalidState
 	 * @throws InvalidArgumentException
@@ -282,15 +270,11 @@ class Tcp
 		string $uri,
 		int $station,
 		int $registerAddress,
-		int|float $value,
-		MetadataTypes\DataType $dataType,
-		Types\ByteOrder|null $byteOrder = null,
+		array $value,
 		int|null $transactionId = null,
 		bool $raw = false,
 	): Promise\PromiseInterface
 	{
-		$byteOrder ??= Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_BIG);
-
 		$deferred = new Promise\Deferred();
 
 		if (!$this->validateTransactionId($transactionId)) {
@@ -299,12 +283,7 @@ class Tcp
 			);
 		}
 
-		$functionCode = (
-			$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_CHAR)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UCHAR)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SHORT)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_USHORT)
-		)
+		$functionCode = count($value) === 2
 			? Types\ModbusFunction::get(
 				Types\ModbusFunction::FUNCTION_CODE_WRITE_SINGLE_HOLDING_REGISTER,
 			)
@@ -323,43 +302,14 @@ class Tcp
 			$registerAddress,
 		);
 
-		if (
-			$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_CHAR)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SHORT)
-		) {
-			$bytes = $this->transformer->packSignedInt(intval($value), 2, $byteOrder);
-
-		} elseif (
-			$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UCHAR)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_USHORT)
-		) {
-			$bytes = $this->transformer->packUnsignedInt(intval($value), 2, $byteOrder);
-
-		} elseif ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_INT)) {
-			$bytes = $this->transformer->packSignedInt(intval($value), 4, $byteOrder);
-
-		} elseif ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UINT)) {
-			$bytes = $this->transformer->packUnsignedInt(intval($value), 4, $byteOrder);
-
-		} elseif ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_FLOAT)) {
-			$bytes = $this->transformer->packFloat(floatval($value), $byteOrder);
-
-		} else {
-			return Promise\reject(new Exceptions\InvalidArgument('Provided data type is not supported'));
-		}
-
-		if ($bytes === null) {
-			return Promise\reject(new Exceptions\ModbusRtu('Data could not be converted for write'));
-		}
-
-		if (count($bytes) === 2) {
+		if (count($value) === 2) {
 			// Pack value (transform to binary)
-			$request .= pack('C2', ...$bytes);
+			$request .= pack('C2', ...$value);
 
-		} elseif (count($bytes) === 4) {
+		} elseif (count($value) === 4) {
 			$request .= pack('n1C1', 2, 4);
 			// Pack value (transform to binary)
-			$request .= pack('C4', ...$bytes);
+			$request .= pack('C4', ...$value);
 
 		} else {
 			return Promise\reject(new Exceptions\InvalidState('Value could not be converted to bytes'));
@@ -367,7 +317,7 @@ class Tcp
 
 		$this->sendRequest($uri, $request)
 			->then(
-				function (string $response) use ($deferred, $functionCode, $dataType, $byteOrder, $raw): void {
+				static function (string $response) use ($deferred, $functionCode, $raw): void {
 					if ($raw) {
 						$deferred->resolve($response);
 
@@ -382,49 +332,9 @@ class Tcp
 						return;
 					}
 
-					$value = null;
-
-					if ($functionCode->equalsValue(Types\ModbusFunction::FUNCTION_CODE_WRITE_SINGLE_HOLDING_REGISTER)) {
-						$valueUnpacked = unpack('C*', substr($response, 10));
-
-						if ($valueUnpacked === false) {
-							$deferred->reject(new Exceptions\ModbusRtu('Response data could not be parsed'));
-
-							return;
-						}
-
-						// Only one 2 byte register is returned as reply
-						$registersValuesChunks = array_chunk($valueUnpacked, 2);
-
-						if (
-							$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_CHAR)
-							|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SHORT)
-						) {
-							$value = current(array_values(
-								array_map(fn (array $valueChunk): int|null => $this->transformer->unpackSignedInt(
-									$valueChunk,
-									$byteOrder,
-								), $registersValuesChunks),
-							));
-							$value = $value === false ? null : $value;
-						} elseif (
-							$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UCHAR)
-							|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_USHORT)
-						) {
-							$value = current(array_values(
-								array_map(fn (array $valueChunk): int|null => $this->transformer->unpackUnsignedInt(
-									$valueChunk,
-									$byteOrder,
-								), $registersValuesChunks),
-							));
-							$value = $value === false ? null : $value;
-						}
-					}
-
 					$deferred->resolve(new Entities\API\WriteHoldingRegister(
 						$header['station'],
 						$functionCode,
-						$value,
 					));
 				},
 			)
@@ -531,8 +441,6 @@ class Tcp
 		int $station,
 		int $startingAddress,
 		int $quantity,
-		MetadataTypes\DataType $dataType,
-		Types\ByteOrder|null $byteOrder = null,
 		int|null $transactionId = null,
 		bool $raw = false,
 	): Promise\PromiseInterface
@@ -547,16 +455,6 @@ class Tcp
 
 		$transactionId ??= random_int(1, self::MAX_TRANSACTION_ID);
 
-		$byteOrder ??= Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_BIG);
-
-		if (
-			$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_INT)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UINT)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_FLOAT)
-		) {
-			$quantity *= 2;
-		}
-
 		$request = pack(
 			'n3C2n2',
 			$transactionId,
@@ -570,7 +468,7 @@ class Tcp
 
 		$this->sendRequest($uri, $request)
 			->then(
-				function (string $response) use ($deferred, $functionCode, $startingAddress, $dataType, $byteOrder, $raw): void {
+				static function (string $response) use ($deferred, $functionCode, $raw): void {
 					if ($raw) {
 						$deferred->resolve($response);
 
@@ -593,65 +491,11 @@ class Tcp
 						return;
 					}
 
-					if (
-						$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_CHAR)
-						|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UCHAR)
-						|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SHORT)
-						|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_USHORT)
-					) {
-						$registersValuesChunks = array_chunk($registersUnpacked, 2);
-					} elseif (
-						$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_INT)
-						|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UINT)
-						|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_FLOAT)
-					) {
-						$registersValuesChunks = array_chunk($registersUnpacked, 4);
-					} else {
-						$deferred->reject(new Exceptions\InvalidArgument('Provided data type is not supported'));
-
-						return;
-					}
-
-					$registers = [];
-
-					if (
-						$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_CHAR)
-						|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SHORT)
-						|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_INT)
-					) {
-						$registers = array_values(
-							array_map(fn (array $valueChunk): int|null => $this->transformer->unpackSignedInt(
-								$valueChunk,
-								$byteOrder,
-							), $registersValuesChunks),
-						);
-					} elseif (
-						$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UCHAR)
-						|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_USHORT)
-						|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UINT)
-					) {
-						$registers = array_values(
-							array_map(fn (array $valueChunk): int|null => $this->transformer->unpackUnsignedInt(
-								$valueChunk,
-								$byteOrder,
-							), $registersValuesChunks),
-						);
-					} elseif ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_FLOAT)) {
-						$registers = array_values(
-							array_map(fn (array $valueChunk): float|null => $this->transformer->unpackFloat(
-								$valueChunk,
-								$byteOrder,
-							), $registersValuesChunks),
-						);
-					}
-
-					$addresses = array_fill($startingAddress, count($registers), 'value');
-
 					$deferred->resolve(new Entities\API\ReadAnalogInputs(
 						$header['station'],
 						$functionCode,
 						$header['count'],
-						array_combine(array_keys($addresses), array_values($registers)),
+						$registersUnpacked,
 					));
 				},
 			)

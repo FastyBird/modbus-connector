@@ -161,6 +161,14 @@ class Devices extends Console\Command\Command
 			}
 		}
 
+		$connector = $this->askWhichConnector($io);
+
+		if ($connector === null) {
+			$io->warning('No Modbus connectors registered in system');
+
+			return Console\Command\Command::SUCCESS;
+		}
+
 		$question = new Console\Question\ChoiceQuestion(
 			'What would you like to do?',
 			[
@@ -173,14 +181,6 @@ class Devices extends Console\Command\Command
 		$question->setErrorMessage('Selected answer: "%s" is not valid.');
 
 		$whatToDo = $io->askQuestion($question);
-
-		$connector = $this->askWhichConnector($io);
-
-		if ($connector === null) {
-			$io->warning('No Modbus connectors registered in system');
-
-			return Console\Command\Command::SUCCESS;
-		}
 
 		if ($whatToDo === self::CHOICE_QUESTION_CREATE_DEVICE) {
 			$this->createNewDevice($io, $connector);
@@ -1840,6 +1840,7 @@ class Devices extends Console\Command\Command
 
 		if (strval(intval($switchReading)) === $switchReading) {
 			$dataTypes = [
+				MetadataTypes\DataTypeShort::DATA_TYPE_BOOLEAN,
 				MetadataTypes\DataTypeShort::DATA_TYPE_CHAR,
 				MetadataTypes\DataTypeShort::DATA_TYPE_UCHAR,
 				MetadataTypes\DataTypeShort::DATA_TYPE_SHORT,
@@ -1852,20 +1853,22 @@ class Devices extends Console\Command\Command
 			$selected = null;
 
 			if ($default !== null) {
-				if ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_CHAR) {
+				if ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_BOOLEAN) {
 					$selected = 0;
-				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_UCHAR) {
+				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_CHAR) {
 					$selected = 1;
-				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_SHORT) {
+				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_UCHAR) {
 					$selected = 2;
-				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_USHORT) {
+				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_SHORT) {
 					$selected = 3;
-				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_INT) {
+				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_USHORT) {
 					$selected = 4;
-				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_UINT) {
+				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_INT) {
 					$selected = 5;
-				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_FLOAT) {
+				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_UINT) {
 					$selected = 6;
+				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_FLOAT) {
+					$selected = 7;
 				}
 			}
 

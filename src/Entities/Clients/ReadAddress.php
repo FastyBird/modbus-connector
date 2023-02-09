@@ -16,6 +16,7 @@
 namespace FastyBird\Connector\Modbus\Entities\Clients;
 
 use FastyBird\Connector\Modbus\Entities;
+use FastyBird\Library\Metadata\Types as MetadataTypes;
 use Nette;
 
 /**
@@ -34,6 +35,7 @@ abstract class ReadAddress implements Entities\API\Entity
 	public function __construct(
 		private readonly int $address,
 		private readonly Entities\ModbusChannel $channel,
+		private readonly MetadataTypes\DataType $dataType,
 	)
 	{
 	}
@@ -48,13 +50,30 @@ abstract class ReadAddress implements Entities\API\Entity
 		return $this->channel;
 	}
 
-	abstract public function getSize(): int;
+	public function getDataType(): MetadataTypes\DataType
+	{
+		return $this->dataType;
+	}
+
+	public function getSize(): int
+	{
+		if (
+			$this->getDataType()->equalsValue(MetadataTypes\DataType::DATA_TYPE_INT)
+			|| $this->getDataType()->equalsValue(MetadataTypes\DataType::DATA_TYPE_UINT)
+			|| $this->getDataType()->equalsValue(MetadataTypes\DataType::DATA_TYPE_FLOAT)
+		) {
+			return 2;
+		}
+
+		return 1;
+	}
 
 	public function toArray(): array
 	{
 		return [
 			'address' => $this->getAddress(),
 			'channel' => $this->getChannel()->getIdentifier(),
+			'data_type' => $this->getDataType()->getValue(),
 		];
 	}
 

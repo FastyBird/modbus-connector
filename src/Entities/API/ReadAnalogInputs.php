@@ -18,7 +18,6 @@ namespace FastyBird\Connector\Modbus\Entities\API;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Types;
 use Nette;
-use function array_key_exists;
 
 /**
  * Analog registers reading response entity
@@ -34,7 +33,7 @@ final class ReadAnalogInputs implements Entities\API\Entity
 	use Nette\SmartObject;
 
 	/**
-	 * @param array<int, int|float|null> $registers
+	 * @param array<int> $registers
 	 */
 	public function __construct(
 		private readonly int $station,
@@ -61,20 +60,11 @@ final class ReadAnalogInputs implements Entities\API\Entity
 	}
 
 	/**
-	 * @return array<int, int|float|null>
+	 * @return array<int>
 	 */
 	public function getRegisters(): array
 	{
 		return $this->registers;
-	}
-
-	public function findRegister(int $address): int|float|null
-	{
-		if (!array_key_exists($address, $this->registers)) {
-			return null;
-		}
-
-		return $this->registers[$address];
 	}
 
 	public function toArray(): array

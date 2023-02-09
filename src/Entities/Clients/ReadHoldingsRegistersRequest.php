@@ -15,10 +15,6 @@
 
 namespace FastyBird\Connector\Modbus\Entities\Clients;
 
-use FastyBird\Connector\Modbus\Exceptions;
-use FastyBird\Connector\Modbus\Types;
-use FastyBird\Library\Metadata\Types as MetadataTypes;
-
 /**
  * Read holdings registers request entity
  *
@@ -29,33 +25,5 @@ use FastyBird\Library\Metadata\Types as MetadataTypes;
  */
 final class ReadHoldingsRegistersRequest extends ReadRequest
 {
-
-	/**
-	 * @throws Exceptions\InvalidState
-	 */
-	public function getDataType(): MetadataTypes\DataType
-	{
-		$dataType = null;
-
-		foreach ($this->getAddresses() as $address) {
-			$property = $address->getChannel()->findProperty(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
-
-			if ($property === null) {
-				throw new Exceptions\InvalidState('Channel value property could not be loaded');
-			}
-
-			if ($dataType === null) {
-				$dataType = $property->getDataType();
-			} elseif (!$dataType->equals($property->getDataType())) {
-				throw new Exceptions\InvalidState('Registers chunk data types are mixed');
-			}
-		}
-
-		if ($dataType === null) {
-			throw new Exceptions\InvalidState('Data type could not be determined from addresses');
-		}
-
-		return $dataType;
-	}
 
 }

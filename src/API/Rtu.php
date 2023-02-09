@@ -19,28 +19,17 @@ use FastyBird\Connector\Modbus\API;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Types;
-use FastyBird\Library\Metadata\Types as MetadataTypes;
 use Nette;
-use function array_chunk;
 use function array_combine;
 use function array_fill;
 use function array_keys;
 use function array_map;
 use function array_merge;
-use function array_slice;
 use function array_values;
-use function bindec;
 use function count;
 use function current;
 use function decbin;
-use function floatval;
-use function func_get_args;
-use function func_num_args;
-use function implode;
-use function in_array;
-use function intval;
 use function pack;
-use function round;
 use function str_repeat;
 use function str_split;
 use function strlen;
@@ -68,7 +57,6 @@ class Rtu
 
 	public function __construct(
 		private readonly API\Interfaces\Serial $interface,
-		private readonly API\Transformer $transformer,
 	)
 	{
 	}
@@ -140,7 +128,6 @@ class Rtu
 	 *
 	 * @return ($raw is true ? string : Entities\API\ReadAnalogInputs)
 	 *
-	 * @throws Exceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
 	 */
@@ -148,8 +135,6 @@ class Rtu
 		int $station,
 		int $startingAddress,
 		int $quantity,
-		MetadataTypes\DataType $dataType,
-		Types\ByteOrder|null $byteOrder = null,
 		bool $raw = false,
 	): string|Entities\API\ReadAnalogInputs
 	{
@@ -158,8 +143,6 @@ class Rtu
 			$station,
 			$startingAddress,
 			$quantity,
-			$dataType,
-			$byteOrder,
 			$raw,
 		);
 	}
@@ -169,7 +152,6 @@ class Rtu
 	 *
 	 * @return ($raw is true ? string : Entities\API\ReadAnalogInputs)
 	 *
-	 * @throws Exceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
 	 */
@@ -177,8 +159,6 @@ class Rtu
 		int $station,
 		int $startingAddress,
 		int $quantity,
-		MetadataTypes\DataType $dataType,
-		Types\ByteOrder|null $byteOrder = null,
 		bool $raw = false,
 	): string|Entities\API\ReadAnalogInputs
 	{
@@ -187,8 +167,6 @@ class Rtu
 			$station,
 			$startingAddress,
 			$quantity,
-			$dataType,
-			$byteOrder,
 			$raw,
 		);
 	}
@@ -245,29 +223,21 @@ class Rtu
 	/**
 	 * (0x06) Write Single Register
 	 *
+	 * @param array<int> $value
+	 *
 	 * @return ($raw is true ? string : Entities\API\WriteHoldingRegister)
 	 *
 	 * @throws Exceptions\InvalidState
-	 * @throws Exceptions\InvalidArgument
 	 * @throws Exceptions\ModbusRtu
 	 */
 	public function writeSingleHolding(
 		int $station,
 		int $registerAddress,
-		int|float $value,
-		MetadataTypes\DataType $dataType,
-		Types\ByteOrder|null $byteOrder = null,
+		array $value,
 		bool $raw = false,
 	): string|Entities\API\WriteHoldingRegister
 	{
-		$byteOrder ??= Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_BIG);
-
-		$functionCode = (
-			$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_CHAR)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UCHAR)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SHORT)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_USHORT)
-		)
+		$functionCode = count($value) === 2
 			? Types\ModbusFunction::get(
 				Types\ModbusFunction::FUNCTION_CODE_WRITE_SINGLE_HOLDING_REGISTER,
 			)
@@ -278,43 +248,14 @@ class Rtu
 		// Pack header (transform to binary)
 		$request = pack('C2n1', $station, $functionCode->getValue(), $registerAddress);
 
-		if (
-			$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_CHAR)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SHORT)
-		) {
-			$bytes = $this->transformer->packSignedInt(intval($value), 2, $byteOrder);
-
-		} elseif (
-			$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UCHAR)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_USHORT)
-		) {
-			$bytes = $this->transformer->packUnsignedInt(intval($value), 2, $byteOrder);
-
-		} elseif ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_INT)) {
-			$bytes = $this->transformer->packSignedInt(intval($value), 4, $byteOrder);
-
-		} elseif ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UINT)) {
-			$bytes = $this->transformer->packUnsignedInt(intval($value), 4, $byteOrder);
-
-		} elseif ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_FLOAT)) {
-			$bytes = $this->transformer->packFloat(floatval($value), $byteOrder);
-
-		} else {
-			throw new Exceptions\InvalidArgument('Provided data type is not supported');
-		}
-
-		if ($bytes === null) {
-			throw new Exceptions\ModbusRtu('Data could not be converted for write');
-		}
-
-		if (count($bytes) === 2) {
+		if (count($value) === 2) {
 			// Pack value (transform to binary)
-			$request .= pack('C2', ...$bytes);
+			$request .= pack('C2', ...$value);
 
-		} elseif (count($bytes) === 4) {
+		} elseif (count($value) === 4) {
 			$request .= pack('n1C1', 2, 4);
 			// Pack value (transform to binary)
-			$request .= pack('C4', ...$bytes);
+			$request .= pack('C4', ...$value);
 
 		} else {
 			throw new Exceptions\InvalidState('Value could not be converted to bytes');
@@ -332,332 +273,13 @@ class Rtu
 				throw new Exceptions\ModbusRtu('Response header could not be parsed');
 			}
 
-			$value = null;
-
-			if ($functionCode->equalsValue(Types\ModbusFunction::FUNCTION_CODE_WRITE_SINGLE_HOLDING_REGISTER)) {
-				$valueUnpacked = unpack('C*', substr($response, 4, -2));
-
-				if ($valueUnpacked === false) {
-					throw new Exceptions\ModbusRtu('Response data could not be parsed');
-				}
-
-				// Only one 2 byte register is returned as reply
-				$registersValuesChunks = array_chunk($valueUnpacked, 2);
-
-				if (
-					$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_CHAR)
-					|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SHORT)
-				) {
-					$value = current(array_values(
-						array_map(fn (array $valueChunk): int|null => $this->transformer->unpackSignedInt(
-							$valueChunk,
-							$byteOrder,
-						), $registersValuesChunks),
-					));
-					$value = $value === false ? null : $value;
-				} elseif (
-					$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UCHAR)
-					|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_USHORT)
-				) {
-					$value = current(array_values(
-						array_map(fn (array $valueChunk): int|null => $this->transformer->unpackUnsignedInt(
-							$valueChunk,
-							$byteOrder,
-						), $registersValuesChunks),
-					));
-					$value = $value === false ? null : $value;
-				}
-			}
-
 			return new Entities\API\WriteHoldingRegister(
 				$header['station'],
 				$functionCode,
-				$value,
 			);
 		}
 
 		return $response;
-	}
-
-	/**
-	 * (0x15) Write Multiple Coils Registers
-	 *
-	 * @param array<bool> $values
-	 *
-	 * @return ($raw is true ? string : Entities\API\WriteMultiple)
-	 *
-	 * @throws Exceptions\InvalidState
-	 * @throws Exceptions\ModbusRtu
-	 */
-	public function writeMultipleCoils(
-		int $station,
-		int $startingAddress,
-		array $values,
-		bool $raw = false,
-	): string|Entities\API\WriteMultiple
-	{
-		$functionCode = Types\ModbusFunction::get(Types\ModbusFunction::FUNCTION_CODE_WRITE_MULTIPLE_COILS);
-
-		$request = pack(
-			'C2n2C1',
-			$station,
-			$functionCode->getValue(),
-			$startingAddress,
-			count($values),
-			intval(round(count($values) / 8)),
-		);
-
-		$dataBytes = array_map(
-			static fn (array $byte): int => intval(
-				bindec(strrev(implode('', array_map(static fn (bool $bit): int => $bit ? 1 : 0, $byte)))),
-			),
-			array_chunk($values, 8),
-		);
-
-		$request .= pack('C*', $dataBytes);
-
-		// Append CRC check
-		$request .= $this->crc16($request);
-
-		$response = $this->sendRequest($request);
-
-		if ($raw === false) {
-			$header = unpack('C1station/C1function/n1address/n1count', $response);
-
-			if ($header === false) {
-				throw new Exceptions\ModbusRtu('Response data could not be parsed');
-			}
-
-			return new Entities\API\WriteMultiple(
-				$header['station'],
-				$functionCode,
-			);
-		}
-
-		return $response;
-	}
-
-	/**
-	 * (0x16) Write Multiple Holdings Registers
-	 *
-	 * @param array<int|float> $values
-	 *
-	 * @return ($raw is true ? string : Entities\API\WriteMultiple)
-	 *
-	 * @throws Exceptions\InvalidArgument
-	 * @throws Exceptions\InvalidState
-	 * @throws Exceptions\ModbusRtu
-	 */
-	public function writeMultipleHoldings(
-		int $station,
-		int $startingAddress,
-		array $values,
-		MetadataTypes\DataType $dataType,
-		Types\ByteOrder|null $byteOrder = null,
-		bool $raw = false,
-	): string|Entities\API\WriteMultiple
-	{
-		$functionCode = Types\ModbusFunction::get(
-			Types\ModbusFunction::FUNCTION_CODE_WRITE_MULTIPLE_HOLDINGS_REGISTERS,
-		);
-
-		$byteOrder ??= Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_BIG);
-
-		$request = pack(
-			'C2n2',
-			$station,
-			$functionCode->getValue(),
-			$startingAddress,
-			count($values),
-		);
-
-		if (
-			$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_CHAR)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SHORT)
-		) {
-			$bytes = array_map(
-				fn (int|float $value): array|null => $this->transformer->packSignedInt(intval($value), 2, $byteOrder),
-				$values,
-			);
-
-		} elseif (
-			$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UCHAR)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_USHORT)
-		) {
-			$bytes = array_map(
-				fn (int|float $value): array|null => $this->transformer->packUnsignedInt(intval($value), 2, $byteOrder),
-				$values,
-			);
-
-		} elseif ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_INT)) {
-			$bytes = array_map(
-				fn (int|float $value): array|null => $this->transformer->packSignedInt(intval($value), 4, $byteOrder),
-				$values,
-			);
-
-		} elseif ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UINT)) {
-			$bytes = array_map(
-				fn (int|float $value): array|null => $this->transformer->packUnsignedInt(intval($value), 4, $byteOrder),
-				$values,
-			);
-
-		} elseif ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_FLOAT)) {
-			$bytes = array_map(
-				fn (int|float $value): array|null => $this->transformer->packFloat(floatval($value), $byteOrder),
-				$values,
-			);
-
-		} else {
-			throw new Exceptions\InvalidArgument('Provided data type is not supported');
-		}
-
-		if (in_array(null, $bytes, true)) {
-			throw new Exceptions\ModbusRtu('Data could not be converted for write');
-		}
-
-		$bytes = array_merge(...$bytes);
-
-		$request .= pack('C1', count($bytes));
-		// Pack value (transform to binary)
-		$request .= pack('C*', ...$bytes);
-		// Append CRC check
-		$request .= $this->crc16($request);
-
-		$response = $this->sendRequest($request);
-
-		if ($raw === false) {
-			$header = unpack('C1station/C1function/n1address/n1count', $response);
-
-			if ($header === false) {
-				throw new Exceptions\ModbusRtu('Response data could not be parsed');
-			}
-
-			return new Entities\API\WriteMultiple(
-				$header['station'],
-				$functionCode,
-			);
-		}
-
-		return $response;
-	}
-
-	/**
-	 * (0x07) Read Exception Status (Serial Line only)
-	 *
-	 * @return array<string, string|int>|string|false
-	 *
-	 * @throws Exceptions\InvalidState
-	 * @throws Exceptions\ModbusRtu
-	 */
-	public function readExceptionStatus(
-		int $station,
-		bool $raw = false,
-	): string|array|false
-	{
-		$request = pack('C2', $station, 0x07);
-		// Append CRC check
-		$request .= $this->crc16($request);
-
-		$response = $this->sendRequest($request);
-
-		if ($raw === false) {
-			$response = unpack('C1station/C1function/C1data', $response);
-		}
-
-		return $response;
-	}
-
-	/**
-	 * (0x08) Diagnostics (Serial Line only)
-	 *
-	 * @throws Exceptions\InvalidState
-	 * @throws Exceptions\ModbusRtu
-	 */
-	public function diagnostics(int $station, int $subFunction): string|false
-	{
-		if (func_num_args() < 3) {
-			throw new Exceptions\ModbusRtu('Incorrect number of arguments', -4);
-		}
-
-		$request = pack('C2n1', $station, 0x08, $subFunction);
-		$request .= pack('n*', ...array_slice(func_get_args(), 2));
-		// Append CRC check
-		$request .= $this->crc16($request);
-
-		return $this->sendRequest($request);
-	}
-
-	/**
-	 * (0x0B) Get Comm Event Counter (Serial Line only)
-	 *
-	 * @return array<string, string|int>|string|false
-	 *
-	 * @throws Exceptions\InvalidState
-	 * @throws Exceptions\ModbusRtu
-	 */
-	public function getCommEventCounter(
-		int $station,
-		bool $raw = false,
-	): string|array|false
-	{
-		$request = pack('C2', $station, 0x0B);
-
-		$response = $this->sendRequest($request);
-
-		if ($raw === false) {
-			$response = unpack('C1station/C1function/n1status/n1eventcount', $response);
-		}
-
-		return $response;
-	}
-
-	/**
-	 * (0x0C) Get Comm Event Log (Serial Line only)
-	 *
-	 * @return array<string, string|int>|string|false
-	 *
-	 * @throws Exceptions\InvalidState
-	 * @throws Exceptions\ModbusRtu
-	 */
-	public function readCommEventLog(
-		int $station,
-		bool $raw = false,
-	): string|array|false
-	{
-		$request = pack('C2', $station, 0x0C);
-
-		$response = $this->sendRequest($request);
-
-		if ($raw === false) {
-			$unpacked = unpack('C1station/C1function/C1count/n1status/n1eventcount/n1messagecount', $response);
-
-			if ($unpacked === false) {
-				return false;
-			}
-
-			$eventsUnpacked = unpack('C*', substr($response, 9, -2));
-
-			if ($eventsUnpacked === false) {
-				return false;
-			}
-
-			$response = $unpacked + ['events' => array_values($eventsUnpacked)];
-		}
-
-		return $response;
-	}
-
-	/**
-	 * (0x11) Report Server ID (Serial Line only)
-	 *
-	 * @throws Exceptions\InvalidState
-	 * @throws Exceptions\ModbusRtu
-	 */
-	public function reportServerId(int $station = 0x00): string|false
-	{
-		$request = pack('C2', $station, 0x11);
-
-		return $this->sendRequest($request);
 	}
 
 	/**
@@ -786,7 +408,6 @@ class Rtu
 	}
 
 	/**
-	 * @throws Exceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\ModbusRtu
 	 */
@@ -795,21 +416,9 @@ class Rtu
 		int $station,
 		int $startingAddress,
 		int $quantity,
-		MetadataTypes\DataType $dataType,
-		Types\ByteOrder|null $byteOrder = null,
 		bool $raw = false,
 	): string|Entities\API\ReadAnalogInputs
 	{
-		$byteOrder ??= Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_BIG);
-
-		if (
-			$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_INT)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UINT)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_FLOAT)
-		) {
-			$quantity *= 2;
-		}
-
 		$request = pack('C2n2', $station, $functionCode->getValue(), $startingAddress, $quantity);
 		// Append CRC check
 		$request .= $this->crc16($request);
@@ -829,63 +438,11 @@ class Rtu
 				throw new Exceptions\ModbusRtu('Response data could not be parsed');
 			}
 
-			if (
-				$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_CHAR)
-				|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UCHAR)
-				|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SHORT)
-				|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_USHORT)
-			) {
-				$registersValuesChunks = array_chunk($registersUnpacked, 2);
-			} elseif (
-				$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_INT)
-				|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UINT)
-				|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_FLOAT)
-			) {
-				$registersValuesChunks = array_chunk($registersUnpacked, 4);
-			} else {
-				throw new Exceptions\InvalidArgument('Provided data type is not supported');
-			}
-
-			$registers = [];
-
-			if (
-				$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_CHAR)
-				|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SHORT)
-				|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_INT)
-			) {
-				$registers = array_values(
-					array_map(fn (array $valueChunk): int|null => $this->transformer->unpackSignedInt(
-						$valueChunk,
-						$byteOrder,
-					), $registersValuesChunks),
-				);
-			} elseif (
-				$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UCHAR)
-				|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_USHORT)
-				|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UINT)
-			) {
-				$registers = array_values(
-					array_map(fn (array $valueChunk): int|null => $this->transformer->unpackUnsignedInt(
-						$valueChunk,
-						$byteOrder,
-					), $registersValuesChunks),
-				);
-			} elseif ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_FLOAT)) {
-				$registers = array_values(
-					array_map(fn (array $valueChunk): float|null => $this->transformer->unpackFloat(
-						$valueChunk,
-						$byteOrder,
-					), $registersValuesChunks),
-				);
-			}
-
-			$addresses = array_fill($startingAddress, count($registers), 'value');
-
 			return new Entities\API\ReadAnalogInputs(
 				$header['station'],
 				$functionCode,
 				$header['count'],
-				array_combine(array_keys($addresses), array_values($registers)),
+				$registersUnpacked,
 			);
 		}
 

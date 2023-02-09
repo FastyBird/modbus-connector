@@ -67,8 +67,6 @@ class Initialize extends Console\Command\Command
 
 	private const CHOICE_QUESTION_TCP_MODE = 'Modbus devices over TCP network';
 
-	private const CHOICE_QUESTION_RTU_TCP_MODE = 'Modbus RTU devices over TCP network';
-
 	private const CHOICE_QUESTION_PARITY_NONE = 'None';
 
 	private const CHOICE_QUESTION_PARITY_ODD = 'Odd verification';
@@ -656,7 +654,6 @@ class Initialize extends Console\Command\Command
 			[
 				self::CHOICE_QUESTION_RTU_MODE,
 				self::CHOICE_QUESTION_TCP_MODE,
-				self::CHOICE_QUESTION_RTU_TCP_MODE,
 			],
 			0,
 		);
@@ -672,10 +669,6 @@ class Initialize extends Console\Command\Command
 
 			if ($answer === self::CHOICE_QUESTION_TCP_MODE || intval($answer) === 1) {
 				return Types\ClientMode::get(Types\ClientMode::MODE_TCP);
-			}
-
-			if ($answer === self::CHOICE_QUESTION_RTU_TCP_MODE || intval($answer) === 2) {
-				return Types\ClientMode::get(Types\ClientMode::MODE_TCP_RTU);
 			}
 
 			throw new Exceptions\InvalidState('Selected answer is not valid');

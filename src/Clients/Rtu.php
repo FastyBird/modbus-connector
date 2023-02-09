@@ -17,6 +17,7 @@ namespace FastyBird\Connector\Modbus\Clients;
 
 use DateTimeInterface;
 use Exception;
+use FastyBird\Connector\Modbus;
 use FastyBird\Connector\Modbus\API;
 use FastyBird\Connector\Modbus\Consumers;
 use FastyBird\Connector\Modbus\Entities;
@@ -40,13 +41,14 @@ use React\Promise;
 use function array_key_exists;
 use function array_merge;
 use function assert;
+use function floatval;
 use function get_loaded_extensions;
 use function in_array;
+use function intval;
 use function is_bool;
 use function is_int;
 use function is_numeric;
 use function is_object;
-use function range;
 use function sprintf;
 use function strval;
 
@@ -273,13 +275,55 @@ class Rtu implements Client
 					|| $valueToWrite->getDataType()->equalsValue(MetadataTypes\DataType::DATA_TYPE_UINT)
 					|| $valueToWrite->getDataType()->equalsValue(MetadataTypes\DataType::DATA_TYPE_FLOAT)
 				) {
-					$this->rtu?->writeSingleHolding(
-						$station,
-						$address,
-						(int) $valueToWrite->getValue(),
-						$valueToWrite->getDataType(),
-						$device->getByteOrder(),
-					);
+					if (
+						$deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_CHAR)
+						|| $deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SHORT)
+					) {
+						$bytes = $this->transformer->packSignedInt(
+							intval($valueToWrite->getValue()),
+							2,
+							$device->getByteOrder(),
+						);
+
+					} elseif (
+						$deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UCHAR)
+						|| $deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_USHORT)
+					) {
+						$bytes = $this->transformer->packUnsignedInt(
+							intval($valueToWrite->getValue()),
+							2,
+							$device->getByteOrder(),
+						);
+
+					} elseif ($deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_INT)) {
+						$bytes = $this->transformer->packSignedInt(
+							intval($valueToWrite->getValue()),
+							4,
+							$device->getByteOrder(),
+						);
+
+					} elseif ($deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UINT)) {
+						$bytes = $this->transformer->packUnsignedInt(
+							intval($valueToWrite->getValue()),
+							4,
+							$device->getByteOrder(),
+						);
+
+					} elseif ($deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_FLOAT)) {
+						$bytes = $this->transformer->packFloat(
+							floatval($valueToWrite->getValue()),
+							$device->getByteOrder(),
+						);
+
+					} else {
+						return Promise\reject(new Exceptions\InvalidArgument('Provided data type is not supported'));
+					}
+
+					if ($bytes === null) {
+						return Promise\reject(new Exceptions\InvalidState('Data could not be converted for write'));
+					}
+
+					$this->rtu?->writeSingleHolding($station, $address, $bytes);
 				} else {
 					return Promise\reject(
 						new Exceptions\InvalidState(sprintf(
@@ -470,19 +514,31 @@ class Rtu implements Client
 		$requests = [];
 
 		if ($coilsAddresses !== []) {
-			$requests = array_merge($requests, $this->split($coilsAddresses));
+			$requests = array_merge(
+				$requests,
+				$this->split($coilsAddresses, Modbus\Constants::MAX_DISCRETE_REGISTERS_PER_MODBUS_REQUEST),
+			);
 		}
 
 		if ($discreteInputsAddresses !== []) {
-			$requests = array_merge($requests, $this->split($discreteInputsAddresses));
+			$requests = array_merge(
+				$requests,
+				$this->split($discreteInputsAddresses, Modbus\Constants::MAX_DISCRETE_REGISTERS_PER_MODBUS_REQUEST),
+			);
 		}
 
 		if ($holdingAddresses !== []) {
-			$requests = array_merge($requests, $this->split($holdingAddresses));
+			$requests = array_merge(
+				$requests,
+				$this->split($holdingAddresses, Modbus\Constants::MAX_ANALOG_REGISTERS_PER_MODBUS_REQUEST),
+			);
 		}
 
 		if ($inputsAddresses !== []) {
-			$requests = array_merge($requests, $this->split($inputsAddresses));
+			$requests = array_merge(
+				$requests,
+				$this->split($inputsAddresses, Modbus\Constants::MAX_ANALOG_REGISTERS_PER_MODBUS_REQUEST),
+			);
 		}
 
 		if ($requests === []) {
@@ -492,28 +548,25 @@ class Rtu implements Client
 		$now = $this->dateTimeFactory->getNow();
 
 		foreach ($requests as $request) {
-			foreach (range(
-				$request->getStartAddress(),
-				$request->getStartAddress() + $request->getQuantity(),
-			) as $address) {
+			foreach ($request->getAddresses() as $requestAddress) {
 				if ($request instanceof Entities\Clients\ReadCoilsRequest) {
 					$channel = $device->findChannelByType(
-						$address,
+						$requestAddress->getAddress(),
 						Types\ChannelType::get(Types\ChannelType::COIL),
 					);
 				} elseif ($request instanceof Entities\Clients\ReadDiscreteInputsRequest) {
 					$channel = $device->findChannelByType(
-						$address,
+						$requestAddress->getAddress(),
 						Types\ChannelType::get(Types\ChannelType::DISCRETE_INPUT),
 					);
 				} elseif ($request instanceof Entities\Clients\ReadHoldingsRegistersRequest) {
 					$channel = $device->findChannelByType(
-						$address,
+						$requestAddress->getAddress(),
 						Types\ChannelType::get(Types\ChannelType::HOLDING_REGISTER),
 					);
 				} elseif ($request instanceof Entities\Clients\ReadInputsRegistersRequest) {
 					$channel = $device->findChannelByType(
-						$address,
+						$requestAddress->getAddress(),
 						Types\ChannelType::get(Types\ChannelType::INPUT_REGISTER),
 					);
 				} else {
@@ -543,16 +596,12 @@ class Rtu implements Client
 						$station,
 						$request->getStartAddress(),
 						$request->getQuantity(),
-						$request->getDataType(),
-						$device->getByteOrder(),
 					);
 				} elseif ($request instanceof Entities\Clients\ReadInputsRegistersRequest) {
-					$response = $this->rtu?->readHoldingRegisters(
+					$response = $this->rtu?->readInputRegisters(
 						$station,
 						$request->getStartAddress(),
 						$request->getQuantity(),
-						$request->getDataType(),
-						$device->getByteOrder(),
 					);
 				} else {
 					continue;
@@ -561,75 +610,68 @@ class Rtu implements Client
 				if (is_object($response)) {
 					$now = $this->dateTimeFactory->getNow();
 
-					foreach ($response->getRegisters() as $address => $value) {
-						if ($request instanceof Entities\Clients\ReadCoilsRequest) {
-							$channel = $device->findChannelByType(
-								$address,
-								Types\ChannelType::get(Types\ChannelType::COIL),
-							);
-						} elseif ($request instanceof Entities\Clients\ReadDiscreteInputsRequest) {
-							$channel = $device->findChannelByType(
-								$address,
-								Types\ChannelType::get(Types\ChannelType::DISCRETE_INPUT),
-							);
-						} elseif ($request instanceof Entities\Clients\ReadHoldingsRegistersRequest) {
-							$channel = $device->findChannelByType(
-								$address,
-								Types\ChannelType::get(Types\ChannelType::HOLDING_REGISTER),
-							);
-						} else {
-							$channel = $device->findChannelByType(
-								$address,
-								Types\ChannelType::get(Types\ChannelType::INPUT_REGISTER),
-							);
-						}
-
-						if ($channel !== null) {
-							$this->processedReadRegister[$channel->getIdentifier()] = $now;
-
-							$property = $channel->findProperty(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
-
-							if ($property instanceof DevicesEntities\Channels\Properties\Dynamic) {
-								$this->propertyStateHelper->setValue(
-									$property,
-									Utils\ArrayHash::from([
-										DevicesStates\Property::ACTUAL_VALUE_KEY => DevicesUtilities\ValueHelper::flattenValue(
-											$this->transformer->transformValueFromDevice(
-												$property->getDataType(),
-												$property->getFormat(),
-												$value,
-											),
-										),
-										DevicesStates\Property::VALID_KEY => true,
-									]),
+					if ($response instanceof Entities\API\ReadDigitalInputs) {
+						foreach ($response->getRegisters() as $address => $value) {
+							if ($request instanceof Entities\Clients\ReadCoilsRequest) {
+								$channel = $device->findChannelByType(
+									$address,
+									Types\ChannelType::get(Types\ChannelType::COIL),
 								);
+							} elseif ($request instanceof Entities\Clients\ReadDiscreteInputsRequest) {
+								$channel = $device->findChannelByType(
+									$address,
+									Types\ChannelType::get(Types\ChannelType::DISCRETE_INPUT),
+								);
+							} else {
+								continue;
+							}
+
+							if ($channel !== null) {
+								$this->processedReadRegister[$channel->getIdentifier()] = $now;
+
+								$property = $channel->findProperty(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
+
+								if ($property instanceof DevicesEntities\Channels\Properties\Dynamic) {
+									$this->propertyStateHelper->setValue(
+										$property,
+										Utils\ArrayHash::from([
+											DevicesStates\Property::ACTUAL_VALUE_KEY => DevicesUtilities\ValueHelper::flattenValue(
+												$this->transformer->transformValueFromDevice(
+													$property->getDataType(),
+													$property->getFormat(),
+													$value,
+												),
+											),
+											DevicesStates\Property::VALID_KEY => true,
+										]),
+									);
+								}
 							}
 						}
+					} else {
+						$this->processAnalogRegistersResponse($request, $response, $device);
 					}
 				}
 			} catch (Exceptions\ModbusRtu $ex) {
-				foreach (range(
-					$request->getStartAddress(),
-					$request->getStartAddress() + $request->getQuantity(),
-				) as $address) {
+				foreach ($request->getAddresses() as $requestAddress) {
 					if ($request instanceof Entities\Clients\ReadCoilsRequest) {
 						$channel = $device->findChannelByType(
-							$address,
+							$requestAddress->getAddress(),
 							Types\ChannelType::get(Types\ChannelType::COIL),
 						);
 					} elseif ($request instanceof Entities\Clients\ReadDiscreteInputsRequest) {
 						$channel = $device->findChannelByType(
-							$address,
+							$requestAddress->getAddress(),
 							Types\ChannelType::get(Types\ChannelType::DISCRETE_INPUT),
 						);
 					} elseif ($request instanceof Entities\Clients\ReadHoldingsRegistersRequest) {
 						$channel = $device->findChannelByType(
-							$address,
+							$requestAddress->getAddress(),
 							Types\ChannelType::get(Types\ChannelType::HOLDING_REGISTER),
 						);
 					} else {
 						$channel = $device->findChannelByType(
-							$address,
+							$requestAddress->getAddress(),
 							Types\ChannelType::get(Types\ChannelType::INPUT_REGISTER),
 						);
 					}
@@ -777,11 +819,8 @@ class Rtu implements Client
 
 		if ($deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_BOOLEAN)) {
 			return $property->isSettable()
-				? new Entities\Clients\ReadCoilAddress($address, $channel)
-				: new Entities\Clients\ReadDiscreteInputAddress(
-					$address,
-					$channel,
-				);
+				? new Entities\Clients\ReadCoilAddress($address, $channel, $deviceExpectedDataType)
+				: new Entities\Clients\ReadDiscreteInputAddress($address, $channel, $deviceExpectedDataType);
 		} elseif (
 			$deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_CHAR)
 			|| $deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UCHAR)
@@ -792,8 +831,8 @@ class Rtu implements Client
 			|| $deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_FLOAT)
 		) {
 			return $property->isSettable()
-				? new Entities\Clients\ReadHoldingRegisterAddress($address, $channel)
-				: new Entities\Clients\ReadInputRegisterAddress($address, $channel);
+				? new Entities\Clients\ReadHoldingRegisterAddress($address, $channel, $deviceExpectedDataType)
+				: new Entities\Clients\ReadInputRegisterAddress($address, $channel, $deviceExpectedDataType);
 		}
 
 		$this->logger->warning(

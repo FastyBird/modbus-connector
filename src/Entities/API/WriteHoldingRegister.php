@@ -35,7 +35,6 @@ final class WriteHoldingRegister implements Entities\API\Entity
 	public function __construct(
 		private readonly int $station,
 		private readonly Types\ModbusFunction $function,
-		private readonly int|null $value,
 	)
 	{
 	}
@@ -50,17 +49,11 @@ final class WriteHoldingRegister implements Entities\API\Entity
 		return $this->function;
 	}
 
-	public function getValue(): int|null
-	{
-		return $this->value;
-	}
-
 	public function toArray(): array
 	{
 		return [
 			'station' => $this->getStation(),
 			'function' => $this->getFunction()->getValue(),
-			'value' => $this->getValue(),
 		];
 	}
 

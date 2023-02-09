@@ -17,15 +17,18 @@
 Modbus connector is extension for [FastyBird](https://www.fastybird.com) [IoT](https://en.wikipedia.org/wiki/Internet_of_things) ecosystem
 which is integrating [Modbus](https://www.modbus.org) devices.
 
-Modbus connector is an [Apache2 licensed](http://www.apache.org/licenses/LICENSE-2.0) distributed extension, developed
-in [PHP](https://www.php.net) on top of the [Nette framework](https://nette.org) and [Symfony framework](https://symfony.com).
+Modbus Connector is a distributed extension that is developed in [PHP](https://www.php.net), built on the [Nette](https://nette.org) and [Symfony](https://symfony.com) frameworks,
+and is licensed under [Apache2](http://www.apache.org/licenses/LICENSE-2.0).
 
 ### Features:
 
-- [Modbus RTU](https://en.wikipedia.org/wiki/Modbus) support
-- Modbus connector management for [FastyBird](https://www.fastybird.com) [IoT](https://en.wikipedia.org/wiki/Internet_of_things) [devices module](https://github.com/FastyBird/devices-module)
-- Modbus device management for [FastyBird](https://www.fastybird.com) [IoT](https://en.wikipedia.org/wiki/Internet_of_things) [devices module](https://github.com/FastyBird/devices-module)
-- [{JSON:API}](https://jsonapi.org/) schemas for full api access
+- Support for both [Modbus](https://en.wikipedia.org/wiki/Modbus) RTU and TCP/IP communication protocols
+- Capability to handle a diverse range of data types
+- Ability to read and write from various Modbus memory areas, including coils, discrete inputs, holding registers, and input registers
+- Integration with the [FastyBird](https://www.fastybird.com) [IoT](https://en.wikipedia.org/wiki/Internet_of_things) [devices module](https://github.com/FastyBird/devices-module) for easy management and monitoring of Modbus devices
+- Advanced device management features, such as controlling power status, measuring energy consumption, and reading sensor data
+- [{JSON:API}](https://jsonapi.org/) schemas for full API access, providing a standardized and consistent way for developers to access and manipulate Shelly device data
+- Regular updates with new features and bug fixes, ensuring that the Shelly Connector is always up-to-date and reliable.
 
 ## Requirements
 
@@ -50,7 +53,7 @@ application under marketplace section.
 ## Documentation
 
 Learn how to connect Modbus devices and manage them with [FastyBird](https://www.fastybird.com) [IoT](https://en.wikipedia.org/wiki/Internet_of_things) system
-in [documentation](https://github.com/FastyBird/modbus-connector/blob/main/docs/index.md).
+in [documentation](https://github.com/FastyBird/modbus-connector/wiki).
 
 ## Feedback
 

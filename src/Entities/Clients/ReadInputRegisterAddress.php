@@ -15,10 +15,6 @@
 
 namespace FastyBird\Connector\Modbus\Entities\Clients;
 
-use FastyBird\Connector\Modbus\Exceptions;
-use FastyBird\Connector\Modbus\Types;
-use FastyBird\Library\Metadata\Types\DataType;
-
 /**
  * Read coil register address entity
  *
@@ -29,27 +25,5 @@ use FastyBird\Library\Metadata\Types\DataType;
  */
 final class ReadInputRegisterAddress extends ReadAddress
 {
-
-	/**
-	 * @throws Exceptions\InvalidState
-	 */
-	public function getSize(): int
-	{
-		$property = $this->getChannel()->findProperty(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
-
-		if ($property === null) {
-			throw new Exceptions\InvalidState('Channel value property could not be loaded');
-		}
-
-		if (
-			$property->getDataType()->equalsValue(DataType::DATA_TYPE_INT)
-			|| $property->getDataType()->equalsValue(DataType::DATA_TYPE_UINT)
-			|| $property->getDataType()->equalsValue(DataType::DATA_TYPE_FLOAT)
-		) {
-			return 2;
-		}
-
-		return 1;
-	}
 
 }
