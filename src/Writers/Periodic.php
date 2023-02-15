@@ -229,7 +229,7 @@ class Periodic implements Writer
 							})
 							->otherwise(function (Throwable $ex) use ($device, $channel, $property): void {
 								$this->logger->error(
-									'Could write new property state',
+									'Could not write new property state',
 									[
 										'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 										'type' => 'periodic-writer',

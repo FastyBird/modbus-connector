@@ -1059,8 +1059,6 @@ class Devices extends Console\Command\Command
 	 */
 	private function listRegisters(Style\SymfonyStyle $io, Entities\ModbusDevice $device): void
 	{
-		$io->newLine();
-
 		$findChannelsQuery = new DevicesQueries\FindChannels();
 		$findChannelsQuery->forDevice($device);
 
