@@ -35,7 +35,7 @@ use Symfony\Component\Console\Style;
 use Throwable;
 use function array_combine;
 use function array_key_exists;
-use function array_keys;
+use function array_search;
 use function array_values;
 use function assert;
 use function count;
@@ -663,11 +663,11 @@ class Initialize extends Console\Command\Command
 				throw new Exceptions\InvalidState('Selected answer is not valid');
 			}
 
-			if ($answer === self::CHOICE_QUESTION_RTU_MODE || intval($answer) === 0) {
+			if ($answer === self::CHOICE_QUESTION_RTU_MODE || $answer === '0') {
 				return Types\ClientMode::get(Types\ClientMode::MODE_RTU);
 			}
 
-			if ($answer === self::CHOICE_QUESTION_TCP_MODE || intval($answer) === 1) {
+			if ($answer === self::CHOICE_QUESTION_TCP_MODE || $answer === '1') {
 				return Types\ClientMode::get(Types\ClientMode::MODE_TCP);
 			}
 
@@ -686,7 +686,7 @@ class Initialize extends Console\Command\Command
 
 		$name = $io->askQuestion($question);
 
-		return $name === '' ? null : strval($name);
+		return strval($name) === '' ? null : strval($name);
 	}
 
 	/**
@@ -720,24 +720,30 @@ class Initialize extends Console\Command\Command
 	{
 		$default = $connector?->getByteSize()->getValue() ?? Types\ByteSize::SIZE_8;
 
+		$byteSizes = array_combine(
+			array_values(Types\ByteSize::getValues()),
+			array_values(Types\ByteSize::getValues()),
+		);
+
 		$question = new Console\Question\ChoiceQuestion(
 			'What byte size device uses?',
-			array_combine(
-				array_values(Types\ByteSize::getValues()),
-				array_values(Types\ByteSize::getValues()),
-			),
+			array_values($byteSizes),
 			$default,
 		);
 		$question->setErrorMessage('Selected answer: "%s" is not valid.');
-		$question->setValidator(static function (string|null $answer): Types\ByteSize {
+		$question->setValidator(static function (string|null $answer) use ($byteSizes): Types\ByteSize {
 			if ($answer === null) {
 				throw new Exceptions\InvalidState('Selected answer is not valid');
 			}
 
-			foreach ((array) Types\ByteSize::getAvailableValues() as $value) {
-				if (intval($answer) === $value) {
-					return Types\ByteSize::get(intval($value));
-				}
+			if (array_key_exists($answer, array_values($byteSizes))) {
+				$answer = array_values($byteSizes)[$answer];
+			}
+
+			$byteSize = array_search($answer, $byteSizes, true);
+
+			if ($byteSize !== false && Types\ByteSize::isValidValue($byteSize)) {
+				return Types\ByteSize::get(intval($byteSize));
 			}
 
 			throw new Exceptions\InvalidState('Selected answer is not valid');
@@ -761,24 +767,30 @@ class Initialize extends Console\Command\Command
 	{
 		$default = $connector?->getBaudRate()->getValue() ?? Types\BaudRate::BAUD_RATE_9600;
 
+		$baudRates = array_combine(
+			array_values(Types\BaudRate::getValues()),
+			array_values(Types\BaudRate::getValues()),
+		);
+
 		$question = new Console\Question\ChoiceQuestion(
 			'What communication baud rate devices use?',
-			array_combine(
-				array_values(Types\BaudRate::getValues()),
-				array_values(Types\BaudRate::getValues()),
-			),
+			array_values($baudRates),
 			$default,
 		);
 		$question->setErrorMessage('Selected answer: "%s" is not valid.');
-		$question->setValidator(static function (string|null $answer): Types\BaudRate {
+		$question->setValidator(static function (string|null $answer) use ($baudRates): Types\BaudRate {
 			if ($answer === null) {
 				throw new Exceptions\InvalidState('Selected answer is not valid');
 			}
 
-			foreach ((array) Types\BaudRate::getAvailableValues() as $value) {
-				if (intval($answer) === $value) {
-					return Types\BaudRate::get(intval($value));
-				}
+			if (array_key_exists($answer, array_values($baudRates))) {
+				$answer = array_values($baudRates)[$answer];
+			}
+
+			$baudRate = array_search($answer, $baudRates, true);
+
+			if ($baudRate !== false && Types\BaudRate::isValidValue($baudRate)) {
+				return Types\BaudRate::get(intval($baudRate));
 			}
 
 			throw new Exceptions\InvalidState('Selected answer is not valid');
@@ -828,11 +840,11 @@ class Initialize extends Console\Command\Command
 				throw new Exceptions\InvalidState('Selected answer is not valid');
 			}
 
-			if ($answer === self::CHOICE_QUESTION_PARITY_NONE || intval($answer) === 0) {
+			if ($answer === self::CHOICE_QUESTION_PARITY_NONE || $answer === '0') {
 				return Types\Parity::get(Types\Parity::PARITY_NONE);
-			} elseif ($answer === self::CHOICE_QUESTION_PARITY_ODD || intval($answer) === 1) {
+			} elseif ($answer === self::CHOICE_QUESTION_PARITY_ODD || $answer === '1') {
 				return Types\Parity::get(Types\Parity::PARITY_ODD);
-			} elseif ($answer === self::CHOICE_QUESTION_PARITY_EVEN || intval($answer) === 2) {
+			} elseif ($answer === self::CHOICE_QUESTION_PARITY_EVEN || $answer === '2') {
 				return Types\Parity::get(Types\Parity::PARITY_EVEN);
 			}
 
@@ -857,24 +869,30 @@ class Initialize extends Console\Command\Command
 	{
 		$default = $connector?->getStopBits()->getValue() ?? Types\StopBits::STOP_BIT_ONE;
 
+		$stopBits = array_combine(
+			array_values(Types\StopBits::getValues()),
+			array_values(Types\StopBits::getValues()),
+		);
+
 		$question = new Console\Question\ChoiceQuestion(
 			'How many stop bits devices use?',
-			array_combine(
-				array_values(Types\StopBits::getValues()),
-				array_values(Types\StopBits::getValues()),
-			),
+			array_values($stopBits),
 			$default,
 		);
 		$question->setErrorMessage('Selected answer: "%s" is not valid.');
-		$question->setValidator(static function (string|null $answer): Types\StopBits {
+		$question->setValidator(static function (string|null $answer) use ($stopBits): Types\StopBits {
 			if ($answer === null) {
 				throw new Exceptions\InvalidState('Selected answer is not valid');
 			}
 
-			foreach ((array) Types\StopBits::getAvailableValues() as $value) {
-				if ($value === intval($answer)) {
-					return Types\StopBits::get(intval($value));
-				}
+			if (array_key_exists($answer, array_values($stopBits))) {
+				$answer = array_values($stopBits)[$answer];
+			}
+
+			$stopBit = array_search($answer, $stopBits, true);
+
+			if ($stopBit !== false && Types\StopBits::isValidValue($stopBit)) {
+				return Types\StopBits::get(intval($stopBit));
 			}
 
 			throw new Exceptions\InvalidState('Selected answer is not valid');
@@ -917,38 +935,44 @@ class Initialize extends Console\Command\Command
 		}
 
 		$question = new Console\Question\ChoiceQuestion(
-			'Please select connector to manage',
+			'Please select connector under which you want to manage devices',
 			array_values($connectors),
+			count($connectors) === 1 ? 0 : null,
 		);
-		$question->setErrorMessage('Selected answer: "%s" is not valid.');
+		$question->setErrorMessage('Selected connector: "%s" is not valid.');
 		$question->setValidator(function (string|null $answer) use ($connectors): Entities\ModbusConnector {
 			if ($answer === null) {
 				throw new Exceptions\InvalidState('Selected answer is not valid');
 			}
 
-			$connectorIdentifiers = array_keys($connectors);
-
-			if (!array_key_exists(intval($answer), $connectorIdentifiers)) {
-				throw new Exceptions\Runtime('You have to select connector from list');
+			if (array_key_exists($answer, array_values($connectors))) {
+				$answer = array_values($connectors)[$answer];
 			}
 
-			$findConnectorQuery = new DevicesQueries\FindConnectors();
-			$findConnectorQuery->byIdentifier($connectorIdentifiers[intval($answer)]);
+			$identifier = array_search($answer, $connectors, true);
 
-			$connector = $this->connectorsRepository->findOneBy($findConnectorQuery, Entities\ModbusConnector::class);
-			assert($connector instanceof Entities\ModbusConnector || $connector === null);
+			if ($identifier !== false) {
+				$findConnectorQuery = new DevicesQueries\FindConnectors();
+				$findConnectorQuery->byIdentifier($identifier);
 
-			if ($connector === null) {
-				throw new Exceptions\Runtime('You have to select connector from list');
+				$connector = $this->connectorsRepository->findOneBy(
+					$findConnectorQuery,
+					Entities\ModbusConnector::class,
+				);
+				assert($connector instanceof Entities\ModbusConnector || $connector === null);
+
+				if ($connector !== null) {
+					return $connector;
+				}
 			}
 
-			return $connector;
+			throw new Exceptions\InvalidState('Selected answer is not valid');
 		});
 
-		$answer = $io->askQuestion($question);
-		assert($answer instanceof Entities\ModbusConnector);
+		$connector = $io->askQuestion($question);
+		assert($connector instanceof Entities\ModbusConnector);
 
-		return $answer;
+		return $connector;
 	}
 
 	/**

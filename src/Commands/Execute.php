@@ -19,6 +19,7 @@ use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Commands as DevicesCommands;
+use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
 use FastyBird\Module\Devices\Models as DevicesModels;
 use FastyBird\Module\Devices\Queries as DevicesQueries;
@@ -35,6 +36,7 @@ use function assert;
 use function count;
 use function is_string;
 use function sprintf;
+use function usort;
 
 /**
  * Connector execute command
@@ -153,10 +155,17 @@ class Execute extends Console\Command\Command
 
 			$findConnectorsQuery = new DevicesQueries\FindConnectors();
 
-			foreach ($this->connectorsRepository->findAllBy(
+			$systemConnectors = $this->connectorsRepository->findAllBy(
 				$findConnectorsQuery,
 				Entities\ModbusConnector::class,
-			) as $connector) {
+			);
+			usort(
+				$systemConnectors,
+				// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
+				static fn (DevicesEntities\Connectors\Connector $a, DevicesEntities\Connectors\Connector $b): int => $a->getIdentifier() <=> $b->getIdentifier()
+			);
+
+			foreach ($systemConnectors as $connector) {
 				assert($connector instanceof Entities\ModbusConnector);
 
 				$connectors[$connector->getIdentifier()] = $connector->getIdentifier()

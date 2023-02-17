@@ -35,7 +35,6 @@ use Symfony\Component\Console\Output;
 use Symfony\Component\Console\Style;
 use Throwable;
 use function array_key_exists;
-use function array_keys;
 use function array_search;
 use function array_values;
 use function assert;
@@ -1113,7 +1112,7 @@ class Devices extends Console\Command\Command
 
 		$name = $io->askQuestion($question);
 
-		return $name === '' ? null : strval($name);
+		return strval($name) === '' ? null : strval($name);
 	}
 
 	/**
@@ -1274,19 +1273,19 @@ class Devices extends Console\Command\Command
 				throw new Exceptions\InvalidState('Selected answer is not valid');
 			}
 
-			if ($answer === Types\ByteOrder::BYTE_ORDER_BIG || intval($answer) === 0) {
+			if ($answer === Types\ByteOrder::BYTE_ORDER_BIG || $answer === '0') {
 				return Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_BIG);
 			}
 
-			if ($answer === Types\ByteOrder::BYTE_ORDER_BIG_SWAP || intval($answer) === 1) {
+			if ($answer === Types\ByteOrder::BYTE_ORDER_BIG_SWAP || $answer === '1') {
 				return Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_BIG_SWAP);
 			}
 
-			if ($answer === Types\ByteOrder::BYTE_ORDER_LITTLE || intval($answer) === 2) {
+			if ($answer === Types\ByteOrder::BYTE_ORDER_LITTLE || $answer === '2') {
 				return Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_LITTLE);
 			}
 
-			if ($answer === Types\ByteOrder::BYTE_ORDER_LITTLE_SWAP || intval($answer) === 3) {
+			if ($answer === Types\ByteOrder::BYTE_ORDER_LITTLE_SWAP || $answer === '3') {
 				return Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_LITTLE_SWAP);
 			}
 
@@ -1396,19 +1395,19 @@ class Devices extends Console\Command\Command
 				throw new Exceptions\InvalidState('Selected answer is not valid');
 			}
 
-			if ($answer === self::CHOICE_QUESTION_CHANNEL_DISCRETE_INPUT || intval($answer) === 0) {
+			if ($answer === self::CHOICE_QUESTION_CHANNEL_DISCRETE_INPUT || $answer === '0') {
 				return Types\ChannelType::get(Types\ChannelType::DISCRETE_INPUT);
 			}
 
-			if ($answer === self::CHOICE_QUESTION_CHANNEL_COIL || intval($answer) === 1) {
+			if ($answer === self::CHOICE_QUESTION_CHANNEL_COIL || $answer === '1') {
 				return Types\ChannelType::get(Types\ChannelType::COIL);
 			}
 
-			if ($answer === self::CHOICE_QUESTION_CHANNEL_INPUT_REGISTER || intval($answer) === 2) {
+			if ($answer === self::CHOICE_QUESTION_CHANNEL_INPUT_REGISTER || $answer === '2') {
 				return Types\ChannelType::get(Types\ChannelType::INPUT_REGISTER);
 			}
 
-			if ($answer === self::CHOICE_QUESTION_CHANNEL_HOLDING_REGISTER || intval($answer) === 3) {
+			if ($answer === self::CHOICE_QUESTION_CHANNEL_HOLDING_REGISTER || $answer === '3') {
 				return Types\ChannelType::get(Types\ChannelType::HOLDING_REGISTER);
 			}
 
@@ -1620,7 +1619,7 @@ class Devices extends Console\Command\Command
 			$default ?? $dataTypes[0],
 		);
 		$question->setErrorMessage('Selected answer: "%s" is not valid.');
-		$question->setValidator(static function (string|null $answer) use ($question): MetadataTypes\DataType {
+		$question->setValidator(static function (string|null $answer) use ($dataTypes): MetadataTypes\DataType {
 			if ($answer === null) {
 				throw new Exceptions\InvalidState('Selected answer is not valid');
 			}
@@ -1630,10 +1629,10 @@ class Devices extends Console\Command\Command
 			}
 
 			if (
-				array_key_exists($answer, $question->getChoices())
-				&& MetadataTypes\DataType::isValidValue($question->getChoices()[$answer])
+				array_key_exists($answer, $dataTypes)
+				&& MetadataTypes\DataType::isValidValue($dataTypes[$answer])
 			) {
-				return MetadataTypes\DataType::get($question->getChoices()[$answer]);
+				return MetadataTypes\DataType::get($dataTypes[$answer]);
 			}
 
 			throw new Exceptions\InvalidState('Selected answer is not valid');
@@ -1876,7 +1875,7 @@ class Devices extends Console\Command\Command
 				$selected,
 			);
 			$question->setErrorMessage('Selected answer: "%s" is not valid.');
-			$question->setValidator(static function (string|null $answer) use ($question): string {
+			$question->setValidator(static function (string|null $answer) use ($dataTypes): string {
 				if ($answer === null) {
 					throw new Exceptions\InvalidState('Selected answer is not valid');
 				}
@@ -1886,10 +1885,10 @@ class Devices extends Console\Command\Command
 				}
 
 				if (
-					array_key_exists($answer, $question->getChoices())
-					&& MetadataTypes\DataTypeShort::isValidValue($question->getChoices()[$answer])
+					array_key_exists($answer, $dataTypes)
+					&& MetadataTypes\DataTypeShort::isValidValue($dataTypes[$answer])
 				) {
-					return $question->getChoices()[$answer];
+					return $dataTypes[$answer];
 				}
 
 				throw new Exceptions\InvalidState('Selected answer is not valid');
@@ -2117,7 +2116,7 @@ class Devices extends Console\Command\Command
 				$selected,
 			);
 			$question->setErrorMessage('Selected answer: "%s" is not valid.');
-			$question->setValidator(static function (string|null $answer) use ($question): string {
+			$question->setValidator(static function (string|null $answer) use ($dataTypes): string {
 				if ($answer === null) {
 					throw new Exceptions\InvalidState('Selected answer is not valid');
 				}
@@ -2127,10 +2126,10 @@ class Devices extends Console\Command\Command
 				}
 
 				if (
-					array_key_exists($answer, $question->getChoices())
-					&& MetadataTypes\DataTypeShort::isValidValue($question->getChoices()[$answer])
+					array_key_exists($answer, $dataTypes)
+					&& MetadataTypes\DataTypeShort::isValidValue($dataTypes[$answer])
 				) {
-					return $question->getChoices()[$answer];
+					return $dataTypes[$answer];
 				}
 
 				throw new Exceptions\InvalidState('Selected answer is not valid');
@@ -2191,23 +2190,28 @@ class Devices extends Console\Command\Command
 				throw new Exceptions\InvalidState('Selected answer is not valid');
 			}
 
-			$connectorIdentifiers = array_keys($connectors);
-
-			if (!array_key_exists(intval($answer), $connectorIdentifiers)) {
-				throw new Exceptions\Runtime('You have to select connector from list');
+			if (array_key_exists($answer, array_values($connectors))) {
+				$answer = array_values($connectors)[$answer];
 			}
 
-			$findConnectorQuery = new DevicesQueries\FindConnectors();
-			$findConnectorQuery->byIdentifier($connectorIdentifiers[intval($answer)]);
+			$identifier = array_search($answer, $connectors, true);
 
-			$connector = $this->connectorsRepository->findOneBy($findConnectorQuery, Entities\ModbusConnector::class);
-			assert($connector instanceof Entities\ModbusConnector || $connector === null);
+			if ($identifier !== false) {
+				$findConnectorQuery = new DevicesQueries\FindConnectors();
+				$findConnectorQuery->byIdentifier($identifier);
 
-			if ($connector === null) {
-				throw new Exceptions\Runtime('You have to select connector from list');
+				$connector = $this->connectorsRepository->findOneBy(
+					$findConnectorQuery,
+					Entities\ModbusConnector::class,
+				);
+				assert($connector instanceof Entities\ModbusConnector || $connector === null);
+
+				if ($connector !== null) {
+					return $connector;
+				}
 			}
 
-			return $connector;
+			throw new Exceptions\InvalidState('Selected answer is not valid');
 		});
 
 		$connector = $io->askQuestion($question);
@@ -2254,27 +2258,29 @@ class Devices extends Console\Command\Command
 		$question->setErrorMessage('Selected device: "%s" is not valid.');
 		$question->setValidator(function (string|null $answer) use ($connector, $devices): Entities\ModbusDevice {
 			if ($answer === null) {
-				throw new Exceptions\InvalidState('Selected answer is not valid');
-			}
-
-			$devicesIdentifiers = array_keys($devices);
-
-			if (!array_key_exists(intval($answer), $devicesIdentifiers)) {
 				throw new Exceptions\Runtime('You have to select device from list');
 			}
 
-			$findDeviceQuery = new DevicesQueries\FindDevices();
-			$findDeviceQuery->byIdentifier($devicesIdentifiers[intval($answer)]);
-			$findDeviceQuery->forConnector($connector);
-
-			$device = $this->devicesRepository->findOneBy($findDeviceQuery, Entities\ModbusDevice::class);
-			assert($device instanceof Entities\ModbusDevice || $device === null);
-
-			if ($device === null) {
-				throw new Exceptions\Runtime('You have to select device from list');
+			if (array_key_exists($answer, array_values($devices))) {
+				$answer = array_values($devices)[$answer];
 			}
 
-			return $device;
+			$identifier = array_search($answer, $devices, true);
+
+			if ($identifier !== false) {
+				$findDeviceQuery = new DevicesQueries\FindDevices();
+				$findDeviceQuery->byIdentifier($identifier);
+				$findDeviceQuery->forConnector($connector);
+
+				$device = $this->devicesRepository->findOneBy($findDeviceQuery, Entities\ModbusDevice::class);
+				assert($device instanceof Entities\ModbusDevice || $device === null);
+
+				if ($device !== null) {
+					return $device;
+				}
+			}
+
+			throw new Exceptions\Runtime('You have to select device from list');
 		});
 
 		$device = $io->askQuestion($question);
