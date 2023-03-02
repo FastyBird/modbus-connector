@@ -1034,7 +1034,7 @@ class Devices extends Console\Command\Command
 				],
 			);
 
-			$io->error('Something went wrong, register could not be updated. Error was logged.');
+			$io->error('Something went wrong, register could not be removed. Error was logged.');
 		} finally {
 			// Revert all changes when error occur
 			if ($this->getOrmConnection()->isTransactionActive()) {
