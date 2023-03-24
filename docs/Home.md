@@ -18,7 +18,6 @@ A device is an entity that represents a physical [Modbus](https://en.wikipedia.o
 
 The connector supports two device interfaces, the first being RS485 on twisted wire lines and the second being TCP/IP via standard network communication.
 
-
 # Configuration
 
 To use [Modbus](https://en.wikipedia.org/wiki/Modbus) devices with the [FastyBird](https://www.fastybird.com) [IoT](https://en.wikipedia.org/wiki/Internet_of_things) ecosystem, you will need to configure at least one connector.
@@ -108,7 +107,7 @@ This can be accomplished either through a console command or through the user in
 
 ## Manual Console Command
 
-To manually trigger device discovery, use the following command:
+To manually trigger device configuration, use the following command:
 
 ```shell
 php bin/fb-console fb:modbus-connector:devices

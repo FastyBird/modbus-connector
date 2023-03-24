@@ -26,9 +26,8 @@ and is licensed under [Apache2](http://www.apache.org/licenses/LICENSE-2.0).
 - Capability to handle a diverse range of data types
 - Ability to read and write from various Modbus memory areas, including coils, discrete inputs, holding registers, and input registers
 - Integration with the [FastyBird](https://www.fastybird.com) [IoT](https://en.wikipedia.org/wiki/Internet_of_things) [devices module](https://github.com/FastyBird/devices-module) for easy management and monitoring of Modbus devices
-- Advanced device management features, such as controlling power status, measuring energy consumption, and reading sensor data
-- [{JSON:API}](https://jsonapi.org/) schemas for full API access, providing a standardized and consistent way for developers to access and manipulate Shelly device data
-- Regular updates with new features and bug fixes, ensuring that the Shelly Connector is always up-to-date and reliable.
+- [{JSON:API}](https://jsonapi.org/) schemas for full API access, providing a standardized and consistent way for developers to access and manipulate Modbus device data
+- Regular updates with new features and bug fixes, ensuring that the Modbus Connector is always up-to-date and reliable.
 
 ## Requirements
 

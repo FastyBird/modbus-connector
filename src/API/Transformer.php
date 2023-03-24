@@ -63,7 +63,7 @@ final class Transformer
 		MetadataTypes\DataType $dataType,
 		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|null $format,
 		string|int|float|bool|null $value,
-	): float|int|string|bool|MetadataTypes\SwitchPayload|MetadataTypes\ButtonPayload|null
+	): float|int|string|bool|MetadataTypes\SwitchPayload|MetadataTypes\ButtonPayload|MetadataTypes\CoverPayload|null
 	{
 		if ($value === null) {
 			return null;
@@ -140,6 +140,12 @@ final class Transformer
 								strval($value),
 							)
 							: null;
+					} elseif ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_COVER)) {
+						return MetadataTypes\CoverPayload::isValidValue(strval($value))
+							? MetadataTypes\CoverPayload::get(
+								strval($value),
+							)
+							: null;
 					} else {
 						return strval($value);
 					}
@@ -171,6 +177,12 @@ final class Transformer
 								strval($filtered[0][0]->getValue()),
 							)
 							: null;
+					} elseif ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_COVER)) {
+						return MetadataTypes\CoverPayload::isValidValue(strval($filtered[0][0]->getValue()))
+							? MetadataTypes\CoverPayload::get(
+								strval($filtered[0][0]->getValue()),
+							)
+							: null;
 					} else {
 						return strval($filtered[0][0]->getValue());
 					}
@@ -189,7 +201,7 @@ final class Transformer
 	public function transformValueToDevice(
 		MetadataTypes\DataType $dataType,
 		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|null $format,
-		bool|float|int|string|DateTimeInterface|MetadataTypes\ButtonPayload|MetadataTypes\SwitchPayload|null $value,
+		bool|float|int|string|DateTimeInterface|MetadataTypes\ButtonPayload|MetadataTypes\SwitchPayload|MetadataTypes\CoverPayload|null $value,
 	): ValueObjects\DeviceData|null
 	{
 		if ($value === null) {
@@ -291,6 +303,9 @@ final class Transformer
 				) || (
 					$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_BUTTON)
 					&& $value instanceof MetadataTypes\ButtonPayload
+				) || (
+					$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_COVER)
+					&& $value instanceof MetadataTypes\CoverPayload
 				)
 			) {
 				return new ValueObjects\DeviceData(

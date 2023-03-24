@@ -46,7 +46,7 @@ final class Channel
 	public function getConfiguration(
 		DevicesEntities\Channels\Channel $channel,
 		Types\ChannelPropertyIdentifier $type,
-	): float|bool|int|string|MetadataTypes\ButtonPayload|MetadataTypes\SwitchPayload|DateTimeInterface|null
+	): float|bool|int|string|MetadataTypes\ButtonPayload|MetadataTypes\SwitchPayload|MetadataTypes\CoverPayload|DateTimeInterface|null
 	{
 		$configuration = $channel->findProperty(strval($type->getValue()));
 
