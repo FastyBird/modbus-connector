@@ -29,6 +29,7 @@ use FastyBird\Connector\Modbus\Schemas;
 use FastyBird\Connector\Modbus\Subscribers;
 use FastyBird\Connector\Modbus\Writers;
 use FastyBird\Library\Bootstrap\Boot as BootstrapBoot;
+use FastyBird\Library\Exchange\DI as ExchangeDI;
 use FastyBird\Module\Devices\DI as DevicesDI;
 use Nette\DI;
 use Nette\Schema;
@@ -83,26 +84,38 @@ class ModbusExtension extends DI\CompilerExtension
 		$configuration = $this->getConfig();
 		assert($configuration instanceof stdClass);
 
+		$writer = null;
+
 		if ($configuration->writer === Writers\Event::NAME) {
-			$builder->addDefinition($this->prefix('writers.event'), new DI\Definitions\ServiceDefinition())
-				->setType(Writers\Event::class);
+			$writer = $builder->addDefinition($this->prefix('writers.event'), new DI\Definitions\ServiceDefinition())
+				->setType(Writers\Event::class)
+				->setAutowired(false);
 		} elseif ($configuration->writer === Writers\Exchange::NAME) {
-			$builder->addDefinition($this->prefix('writers.exchange'), new DI\Definitions\ServiceDefinition())
-				->setType(Writers\Exchange::class);
+			$writer = $builder->addDefinition($this->prefix('writers.exchange'), new DI\Definitions\ServiceDefinition())
+				->setType(Writers\Exchange::class)
+				->setAutowired(false)
+				->addTag(ExchangeDI\ExchangeExtension::CONSUMER_STATUS, false);
 		} elseif ($configuration->writer === Writers\Periodic::NAME) {
-			$builder->addDefinition($this->prefix('writers.periodic'), new DI\Definitions\ServiceDefinition())
-				->setType(Writers\Periodic::class);
+			$writer = $builder->addDefinition($this->prefix('writers.periodic'), new DI\Definitions\ServiceDefinition())
+				->setType(Writers\Periodic::class)
+				->setAutowired(false);
 		}
 
 		$builder->addFactoryDefinition($this->prefix('client.rtu'))
 			->setImplement(Clients\RtuFactory::class)
 			->getResultDefinition()
-			->setType(Clients\Rtu::class);
+			->setType(Clients\Rtu::class)
+			->setArguments([
+				'writer' => $writer,
+			]);
 
 		$builder->addFactoryDefinition($this->prefix('client.tcp'))
 			->setImplement(Clients\TcpFactory::class)
 			->getResultDefinition()
-			->setType(Clients\Tcp::class);
+			->setType(Clients\Tcp::class)
+			->setArguments([
+				'writer' => $writer,
+			]);
 
 		$builder->addFactoryDefinition($this->prefix('api.rtu'))
 			->setImplement(API\RtuFactory::class)
