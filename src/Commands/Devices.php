@@ -1437,9 +1437,9 @@ class Devices extends Console\Command\Command
 
 		$question = new Console\Question\Question(
 			(
-				$channel !== null ?
-				'Provide register address. It have to be number'
-				: 'Provide register address. It could be single number or range like 1-2'
+				$channel !== null
+					? 'Provide register address. It have to be number'
+					: 'Provide register address. It could be single number or range like 1-2'
 			),
 			$address,
 		);
