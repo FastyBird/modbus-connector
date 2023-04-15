@@ -48,6 +48,8 @@ final class State implements Consumer
 	public function __construct(
 		private readonly Helpers\Property $propertyStateHelper,
 		private readonly DevicesModels\Devices\DevicesRepository $devicesRepository,
+		private readonly DevicesModels\Devices\Properties\PropertiesRepository $devicePropertiesRepository,
+		private readonly DevicesModels\Channels\ChannelsRepository $channelsRepository,
 		private readonly DevicesUtilities\DeviceConnection $deviceConnectionManager,
 		Log\LoggerInterface|null $logger = null,
 	)
@@ -92,7 +94,10 @@ final class State implements Consumer
 				|| $entity->getState()->equalsValue(Metadata\Types\ConnectionState::STATE_LOST)
 				|| $entity->getState()->equalsValue(Metadata\Types\ConnectionState::STATE_UNKNOWN)
 			) {
-				foreach ($device->getProperties() as $property) {
+				$findDevicePropertiesQuery = new DevicesQueries\FindDeviceProperties();
+				$findDevicePropertiesQuery->forDevice($device);
+
+				foreach ($this->devicePropertiesRepository->findAllBy($findDevicePropertiesQuery) as $property) {
 					if (!$property instanceof DevicesEntities\Devices\Properties\Dynamic) {
 						continue;
 					}
@@ -105,7 +110,12 @@ final class State implements Consumer
 					);
 				}
 
-				foreach ($device->getChannels() as $channel) {
+				$findChannelsQuery = new DevicesQueries\FindChannels();
+				$findChannelsQuery->forDevice($device);
+
+				$channels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\ModbusChannel::class);
+
+				foreach ($channels as $channel) {
 					foreach ($channel->getProperties() as $property) {
 						if (!$property instanceof DevicesEntities\Channels\Properties\Dynamic) {
 							continue;
@@ -127,7 +137,6 @@ final class State implements Consumer
 			[
 				'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 				'type' => 'state-message-consumer',
-				'group' => 'consumer',
 				'device' => [
 					'id' => $device->getPlainId(),
 				],

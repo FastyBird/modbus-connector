@@ -25,6 +25,8 @@ use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
 use FastyBird\Module\Devices\Models as DevicesModels;
+use FastyBird\Module\Devices\Queries as DevicesQueries;
+use IPub\DoctrineCrud;
 use Nette;
 use Nette\Utils;
 use function sprintf;
@@ -43,6 +45,7 @@ final class Properties implements Common\EventSubscriber
 	use Nette\SmartObject;
 
 	public function __construct(
+		private readonly DevicesModels\Devices\Properties\PropertiesRepository $propertiesRepository,
 		private readonly DevicesModels\Devices\Properties\PropertiesManager $propertiesManager,
 	)
 	{
@@ -60,6 +63,7 @@ final class Properties implements Common\EventSubscriber
 	 *
 	 * @throws DevicesExceptions\InvalidArgument
 	 * @throws DevicesExceptions\InvalidState
+	 * @throws DoctrineCrud\Exceptions\InvalidArgumentException
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
 	 */
@@ -70,10 +74,14 @@ final class Properties implements Common\EventSubscriber
 
 		// Check for valid entity
 		if ($entity instanceof Entities\ModbusDevice) {
-			$stateProperty = $entity->getProperty(Types\DevicePropertyIdentifier::IDENTIFIER_STATE);
+			$findDevicePropertyQuery = new DevicesQueries\FindDeviceProperties();
+			$findDevicePropertyQuery->forDevice($entity);
+			$findDevicePropertyQuery->byIdentifier(Types\DevicePropertyIdentifier::IDENTIFIER_STATE);
+
+			$stateProperty = $this->propertiesRepository->findOneBy($findDevicePropertyQuery);
 
 			if ($stateProperty !== null) {
-				$entity->removeProperty($stateProperty);
+				$this->propertiesManager->delete($stateProperty);
 			}
 
 			$this->propertiesManager->create(Utils\ArrayHash::from([

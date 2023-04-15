@@ -20,6 +20,7 @@ use Doctrine\Persistence;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Types;
+use FastyBird\Library\Bootstrap\Helpers as BootstrapHelpers;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
@@ -78,6 +79,7 @@ class Initialize extends Console\Command\Command
 	public function __construct(
 		private readonly DevicesModels\Connectors\ConnectorsRepository $connectorsRepository,
 		private readonly DevicesModels\Connectors\ConnectorsManager $connectorsManager,
+		private readonly DevicesModels\Connectors\Properties\PropertiesRepository $propertiesRepository,
 		private readonly DevicesModels\Connectors\Properties\PropertiesManager $propertiesManager,
 		private readonly DevicesModels\Connectors\Controls\ControlsManager $controlsManager,
 		private readonly Persistence\ManagerRegistry $managerRegistry,
@@ -305,11 +307,7 @@ class Initialize extends Console\Command\Command
 				[
 					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 					'type' => 'initialize-cmd',
-					'group' => 'cmd',
-					'exception' => [
-						'message' => $ex->getMessage(),
-						'code' => $ex->getCode(),
-					],
+					'exception' => BootstrapHelpers\Logger::buildException($ex),
 				],
 			);
 
@@ -351,7 +349,11 @@ class Initialize extends Console\Command\Command
 			return;
 		}
 
-		$modeProperty = $connector->findProperty(Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE);
+		$findConnectorPropertyQuery = new DevicesQueries\FindConnectorProperties();
+		$findConnectorPropertyQuery->forConnector($connector);
+		$findConnectorPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE);
+
+		$modeProperty = $this->propertiesRepository->findOneBy($findConnectorPropertyQuery);
 
 		if ($modeProperty === null) {
 			$changeMode = true;
@@ -411,11 +413,35 @@ class Initialize extends Console\Command\Command
 			$stopBits = $this->askRtuStopBits($io, $connector);
 		}
 
-		$interfaceProperty = $connector->findProperty(Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_INTERFACE);
-		$baudRateProperty = $connector->findProperty(Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_BAUD_RATE);
-		$byteSizeProperty = $connector->findProperty(Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_BYTE_SIZE);
-		$dataParityProperty = $connector->findProperty(Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_PARITY);
-		$stopBitsProperty = $connector->findProperty(Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_STOP_BITS);
+		$findConnectorPropertyQuery = new DevicesQueries\FindConnectorProperties();
+		$findConnectorPropertyQuery->forConnector($connector);
+		$findConnectorPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_INTERFACE);
+
+		$interfaceProperty = $this->propertiesRepository->findOneBy($findConnectorPropertyQuery);
+
+		$findConnectorPropertyQuery = new DevicesQueries\FindConnectorProperties();
+		$findConnectorPropertyQuery->forConnector($connector);
+		$findConnectorPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_BAUD_RATE);
+
+		$baudRateProperty = $this->propertiesRepository->findOneBy($findConnectorPropertyQuery);
+
+		$findConnectorPropertyQuery = new DevicesQueries\FindConnectorProperties();
+		$findConnectorPropertyQuery->forConnector($connector);
+		$findConnectorPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_BYTE_SIZE);
+
+		$byteSizeProperty = $this->propertiesRepository->findOneBy($findConnectorPropertyQuery);
+
+		$findConnectorPropertyQuery = new DevicesQueries\FindConnectorProperties();
+		$findConnectorPropertyQuery->forConnector($connector);
+		$findConnectorPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_PARITY);
+
+		$dataParityProperty = $this->propertiesRepository->findOneBy($findConnectorPropertyQuery);
+
+		$findConnectorPropertyQuery = new DevicesQueries\FindConnectorProperties();
+		$findConnectorPropertyQuery->forConnector($connector);
+		$findConnectorPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_STOP_BITS);
+
+		$stopBitsProperty = $this->propertiesRepository->findOneBy($findConnectorPropertyQuery);
 
 		try {
 			// Start transaction connection to the database
@@ -557,11 +583,7 @@ class Initialize extends Console\Command\Command
 				[
 					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 					'type' => 'initialize-cmd',
-					'group' => 'cmd',
-					'exception' => [
-						'message' => $ex->getMessage(),
-						'code' => $ex->getCode(),
-					],
+					'exception' => BootstrapHelpers\Logger::buildException($ex),
 				],
 			);
 
@@ -620,11 +642,7 @@ class Initialize extends Console\Command\Command
 				[
 					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 					'type' => 'initialize-cmd',
-					'group' => 'cmd',
-					'exception' => [
-						'message' => $ex->getMessage(),
-						'code' => $ex->getCode(),
-					],
+					'exception' => BootstrapHelpers\Logger::buildException($ex),
 				],
 			);
 
@@ -976,7 +994,7 @@ class Initialize extends Console\Command\Command
 			return $connection;
 		}
 
-		throw new Exceptions\Runtime('Entity manager could not be loaded');
+		throw new Exceptions\Runtime('Transformer manager could not be loaded');
 	}
 
 }

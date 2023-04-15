@@ -78,20 +78,6 @@ class ModbusDevice extends DevicesEntities\Devices\Device
 		parent::addChannel($channel);
 	}
 
-	public function getChannel(string $id): ModbusChannel|null
-	{
-		$channel = parent::getChannel($id);
-
-		return $channel instanceof ModbusChannel ? $channel : null;
-	}
-
-	public function findChannel(string $identifier): ModbusChannel|null
-	{
-		$channel = parent::findChannel($identifier);
-
-		return $channel instanceof ModbusChannel ? $channel : null;
-	}
-
 	/**
 	 * @throws DevicesExceptions\InvalidState
 	 * @throws MetadataExceptions\InvalidArgument

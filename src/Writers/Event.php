@@ -20,6 +20,7 @@ use FastyBird\Connector\Modbus\Clients;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Helpers;
 use FastyBird\DateTimeFactory;
+use FastyBird\Library\Bootstrap\Helpers as BootstrapHelpers;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Events as DevicesEvents;
@@ -137,11 +138,7 @@ class Event implements Writer, EventDispatcher\EventSubscriberInterface
 					[
 						'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 						'type' => 'event-writer',
-						'group' => 'writer',
-						'exception' => [
-							'message' => $ex->getMessage(),
-							'code' => $ex->getCode(),
-						],
+						'exception' => BootstrapHelpers\Logger::buildException($ex),
 						'connector' => [
 							'id' => $connectorId->toString(),
 						],

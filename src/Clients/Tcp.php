@@ -26,11 +26,14 @@ use FastyBird\Connector\Modbus\Helpers;
 use FastyBird\Connector\Modbus\Types;
 use FastyBird\Connector\Modbus\Writers;
 use FastyBird\DateTimeFactory;
+use FastyBird\Library\Bootstrap\Helpers as BootstrapHelpers;
 use FastyBird\Library\Metadata;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
+use FastyBird\Module\Devices\Models as DevicesModels;
+use FastyBird\Module\Devices\Queries as DevicesQueries;
 use FastyBird\Module\Devices\States as DevicesStates;
 use FastyBird\Module\Devices\Utilities as DevicesUtilities;
 use InvalidArgumentException;
@@ -96,6 +99,9 @@ class Tcp implements Client
 		private readonly Helpers\Property $propertyStateHelper,
 		private readonly Consumers\Messages $consumer,
 		private readonly Writers\Writer $writer,
+		private readonly DevicesModels\Devices\DevicesRepository $devicesRepository,
+		private readonly DevicesModels\Channels\ChannelsRepository $channelsRepository,
+		private readonly DevicesModels\Channels\Properties\PropertiesRepository $channelPropertiesRepository,
 		private readonly DevicesUtilities\DeviceConnection $deviceConnectionManager,
 		private readonly DevicesUtilities\ChannelPropertiesStates $channelPropertiesStates,
 		private readonly DateTimeFactory\Factory $dateTimeFactory,
@@ -327,7 +333,10 @@ class Tcp implements Client
 	 */
 	private function handleCommunication(): void
 	{
-		foreach ($this->connector->getDevices() as $device) {
+		$findDevicesQuery = new DevicesQueries\FindDevices();
+		$findDevicesQuery->forConnector($this->connector);
+
+		foreach ($this->devicesRepository->findAllBy($findDevicesQuery, Entities\ModbusDevice::class) as $device) {
 			assert($device instanceof Entities\ModbusDevice);
 
 			if (
@@ -358,7 +367,6 @@ class Tcp implements Client
 							[
 								'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 								'type' => 'tcp-client',
-								'group' => 'client',
 								'connector' => [
 									'id' => $this->connector->getPlainId(),
 								],
@@ -432,11 +440,19 @@ class Tcp implements Client
 
 		$coilsAddresses = $discreteInputsAddresses = $holdingAddresses = $inputsAddresses = [];
 
-		foreach ($device->getChannels() as $channel) {
+		$findChannelsQuery = new DevicesQueries\FindChannels();
+		$findChannelsQuery->forDevice($device);
+
+		foreach ($this->channelsRepository->findAllBy($findChannelsQuery, Entities\ModbusChannel::class) as $channel) {
+			assert($channel instanceof Entities\ModbusChannel);
+
 			$address = $channel->getAddress();
 
 			if (!is_int($address)) {
-				foreach ($channel->getProperties() as $property) {
+				$findChannelPropertiesQuery = new DevicesQueries\FindChannelProperties();
+				$findChannelPropertiesQuery->forChannel($channel);
+
+				foreach ($this->channelPropertiesRepository->findAllBy($findChannelPropertiesQuery) as $property) {
 					if (!$property instanceof DevicesEntities\Channels\Properties\Dynamic) {
 						continue;
 					}
@@ -456,7 +472,6 @@ class Tcp implements Client
 					[
 						'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 						'type' => 'tcp-client',
-						'group' => 'client',
 						'connector' => [
 							'id' => $this->connector->getPlainId(),
 						],
@@ -623,7 +638,13 @@ class Tcp implements Client
 							if ($channel !== null) {
 								$this->processedReadRegister[$channel->getIdentifier()] = $now;
 
-								$property = $channel->findProperty(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
+								$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+								$findChannelPropertyQuery->forChannel($channel);
+								$findChannelPropertyQuery->byIdentifier(
+									Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE,
+								);
+
+								$property = $this->channelPropertiesRepository->findOneBy($findChannelPropertyQuery);
 
 								if ($property instanceof DevicesEntities\Channels\Properties\Dynamic) {
 									$this->propertyStateHelper->setValue(
@@ -676,7 +697,13 @@ class Tcp implements Client
 							if ($channel !== null) {
 								$this->processedReadRegister[$channel->getIdentifier()] = $now;
 
-								$property = $channel->findProperty(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
+								$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+								$findChannelPropertyQuery->forChannel($channel);
+								$findChannelPropertyQuery->byIdentifier(
+									Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE,
+								);
+
+								$property = $this->channelPropertiesRepository->findOneBy($findChannelPropertyQuery);
 
 								if ($property instanceof DevicesEntities\Channels\Properties\Dynamic) {
 									$this->propertyStateHelper->setValue(
@@ -694,11 +721,7 @@ class Tcp implements Client
 							[
 								'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 								'type' => 'tcp-client',
-								'group' => 'client',
-								'exception' => [
-									'message' => $ex->getMessage(),
-									'code' => $ex->getCode(),
-								],
+								'exception' => BootstrapHelpers\Logger::buildException($ex),
 								'connector' => [
 									'id' => $this->connector->getPlainId(),
 								],
@@ -715,11 +738,7 @@ class Tcp implements Client
 							[
 								'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 								'type' => 'tcp-client',
-								'group' => 'client',
-								'exception' => [
-									'message' => $ex->getMessage(),
-									'code' => $ex->getCode(),
-								],
+								'exception' => BootstrapHelpers\Logger::buildException($ex),
 								'connector' => [
 									'id' => $this->connector->getPlainId(),
 								],
@@ -754,7 +773,11 @@ class Tcp implements Client
 	{
 		$now = $this->dateTimeFactory->getNow();
 
-		$property = $channel->findProperty(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
+		$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+		$findChannelPropertyQuery->forChannel($channel);
+		$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
+
+		$property = $this->channelPropertiesRepository->findOneBy($findChannelPropertyQuery);
 
 		if (
 			!$property instanceof DevicesEntities\Channels\Properties\Dynamic
@@ -804,7 +827,6 @@ class Tcp implements Client
 			[
 				'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 				'type' => 'tcp-client',
-				'group' => 'client',
 				'connector' => [
 					'id' => $this->connector->getPlainId(),
 				],

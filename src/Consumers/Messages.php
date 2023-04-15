@@ -67,7 +67,6 @@ final class Messages
 			[
 				'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 				'type' => 'consumer',
-				'group' => 'consumer',
 			],
 		);
 	}
@@ -81,7 +80,6 @@ final class Messages
 			[
 				'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 				'type' => 'consumer',
-				'group' => 'consumer',
 				'message' => $entity->toArray(),
 			],
 		);
@@ -103,7 +101,6 @@ final class Messages
 				[
 					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 					'type' => 'consumer',
-					'group' => 'consumer',
 				],
 			);
 
@@ -123,7 +120,6 @@ final class Messages
 			[
 				'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 				'type' => 'consumer',
-				'group' => 'consumer',
 				'message' => $entity->toArray(),
 			],
 		);

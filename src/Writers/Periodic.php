@@ -20,6 +20,7 @@ use FastyBird\Connector\Modbus\Clients;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Helpers;
 use FastyBird\DateTimeFactory;
+use FastyBird\Library\Bootstrap\Helpers as BootstrapHelpers;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
@@ -77,6 +78,8 @@ class Periodic implements Writer
 	public function __construct(
 		private readonly Helpers\Property $propertyStateHelper,
 		private readonly DevicesModels\Devices\DevicesRepository $devicesRepository,
+		private readonly DevicesModels\Channels\ChannelsRepository $channelsRepository,
+		private readonly DevicesModels\Channels\Properties\PropertiesRepository $channelPropertiesRepository,
 		private readonly DevicesUtilities\DeviceConnection $deviceConnectionManager,
 		private readonly DevicesUtilities\ChannelPropertiesStates $channelPropertiesStates,
 		private readonly DateTimeFactory\Factory $dateTimeFactory,
@@ -167,8 +170,18 @@ class Periodic implements Writer
 	{
 		$now = $this->dateTimeFactory->getNow();
 
-		foreach ($device->getChannels() as $channel) {
-			foreach ($channel->getProperties() as $property) {
+		$findChannelsQuery = new DevicesQueries\FindChannels();
+		$findChannelsQuery->forDevice($device);
+
+		$channels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\ModbusChannel::class);
+
+		foreach ($channels as $channel) {
+			assert($channel instanceof Entities\ModbusChannel);
+
+			$findChannelPropertiesQuery = new DevicesQueries\FindChannelProperties();
+			$findChannelPropertiesQuery->forChannel($channel);
+
+			foreach ($this->channelPropertiesRepository->findAllBy($findChannelPropertiesQuery) as $property) {
 				if (!$property instanceof DevicesEntities\Channels\Properties\Dynamic) {
 					continue;
 				}
@@ -234,11 +247,7 @@ class Periodic implements Writer
 									[
 										'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 										'type' => 'periodic-writer',
-										'group' => 'writer',
-										'exception' => [
-											'message' => $ex->getMessage(),
-											'code' => $ex->getCode(),
-										],
+										'exception' => BootstrapHelpers\Logger::buildException($ex),
 										'connector' => [
 											'id' => $device->getConnector()->getPlainId(),
 										],

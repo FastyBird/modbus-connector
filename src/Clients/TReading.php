@@ -24,6 +24,8 @@ use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
+use FastyBird\Module\Devices\Models as DevicesModels;
+use FastyBird\Module\Devices\Queries as DevicesQueries;
 use FastyBird\Module\Devices\States as DevicesStates;
 use FastyBird\Module\Devices\Utilities as DevicesUtilities;
 use Nette\Utils;
@@ -32,7 +34,8 @@ use function usort;
 
 /**
  * @property-read API\Transformer $transformer
- * @property-read Helpers\Property $propertyStateHelper,
+ * @property-read Helpers\Property $propertyStateHelper
+ * @property-read DevicesModels\Channels\Properties\PropertiesRepository $channelPropertiesRepository
  */
 trait TReading
 {
@@ -169,7 +172,11 @@ trait TReading
 				);
 			}
 
-			$property = $channel->findProperty(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
+			$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+			$findChannelPropertyQuery->forChannel($channel);
+			$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
+
+			$property = $this->channelPropertiesRepository->findOneBy($findChannelPropertyQuery);
 
 			if (!$property instanceof DevicesEntities\Channels\Properties\Dynamic) {
 				throw new Exceptions\InvalidState(

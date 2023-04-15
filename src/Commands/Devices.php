@@ -20,6 +20,7 @@ use Doctrine\Persistence;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Types;
+use FastyBird\Library\Bootstrap\Helpers as BootstrapHelpers;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Library\Metadata\ValueObjects as MetadataValueObjects;
@@ -97,7 +98,9 @@ class Devices extends Console\Command\Command
 		private readonly DevicesModels\Devices\DevicesManager $devicesManager,
 		private readonly DevicesModels\Channels\ChannelsRepository $channelsRepository,
 		private readonly DevicesModels\Channels\ChannelsManager $channelsManager,
+		private readonly DevicesModels\Devices\Properties\PropertiesRepository $devicePropertiesRepository,
 		private readonly DevicesModels\Devices\Properties\PropertiesManager $devicesPropertiesManager,
+		private readonly DevicesModels\Channels\Properties\PropertiesRepository $channelPropertiesRepository,
 		private readonly DevicesModels\Channels\Properties\PropertiesManager $channelsPropertiesManager,
 		private readonly Persistence\ManagerRegistry $managerRegistry,
 		Log\LoggerInterface|null $logger = null,
@@ -344,11 +347,7 @@ class Devices extends Console\Command\Command
 				[
 					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 					'type' => 'devices-cmd',
-					'group' => 'cmd',
-					'exception' => [
-						'message' => $ex->getMessage(),
-						'code' => $ex->getCode(),
-					],
+					'exception' => BootstrapHelpers\Logger::buildException($ex),
 				],
 			);
 
@@ -408,11 +407,35 @@ class Devices extends Console\Command\Command
 
 		$address = $ipAddress = $port = $unitId = null;
 
-		$addressProperty = $device->findProperty(Types\DevicePropertyIdentifier::IDENTIFIER_ADDRESS);
-		$ipAddressProperty = $device->findProperty(Types\DevicePropertyIdentifier::IDENTIFIER_IP_ADDRESS);
-		$portProperty = $device->findProperty(Types\DevicePropertyIdentifier::IDENTIFIER_IP_ADDRESS_PORT);
-		$unitIdProperty = $device->findProperty(Types\DevicePropertyIdentifier::IDENTIFIER_UNIT_ID);
-		$byteOrderProperty = $device->findProperty(Types\DevicePropertyIdentifier::IDENTIFIER_BYTE_ORDER);
+		$findDevicePropertyQuery = new DevicesQueries\FindDeviceProperties();
+		$findDevicePropertyQuery->forDevice($device);
+		$findDevicePropertyQuery->byIdentifier(Types\DevicePropertyIdentifier::IDENTIFIER_ADDRESS);
+
+		$addressProperty = $this->devicePropertiesRepository->findOneBy($findDevicePropertyQuery);
+
+		$findDevicePropertyQuery = new DevicesQueries\FindDeviceProperties();
+		$findDevicePropertyQuery->forDevice($device);
+		$findDevicePropertyQuery->byIdentifier(Types\DevicePropertyIdentifier::IDENTIFIER_IP_ADDRESS);
+
+		$ipAddressProperty = $this->devicePropertiesRepository->findOneBy($findDevicePropertyQuery);
+
+		$findDevicePropertyQuery = new DevicesQueries\FindDeviceProperties();
+		$findDevicePropertyQuery->forDevice($device);
+		$findDevicePropertyQuery->byIdentifier(Types\DevicePropertyIdentifier::IDENTIFIER_IP_ADDRESS_PORT);
+
+		$portProperty = $this->devicePropertiesRepository->findOneBy($findDevicePropertyQuery);
+
+		$findDevicePropertyQuery = new DevicesQueries\FindDeviceProperties();
+		$findDevicePropertyQuery->forDevice($device);
+		$findDevicePropertyQuery->byIdentifier(Types\DevicePropertyIdentifier::IDENTIFIER_UNIT_ID);
+
+		$unitIdProperty = $this->devicePropertiesRepository->findOneBy($findDevicePropertyQuery);
+
+		$findDevicePropertyQuery = new DevicesQueries\FindDeviceProperties();
+		$findDevicePropertyQuery->forDevice($device);
+		$findDevicePropertyQuery->byIdentifier(Types\DevicePropertyIdentifier::IDENTIFIER_BYTE_ORDER);
+
+		$byteOrderProperty = $this->devicePropertiesRepository->findOneBy($findDevicePropertyQuery);
 
 		if ($connector->getClientMode()->equalsValue(Types\ClientMode::MODE_RTU)) {
 			$address = $this->askDeviceAddress($io, $connector, $device);
@@ -547,11 +570,7 @@ class Devices extends Console\Command\Command
 				[
 					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 					'type' => 'devices-cmd',
-					'group' => 'cmd',
-					'exception' => [
-						'message' => $ex->getMessage(),
-						'code' => $ex->getCode(),
-					],
+					'exception' => BootstrapHelpers\Logger::buildException($ex),
 				],
 			);
 
@@ -576,7 +595,12 @@ class Devices extends Console\Command\Command
 			return;
 		}
 
-		if (count($device->getChannels()) > 0) {
+		$findChannelsQuery = new DevicesQueries\FindChannels();
+		$findChannelsQuery->forDevice($device);
+
+		$channels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\ModbusChannel::class);
+
+		if (count($channels) > 0) {
 			$this->askRegisterAction($io, $device, true);
 
 			return;
@@ -640,11 +664,7 @@ class Devices extends Console\Command\Command
 				[
 					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 					'type' => 'devices-cmd',
-					'group' => 'cmd',
-					'exception' => [
-						'message' => $ex->getMessage(),
-						'code' => $ex->getCode(),
-					],
+					'exception' => BootstrapHelpers\Logger::buildException($ex),
 				],
 			);
 
@@ -756,11 +776,7 @@ class Devices extends Console\Command\Command
 				[
 					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 					'type' => 'devices-cmd',
-					'group' => 'cmd',
-					'exception' => [
-						'message' => $ex->getMessage(),
-						'code' => $ex->getCode(),
-					],
+					'exception' => BootstrapHelpers\Logger::buildException($ex),
 				],
 			);
 
@@ -855,13 +871,29 @@ class Devices extends Console\Command\Command
 			$format = $this->askRegisterFormat($io, $dataType, $channel);
 		}
 
-		$addressProperty = $channel->findProperty(Types\ChannelPropertyIdentifier::IDENTIFIER_ADDRESS);
+		$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+		$findChannelPropertyQuery->forChannel($channel);
+		$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::IDENTIFIER_ADDRESS);
 
-		$typeProperty = $channel->findProperty(Types\ChannelPropertyIdentifier::IDENTIFIER_TYPE);
+		$addressProperty = $this->channelPropertiesRepository->findOneBy($findChannelPropertyQuery);
 
-		$readingDelayProperty = $channel->findProperty(Types\ChannelPropertyIdentifier::IDENTIFIER_READING_DELAY);
+		$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+		$findChannelPropertyQuery->forChannel($channel);
+		$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::IDENTIFIER_TYPE);
 
-		$valueProperty = $channel->findProperty(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
+		$typeProperty = $this->channelPropertiesRepository->findOneBy($findChannelPropertyQuery);
+
+		$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+		$findChannelPropertyQuery->forChannel($channel);
+		$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::IDENTIFIER_READING_DELAY);
+
+		$readingDelayProperty = $this->channelPropertiesRepository->findOneBy($findChannelPropertyQuery);
+
+		$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+		$findChannelPropertyQuery->forChannel($channel);
+		$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
+
+		$valueProperty = $this->channelPropertiesRepository->findOneBy($findChannelPropertyQuery);
 
 		try {
 			// Start transaction connection to the database
@@ -947,11 +979,7 @@ class Devices extends Console\Command\Command
 				[
 					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 					'type' => 'devices-cmd',
-					'group' => 'cmd',
-					'exception' => [
-						'message' => $ex->getMessage(),
-						'code' => $ex->getCode(),
-					],
+					'exception' => BootstrapHelpers\Logger::buildException($ex),
 				],
 			);
 
@@ -963,7 +991,12 @@ class Devices extends Console\Command\Command
 			}
 		}
 
-		if (count($device->getChannels()) > 1) {
+		$findChannelsQuery = new DevicesQueries\FindChannels();
+		$findChannelsQuery->forDevice($device);
+
+		$channels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\ModbusChannel::class);
+
+		if (count($channels) > 1) {
 			$this->askRegisterAction($io, $device, true);
 
 			return;
@@ -1026,11 +1059,7 @@ class Devices extends Console\Command\Command
 				[
 					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 					'type' => 'devices-cmd',
-					'group' => 'cmd',
-					'exception' => [
-						'message' => $ex->getMessage(),
-						'code' => $ex->getCode(),
-					],
+					'exception' => BootstrapHelpers\Logger::buildException($ex),
 				],
 			);
 
@@ -1042,7 +1071,12 @@ class Devices extends Console\Command\Command
 			}
 		}
 
-		if (count($device->getChannels()) > 0) {
+		$findChannelsQuery = new DevicesQueries\FindChannels();
+		$findChannelsQuery->forDevice($device);
+
+		$channels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\ModbusChannel::class);
+
+		if (count($channels) > 0) {
 			$this->askRegisterAction($io, $device, true);
 		}
 	}
@@ -1088,12 +1122,18 @@ class Devices extends Console\Command\Command
 		foreach ($deviceChannels as $index => $channel) {
 			assert($channel instanceof Entities\ModbusChannel);
 
+			$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+			$findChannelPropertyQuery->forChannel($channel);
+			$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
+
+			$valueProperty = $this->channelPropertiesRepository->findOneBy($findChannelPropertyQuery);
+
 			$table->addRow([
 				$index + 1,
 				$channel->getName() ?? $channel->getIdentifier(),
 				strval($channel->getRegisterType()?->getValue()),
 				$channel->getAddress(),
-				$channel->findProperty(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE)?->getDataType()->getValue(),
+				$valueProperty?->getDataType()->getValue(),
 			]);
 		}
 
@@ -1101,7 +1141,12 @@ class Devices extends Console\Command\Command
 
 		$io->newLine();
 
-		if (count($device->getChannels()) > 0) {
+		$findChannelsQuery = new DevicesQueries\FindChannels();
+		$findChannelsQuery->forDevice($device);
+
+		$channels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\ModbusChannel::class);
+
+		if (count($channels) > 0) {
 			$this->askRegisterAction($io, $device, true);
 		}
 	}
@@ -1127,12 +1172,18 @@ class Devices extends Console\Command\Command
 	): int
 	{
 		$question = new Console\Question\Question('Provide device hardware address', $device?->getAddress());
-		$question->setValidator(static function (string|null $answer) use ($connector, $device) {
+		$question->setValidator(function (string|null $answer) use ($connector, $device) {
 			if (strval(intval($answer)) !== strval($answer)) {
 				throw new Exceptions\Runtime('Device hardware address have to be numeric');
 			}
 
-			foreach ($connector->getDevices() as $connectorDevice) {
+			$findDevicesQuery = new DevicesQueries\FindDevices();
+			$findDevicesQuery->forConnector($connector);
+
+			foreach ($this->devicesRepository->findAllBy(
+				$findDevicesQuery,
+				Entities\ModbusDevice::class,
+			) as $connectorDevice) {
 				assert($connectorDevice instanceof Entities\ModbusDevice);
 
 				if (
@@ -1212,12 +1263,18 @@ class Devices extends Console\Command\Command
 	): int
 	{
 		$question = new Console\Question\Question('Provide device unit identifier', $device?->getUnitId());
-		$question->setValidator(static function (string|null $answer) use ($connector, $device) {
+		$question->setValidator(function (string|null $answer) use ($connector, $device) {
 			if (strval(intval($answer)) !== strval($answer)) {
 				throw new Exceptions\Runtime('Device unit identifier have to be numeric');
 			}
 
-			foreach ($connector->getDevices() as $connectorDevice) {
+			$findDevicesQuery = new DevicesQueries\FindDevices();
+			$findDevicesQuery->forConnector($connector);
+
+			foreach ($this->devicesRepository->findAllBy(
+				$findDevicesQuery,
+				Entities\ModbusDevice::class,
+			) as $connectorDevice) {
 				assert($connectorDevice instanceof Entities\ModbusDevice);
 
 				if (
@@ -1443,9 +1500,16 @@ class Devices extends Console\Command\Command
 			),
 			$address,
 		);
-		$question->setValidator(static function (string|null $answer) use ($device, $channel) {
+		$question->setValidator(function (string|null $answer) use ($device, $channel) {
 			if (strval(intval($answer)) === strval($answer)) {
-				foreach ($device->getChannels() as $deviceChannel) {
+				$findChannelsQuery = new DevicesQueries\FindChannels();
+				$findChannelsQuery->forDevice($device);
+
+				$channels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\ModbusChannel::class);
+
+				foreach ($channels as $deviceChannel) {
+					assert($deviceChannel instanceof Entities\ModbusChannel);
+
 					$address = $deviceChannel->getAddress();
 
 					if (
@@ -1471,7 +1535,17 @@ class Devices extends Console\Command\Command
 					$end = intval($matches[2]);
 
 					if ($start < $end) {
-						foreach ($device->getChannels() as $deviceChannel) {
+						$findChannelsQuery = new DevicesQueries\FindChannels();
+						$findChannelsQuery->forDevice($device);
+
+						$channels = $this->channelsRepository->findAllBy(
+							$findChannelsQuery,
+							Entities\ModbusChannel::class,
+						);
+
+						foreach ($channels as $deviceChannel) {
+							assert($deviceChannel instanceof Entities\ModbusChannel);
+
 							$address = $deviceChannel->getAddress();
 
 							if (intval($address) >= $start && intval($address) <= $end) {
@@ -1531,6 +1605,7 @@ class Devices extends Console\Command\Command
 	}
 
 	/**
+	 * @throws DevicesExceptions\InvalidState
 	 * @throws Exceptions\InvalidArgument
 	 */
 	private function askRegisterDataType(
@@ -1565,49 +1640,55 @@ class Devices extends Console\Command\Command
 				? MetadataTypes\DataType::DATA_TYPE_SWITCH
 				: MetadataTypes\DataType::DATA_TYPE_BUTTON;
 
-			switch ($channel?->findProperty(
-				Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE,
-			)?->getDataType()->getValue()) {
-				case MetadataTypes\DataType::DATA_TYPE_CHAR:
-					$default = 0;
+			if ($channel !== null) {
+				$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+				$findChannelPropertyQuery->forChannel($channel);
+				$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
 
-					break;
-				case MetadataTypes\DataType::DATA_TYPE_UCHAR:
-					$default = 1;
+				$valueProperty = $this->channelPropertiesRepository->findOneBy($findChannelPropertyQuery);
 
-					break;
-				case MetadataTypes\DataType::DATA_TYPE_SHORT:
-					$default = 2;
+				switch ($valueProperty?->getDataType()->getValue()) {
+					case MetadataTypes\DataType::DATA_TYPE_CHAR:
+						$default = 0;
 
-					break;
-				case MetadataTypes\DataType::DATA_TYPE_USHORT:
-					$default = 3;
+						break;
+					case MetadataTypes\DataType::DATA_TYPE_UCHAR:
+						$default = 1;
 
-					break;
-				case MetadataTypes\DataType::DATA_TYPE_INT:
-					$default = 4;
+						break;
+					case MetadataTypes\DataType::DATA_TYPE_SHORT:
+						$default = 2;
 
-					break;
-				case MetadataTypes\DataType::DATA_TYPE_UINT:
-					$default = 5;
+						break;
+					case MetadataTypes\DataType::DATA_TYPE_USHORT:
+						$default = 3;
 
-					break;
-				case MetadataTypes\DataType::DATA_TYPE_FLOAT:
-					$default = 6;
+						break;
+					case MetadataTypes\DataType::DATA_TYPE_INT:
+						$default = 4;
 
-					break;
-				case MetadataTypes\DataType::DATA_TYPE_STRING:
-					$default = 7;
+						break;
+					case MetadataTypes\DataType::DATA_TYPE_UINT:
+						$default = 5;
 
-					break;
-				case MetadataTypes\DataType::DATA_TYPE_SWITCH:
-					$default = 8;
+						break;
+					case MetadataTypes\DataType::DATA_TYPE_FLOAT:
+						$default = 6;
 
-					break;
-				case MetadataTypes\DataType::DATA_TYPE_BUTTON:
-					$default = 9;
+						break;
+					case MetadataTypes\DataType::DATA_TYPE_STRING:
+						$default = 7;
 
-					break;
+						break;
+					case MetadataTypes\DataType::DATA_TYPE_SWITCH:
+						$default = 8;
+
+						break;
+					case MetadataTypes\DataType::DATA_TYPE_BUTTON:
+						$default = 9;
+
+						break;
+				}
 			}
 		} else {
 			throw new Exceptions\InvalidArgument('Unknown register type');
@@ -1647,6 +1728,7 @@ class Devices extends Console\Command\Command
 	/**
 	 * @return array<int, array<int, array<int, string>>>|null
 	 *
+	 * @throws DevicesExceptions\InvalidState
 	 * @throws Exceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
@@ -1699,6 +1781,7 @@ class Devices extends Console\Command\Command
 	/**
 	 * @return array<int, array<int, string>>|null
 	 *
+	 * @throws DevicesExceptions\InvalidState
 	 * @throws Exceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
@@ -1711,7 +1794,15 @@ class Devices extends Console\Command\Command
 	{
 		$defaultReading = $defaultWriting = null;
 
-		$existingProperty = $channel?->findProperty(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
+		$existingProperty = null;
+
+		if ($channel !== null) {
+			$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+			$findChannelPropertyQuery->forChannel($channel);
+			$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
+
+			$existingProperty = $this->channelPropertiesRepository->findOneBy($findChannelPropertyQuery);
+		}
 
 		$hasSupport = false;
 
@@ -1911,6 +2002,7 @@ class Devices extends Console\Command\Command
 	/**
 	 * @return array<int, array<int, string>>|null
 	 *
+	 * @throws DevicesExceptions\InvalidState
 	 * @throws Exceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
@@ -1923,7 +2015,15 @@ class Devices extends Console\Command\Command
 	{
 		$defaultReading = $defaultWriting = null;
 
-		$existingProperty = $channel?->findProperty(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
+		$existingProperty = null;
+
+		if ($channel !== null) {
+			$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+			$findChannelPropertyQuery->forChannel($channel);
+			$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
+
+			$existingProperty = $this->channelPropertiesRepository->findOneBy($findChannelPropertyQuery);
+		}
 
 		$hasSupport = false;
 
@@ -2317,7 +2417,6 @@ class Devices extends Console\Command\Command
 				[
 					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 					'type' => 'devices-cmd',
-					'group' => 'cmd',
 				],
 			);
 
@@ -2339,7 +2438,6 @@ class Devices extends Console\Command\Command
 				[
 					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
 					'type' => 'devices-cmd',
-					'group' => 'cmd',
 				],
 			);
 
@@ -2409,7 +2507,7 @@ class Devices extends Console\Command\Command
 			return $connection;
 		}
 
-		throw new Exceptions\Runtime('Entity manager could not be loaded');
+		throw new Exceptions\Runtime('Transformer manager could not be loaded');
 	}
 
 }

@@ -21,6 +21,8 @@ use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
+use FastyBird\Module\Devices\Models as DevicesModels;
+use FastyBird\Module\Devices\Queries as DevicesQueries;
 use Nette;
 use function is_int;
 use function strval;
@@ -38,6 +40,12 @@ final class Channel
 
 	use Nette\SmartObject;
 
+	public function __construct(
+		private readonly DevicesModels\Channels\Properties\PropertiesRepository $channelPropertiesRepository,
+	)
+	{
+	}
+
 	/**
 	 * @throws DevicesExceptions\InvalidState
 	 * @throws MetadataExceptions\InvalidArgument
@@ -48,7 +56,11 @@ final class Channel
 		Types\ChannelPropertyIdentifier $type,
 	): float|bool|int|string|MetadataTypes\ButtonPayload|MetadataTypes\SwitchPayload|MetadataTypes\CoverPayload|DateTimeInterface|null
 	{
-		$configuration = $channel->findProperty(strval($type->getValue()));
+		$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+		$findChannelPropertyQuery->forChannel($channel);
+		$findChannelPropertyQuery->byIdentifier(strval($type->getValue()));
+
+		$configuration = $this->channelPropertiesRepository->findOneBy($findChannelPropertyQuery);
 
 		if ($configuration instanceof DevicesEntities\Channels\Properties\Variable) {
 			if ($type->getValue() === Types\ChannelPropertyIdentifier::IDENTIFIER_ADDRESS) {
