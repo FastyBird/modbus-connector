@@ -61,7 +61,8 @@ final class Transformer
 	 */
 	public function transformValueFromDevice(
 		MetadataTypes\DataType $dataType,
-		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|null $format,
+		// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
+		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|MetadataValueObjects\EquationFormat|null $format,
 		string|int|float|bool|null $value,
 	): float|int|string|bool|MetadataTypes\SwitchPayload|MetadataTypes\ButtonPayload|MetadataTypes\CoverPayload|null
 	{
@@ -200,7 +201,8 @@ final class Transformer
 	 */
 	public function transformValueToDevice(
 		MetadataTypes\DataType $dataType,
-		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|null $format,
+		// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
+		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|MetadataValueObjects\EquationFormat|null $format,
 		bool|float|int|string|DateTimeInterface|MetadataTypes\ButtonPayload|MetadataTypes\SwitchPayload|MetadataTypes\CoverPayload|null $value,
 	): ValueObjects\DeviceData|null
 	{
@@ -320,7 +322,8 @@ final class Transformer
 
 	public function determineDeviceReadDataType(
 		MetadataTypes\DataType $dataType,
-		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|null $format,
+		// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
+		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|MetadataValueObjects\EquationFormat|null $format,
 	): MetadataTypes\DataType
 	{
 		$deviceExpectedDataType = $dataType;
@@ -354,7 +357,8 @@ final class Transformer
 
 	public function determineDeviceWriteDataType(
 		MetadataTypes\DataType $dataType,
-		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|null $format,
+		// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
+		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|MetadataValueObjects\EquationFormat|null $format,
 	): MetadataTypes\DataType
 	{
 		$deviceExpectedDataType = $dataType;
