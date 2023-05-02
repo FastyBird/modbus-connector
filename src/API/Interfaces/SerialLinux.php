@@ -24,9 +24,9 @@ use function exec;
 use function fopen;
 use function is_array;
 use function is_resource;
+use function mb_convert_encoding;
 use function sprintf;
 use function stream_set_blocking;
-use function utf8_encode;
 
 /**
  * Serial interface using Linux file stream
@@ -99,7 +99,10 @@ final class SerialLinux extends Serial
 		$message = exec($command, $output, $resultCode);
 
 		if (boolval($resultCode)) {
-			throw new Exceptions\InvalidState(utf8_encode((string) $message), $resultCode);
+			throw new Exceptions\InvalidState(
+				mb_convert_encoding((string) $message, 'UTF-8', 'ISO-8859-1'),
+				$resultCode,
+			);
 		}
 	}
 
