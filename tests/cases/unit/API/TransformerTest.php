@@ -6,6 +6,7 @@ use FastyBird\Connector\Modbus\API;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Tests\Cases\Unit\BaseTestCase;
 use FastyBird\Connector\Modbus\Types\ByteOrder;
+use FastyBird\Library\Bootstrap\Exceptions as BootstrapExceptions;
 use Nette;
 use function floatval;
 use function pack;
@@ -16,6 +17,7 @@ final class TransformerTest extends BaseTestCase
 {
 
 	/**
+	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Nette\DI\MissingServiceException
 	 */
@@ -65,6 +67,7 @@ final class TransformerTest extends BaseTestCase
 	}
 
 	/**
+	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Nette\DI\MissingServiceException
 	 */
@@ -114,6 +117,7 @@ final class TransformerTest extends BaseTestCase
 	}
 
 	/**
+	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Nette\DI\MissingServiceException
 	 */
@@ -175,6 +179,7 @@ final class TransformerTest extends BaseTestCase
 	}
 
 	/**
+	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Nette\DI\MissingServiceException
 	 */
@@ -236,6 +241,7 @@ final class TransformerTest extends BaseTestCase
 	}
 
 	/**
+	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Nette\DI\MissingServiceException
 	 */
@@ -291,6 +297,7 @@ final class TransformerTest extends BaseTestCase
 	}
 
 	/**
+	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Nette\DI\MissingServiceException
 	 */
@@ -316,6 +323,7 @@ final class TransformerTest extends BaseTestCase
 	}
 
 	/**
+	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Nette\DI\MissingServiceException
 	 */
@@ -352,6 +360,7 @@ final class TransformerTest extends BaseTestCase
 	}
 
 	/**
+	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Nette\DI\MissingServiceException
 	 */
@@ -388,6 +397,7 @@ final class TransformerTest extends BaseTestCase
 	}
 
 	/**
+	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Nette\DI\MissingServiceException
 	 */
@@ -432,6 +442,7 @@ final class TransformerTest extends BaseTestCase
 	}
 
 	/**
+	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Nette\DI\MissingServiceException
 	 */
@@ -472,6 +483,7 @@ final class TransformerTest extends BaseTestCase
 	}
 
 	/**
+	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Nette\DI\MissingServiceException
 	 */
