@@ -47,7 +47,7 @@ final class Connector implements DevicesConnectors\Connector
 
 	private Clients\Client|null $client = null;
 
-	private EventLoop\TimerInterface|null $consumerTimer;
+	private EventLoop\TimerInterface|null $consumerTimer = null;
 
 	/**
 	 * @param array<Clients\ClientFactory> $clientsFactories
