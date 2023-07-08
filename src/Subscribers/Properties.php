@@ -80,27 +80,44 @@ final class Properties implements Common\EventSubscriber
 
 			$stateProperty = $this->propertiesRepository->findOneBy($findDevicePropertyQuery);
 
-			if ($stateProperty !== null) {
+			if ($stateProperty !== null && !$stateProperty instanceof DevicesEntities\Devices\Properties\Dynamic) {
 				$this->propertiesManager->delete($stateProperty);
+
+				$stateProperty = null;
 			}
 
-			$this->propertiesManager->create(Utils\ArrayHash::from([
-				'device' => $entity,
-				'entity' => DevicesEntities\Devices\Properties\Dynamic::class,
-				'identifier' => Types\DevicePropertyIdentifier::IDENTIFIER_STATE,
-				'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_ENUM),
-				'unit' => null,
-				'format' => [
-					MetadataTypes\ConnectionState::STATE_CONNECTED,
-					MetadataTypes\ConnectionState::STATE_DISCONNECTED,
-					MetadataTypes\ConnectionState::STATE_STOPPED,
-					MetadataTypes\ConnectionState::STATE_LOST,
-					MetadataTypes\ConnectionState::STATE_UNKNOWN,
-				],
-				'settable' => false,
-				'queryable' => false,
-			]));
-
+			if ($stateProperty !== null) {
+				$this->propertiesManager->update($stateProperty, Utils\ArrayHash::from([
+					'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_ENUM),
+					'unit' => null,
+					'format' => [
+						MetadataTypes\ConnectionState::STATE_CONNECTED,
+						MetadataTypes\ConnectionState::STATE_DISCONNECTED,
+						MetadataTypes\ConnectionState::STATE_STOPPED,
+						MetadataTypes\ConnectionState::STATE_LOST,
+						MetadataTypes\ConnectionState::STATE_UNKNOWN,
+					],
+					'settable' => false,
+					'queryable' => false,
+				]));
+			} else {
+				$this->propertiesManager->create(Utils\ArrayHash::from([
+					'device' => $entity,
+					'entity' => DevicesEntities\Devices\Properties\Dynamic::class,
+					'identifier' => Types\DevicePropertyIdentifier::IDENTIFIER_STATE,
+					'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_ENUM),
+					'unit' => null,
+					'format' => [
+						MetadataTypes\ConnectionState::STATE_CONNECTED,
+						MetadataTypes\ConnectionState::STATE_DISCONNECTED,
+						MetadataTypes\ConnectionState::STATE_STOPPED,
+						MetadataTypes\ConnectionState::STATE_LOST,
+						MetadataTypes\ConnectionState::STATE_UNKNOWN,
+					],
+					'settable' => false,
+					'queryable' => false,
+				]));
+			}
 		} elseif (
 			$entity instanceof DevicesEntities\Connectors\Properties\Variable
 			&& $entity->getConnector() instanceof Entities\ModbusConnector
