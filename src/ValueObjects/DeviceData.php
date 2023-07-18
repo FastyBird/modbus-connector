@@ -34,14 +34,14 @@ class DeviceData
 	private MetadataTypes\DataType $dataType;
 
 	public function __construct(
-		private readonly string|int|float|bool $value,
+		private readonly string|int|float|bool|null $value,
 		MetadataTypes\DataType|null $dataType,
 	)
 	{
 		$this->dataType = $dataType ?? MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING);
 	}
 
-	public function getValue(): float|bool|int|string
+	public function getValue(): float|bool|int|string|null
 	{
 		return $this->value;
 	}
