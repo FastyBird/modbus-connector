@@ -19,11 +19,14 @@ use DateTimeInterface;
 use FastyBird\Connector\Modbus\Clients;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Helpers;
+use FastyBird\Connector\Modbus\Queries;
 use FastyBird\DateTimeFactory;
 use FastyBird\Library\Bootstrap\Helpers as BootstrapHelpers;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Events as DevicesEvents;
+use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
+use FastyBird\Module\Devices\Models as DevicesModels;
 use FastyBird\Module\Devices\States as DevicesStates;
 use Nette;
 use Nette\Utils;
@@ -54,6 +57,7 @@ class Event implements Writer, EventDispatcher\EventSubscriberInterface
 	public function __construct(
 		private readonly Helpers\Property $propertyStateHelper,
 		private readonly DateTimeFactory\Factory $dateTimeFactory,
+		private readonly DevicesModels\Channels\ChannelsRepository $channelsRepository,
 		private readonly Log\LoggerInterface $logger = new Log\NullLogger(),
 	)
 	{
@@ -62,8 +66,8 @@ class Event implements Writer, EventDispatcher\EventSubscriberInterface
 	public static function getSubscribedEvents(): array
 	{
 		return [
-			DevicesEvents\StateEntityCreated::class => 'stateChanged',
-			DevicesEvents\StateEntityUpdated::class => 'stateChanged',
+			DevicesEvents\ChannelPropertyStateEntityCreated::class => 'stateChanged',
+			DevicesEvents\ChannelPropertyStateEntityUpdated::class => 'stateChanged',
 		];
 	}
 
@@ -83,16 +87,24 @@ class Event implements Writer, EventDispatcher\EventSubscriberInterface
 		unset($this->clients[$connector->getPlainId()]);
 	}
 
-	public function stateChanged(DevicesEvents\StateEntityCreated|DevicesEvents\StateEntityUpdated $event): void
+	/**
+	 * @throws DevicesExceptions\InvalidState
+	 */
+	public function stateChanged(
+		DevicesEvents\ChannelPropertyStateEntityCreated|DevicesEvents\ChannelPropertyStateEntityUpdated $event,
+	): void
 	{
 		foreach ($this->clients as $id => $client) {
 			$this->processClient(Uuid\Uuid::fromString($id), $event, $client);
 		}
 	}
 
+	/**
+	 * @throws DevicesExceptions\InvalidState
+	 */
 	public function processClient(
 		Uuid\UuidInterface $connectorId,
-		DevicesEvents\StateEntityCreated|DevicesEvents\StateEntityUpdated $event,
+		DevicesEvents\ChannelPropertyStateEntityCreated|DevicesEvents\ChannelPropertyStateEntityUpdated $event,
 		Clients\Client $client,
 	): void
 	{
@@ -104,19 +116,28 @@ class Event implements Writer, EventDispatcher\EventSubscriberInterface
 			return;
 		}
 
-		if (!$property instanceof DevicesEntities\Channels\Properties\Dynamic) {
+		if ($property->getChannel() instanceof DevicesEntities\Channels\Channel) {
+			$channel = $property->getChannel();
+			assert($channel instanceof Entities\ModbusChannel);
+
+		} else {
+			$findChannelQuery = new Queries\FindChannels();
+			$findChannelQuery->byId($property->getChannel());
+
+			$channel = $this->channelsRepository->findOneBy($findChannelQuery, Entities\ModbusChannel::class);
+		}
+
+		if ($channel === null) {
 			return;
 		}
 
-		if (!$property->getChannel()->getDevice()->getConnector()->getId()->equals($connectorId)) {
+		if (!$channel->getDevice()->getConnector()->getId()->equals($connectorId)) {
 			return;
 		}
 
-		$device = $property->getChannel()->getDevice();
-		$channel = $property->getChannel();
+		$device = $channel->getDevice();
 
 		assert($device instanceof Entities\ModbusDevice);
-		assert($channel instanceof Entities\ModbusChannel);
 
 		$client->writeChannelProperty($device, $channel, $property)
 			->then(function () use ($property): void {
@@ -146,7 +167,7 @@ class Event implements Writer, EventDispatcher\EventSubscriberInterface
 							'id' => $channel->getPlainId(),
 						],
 						'property' => [
-							'id' => $property->getPlainId(),
+							'id' => $property->getId()->toString(),
 						],
 					],
 				);

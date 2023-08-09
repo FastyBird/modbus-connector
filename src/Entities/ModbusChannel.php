@@ -31,18 +31,18 @@ use function is_string;
 class ModbusChannel extends DevicesEntities\Channels\Channel
 {
 
-	public const CHANNEL_TYPE = 'modbus';
+	public const TYPE = 'modbus';
 
 	public const READING_DELAY = 120.0;
 
 	public function getType(): string
 	{
-		return self::CHANNEL_TYPE;
+		return self::TYPE;
 	}
 
 	public function getDiscriminatorName(): string
 	{
-		return self::CHANNEL_TYPE;
+		return self::TYPE;
 	}
 
 	public function getSource(): MetadataTypes\ConnectorSource

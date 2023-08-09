@@ -37,6 +37,7 @@ final class DevicesProperties extends DataFixtures\AbstractFixture implements Da
 
 	/**
 	 * @throws Exceptions\InvalidState
+	 * @throws DevicesExceptions\InvalidArgument
 	 * @throws DevicesExceptions\InvalidState
 	 */
 	public function load(Persistence\ObjectManager $manager): void

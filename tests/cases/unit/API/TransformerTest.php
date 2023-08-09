@@ -2,6 +2,7 @@
 
 namespace FastyBird\Connector\Modbus\Tests\Cases\Unit\API;
 
+use Error;
 use FastyBird\Connector\Modbus\API;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Tests\Cases\Unit\BaseTestCase;
@@ -20,6 +21,7 @@ final class TransformerTest extends BaseTestCase
 	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Nette\DI\MissingServiceException
+	 * @throws Error
 	 */
 	public function testBytesToUnsignedIntBigEndian(): void
 	{
@@ -70,6 +72,7 @@ final class TransformerTest extends BaseTestCase
 	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Nette\DI\MissingServiceException
+	 * @throws Error
 	 */
 	public function testBytesToUnsignedIntLittleEndian(): void
 	{
@@ -120,6 +123,7 @@ final class TransformerTest extends BaseTestCase
 	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Nette\DI\MissingServiceException
+	 * @throws Error
 	 */
 	public function testBytesToSignedIntBigEndian(): void
 	{
@@ -182,6 +186,7 @@ final class TransformerTest extends BaseTestCase
 	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Nette\DI\MissingServiceException
+	 * @throws Error
 	 */
 	public function testBytesToSignedIntLittleEndian(): void
 	{
@@ -244,6 +249,7 @@ final class TransformerTest extends BaseTestCase
 	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Nette\DI\MissingServiceException
+	 * @throws Error
 	 */
 	public function testBytesToUnsignedInt32BigEndian(): void
 	{
@@ -300,6 +306,7 @@ final class TransformerTest extends BaseTestCase
 	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Nette\DI\MissingServiceException
+	 * @throws Error
 	 */
 	public function testBytesToFloatBigEndian(): void
 	{
@@ -326,6 +333,7 @@ final class TransformerTest extends BaseTestCase
 	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Nette\DI\MissingServiceException
+	 * @throws Error
 	 */
 	public function testUnsignedIntToBytesBigEndian(): void
 	{
@@ -363,6 +371,7 @@ final class TransformerTest extends BaseTestCase
 	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Nette\DI\MissingServiceException
+	 * @throws Error
 	 */
 	public function testUnsignedIntToBytesLittleEndian(): void
 	{
@@ -400,6 +409,7 @@ final class TransformerTest extends BaseTestCase
 	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Nette\DI\MissingServiceException
+	 * @throws Error
 	 */
 	public function testSignedIntToBytesBigEndian(): void
 	{
@@ -445,6 +455,7 @@ final class TransformerTest extends BaseTestCase
 	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Nette\DI\MissingServiceException
+	 * @throws Error
 	 */
 	public function testSignedInt32ToBytesBigEndian(): void
 	{
@@ -486,6 +497,7 @@ final class TransformerTest extends BaseTestCase
 	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Nette\DI\MissingServiceException
+	 * @throws Error
 	 */
 	public function testFloatToBytesBigEndian(): void
 	{

@@ -2,6 +2,7 @@
 
 namespace FastyBird\Connector\Modbus\Tests\Cases\Unit\DI;
 
+use Error;
 use FastyBird\Connector\Modbus\Hydrators;
 use FastyBird\Connector\Modbus\Schemas;
 use FastyBird\Connector\Modbus\Tests\Cases\Unit\BaseTestCase;
@@ -14,6 +15,7 @@ final class ModbusExtensionTest extends BaseTestCase
 	/**
 	 * @throws BootstrapExceptions\InvalidArgument
 	 * @throws Nette\DI\MissingServiceException
+	 * @throws Error
 	 */
 	public function testServicesRegistration(): void
 	{
