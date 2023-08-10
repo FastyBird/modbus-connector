@@ -22,6 +22,7 @@ use FastyBird\Connector\Modbus\Helpers;
 use FastyBird\Connector\Modbus\Queries;
 use FastyBird\DateTimeFactory;
 use FastyBird\Library\Bootstrap\Helpers as BootstrapHelpers;
+use FastyBird\Library\Metadata\Entities as MetadataEntities;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Events as DevicesEvents;
@@ -116,70 +117,75 @@ class Event implements Writer, EventDispatcher\EventSubscriberInterface
 			return;
 		}
 
-		if ($property->getChannel() instanceof DevicesEntities\Channels\Channel) {
-			$channel = $property->getChannel();
-			assert($channel instanceof Entities\ModbusChannel);
+		if (
+			$property instanceof DevicesEntities\Channels\Properties\Dynamic
+			|| $property instanceof MetadataEntities\DevicesModule\ChannelDynamicProperty
+		) {
+			if ($property->getChannel() instanceof DevicesEntities\Channels\Channel) {
+				$channel = $property->getChannel();
+				assert($channel instanceof Entities\ModbusChannel);
 
-		} else {
-			$findChannelQuery = new Queries\FindChannels();
-			$findChannelQuery->byId($property->getChannel());
+			} else {
+				$findChannelQuery = new Queries\FindChannels();
+				$findChannelQuery->byId($property->getChannel());
 
-			$channel = $this->channelsRepository->findOneBy($findChannelQuery, Entities\ModbusChannel::class);
+				$channel = $this->channelsRepository->findOneBy($findChannelQuery, Entities\ModbusChannel::class);
+			}
+
+			if ($channel === null) {
+				return;
+			}
+
+			if (!$channel->getDevice()->getConnector()->getId()->equals($connectorId)) {
+				return;
+			}
+
+			$device = $channel->getDevice();
+
+			assert($device instanceof Entities\ModbusDevice);
+
+			$client->writeChannelProperty($device, $channel, $property)
+				->then(function () use ($property): void {
+					$this->propertyStateHelper->setValue(
+						$property,
+						Utils\ArrayHash::from([
+							DevicesStates\Property::PENDING_KEY => $this->dateTimeFactory->getNow()->format(
+								DateTimeInterface::ATOM,
+							),
+						]),
+					);
+				})
+				->otherwise(function (Throwable $ex) use ($connectorId, $device, $channel, $property): void {
+					$this->logger->error(
+						'Could write new property state',
+						[
+							'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+							'type' => 'event-writer',
+							'exception' => BootstrapHelpers\Logger::buildException($ex),
+							'connector' => [
+								'id' => $connectorId->toString(),
+							],
+							'device' => [
+								'id' => $device->getPlainId(),
+							],
+							'channel' => [
+								'id' => $channel->getPlainId(),
+							],
+							'property' => [
+								'id' => $property->getId()->toString(),
+							],
+						],
+					);
+
+					$this->propertyStateHelper->setValue(
+						$property,
+						Utils\ArrayHash::from([
+							DevicesStates\Property::EXPECTED_VALUE_KEY => null,
+							DevicesStates\Property::PENDING_KEY => false,
+						]),
+					);
+				});
 		}
-
-		if ($channel === null) {
-			return;
-		}
-
-		if (!$channel->getDevice()->getConnector()->getId()->equals($connectorId)) {
-			return;
-		}
-
-		$device = $channel->getDevice();
-
-		assert($device instanceof Entities\ModbusDevice);
-
-		$client->writeChannelProperty($device, $channel, $property)
-			->then(function () use ($property): void {
-				$this->propertyStateHelper->setValue(
-					$property,
-					Utils\ArrayHash::from([
-						DevicesStates\Property::PENDING_KEY => $this->dateTimeFactory->getNow()->format(
-							DateTimeInterface::ATOM,
-						),
-					]),
-				);
-			})
-			->otherwise(function (Throwable $ex) use ($connectorId, $device, $channel, $property): void {
-				$this->logger->error(
-					'Could write new property state',
-					[
-						'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
-						'type' => 'event-writer',
-						'exception' => BootstrapHelpers\Logger::buildException($ex),
-						'connector' => [
-							'id' => $connectorId->toString(),
-						],
-						'device' => [
-							'id' => $device->getPlainId(),
-						],
-						'channel' => [
-							'id' => $channel->getPlainId(),
-						],
-						'property' => [
-							'id' => $property->getId()->toString(),
-						],
-					],
-				);
-
-				$this->propertyStateHelper->setValue(
-					$property,
-					Utils\ArrayHash::from([
-						DevicesStates\Property::EXPECTED_VALUE_KEY => null,
-						DevicesStates\Property::PENDING_KEY => false,
-					]),
-				);
-			});
 	}
 
 }
