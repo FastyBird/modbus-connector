@@ -40,7 +40,6 @@ final class ChannelsProperties extends DataFixtures\AbstractFixture implements D
 	/**
 	 * @throws Exceptions\InvalidState
 	 * @throws DevicesExceptions\InvalidArgument
-	 * @throws DevicesExceptions\InvalidState
 	 * @throws MetadataExceptions\InvalidArgument
 	 */
 	public function load(Persistence\ObjectManager $manager): void

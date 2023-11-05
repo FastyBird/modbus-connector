@@ -38,7 +38,6 @@ final class ConnectorProperties extends DataFixtures\AbstractFixture implements 
 	/**
 	 * @throws Exceptions\InvalidState
 	 * @throws DevicesExceptions\InvalidArgument
-	 * @throws DevicesExceptions\InvalidState
 	 */
 	public function load(Persistence\ObjectManager $manager): void
 	{
