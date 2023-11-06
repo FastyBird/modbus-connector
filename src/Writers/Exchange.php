@@ -58,7 +58,7 @@ class Exchange implements Writer, ExchangeConsumers\Consumer
 	public function __construct(
 		private readonly Helpers\Property $propertyStateHelper,
 		private readonly DateTimeFactory\Factory $dateTimeFactory,
-		private readonly DevicesModels\Channels\Properties\PropertiesRepository $propertiesRepository,
+		private readonly DevicesModels\Entities\Channels\Properties\PropertiesRepository $propertiesRepository,
 		private readonly ExchangeConsumers\Container $consumer,
 		private readonly Log\LoggerInterface $logger = new Log\NullLogger(),
 	)

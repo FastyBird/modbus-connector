@@ -24,7 +24,7 @@ use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
-use FastyBird\Module\Devices\Models as DevicesModels;
+use FastyBird\Module\Devices\Models\Entities\Channels\Properties\PropertiesRepository;
 use FastyBird\Module\Devices\Queries as DevicesQueries;
 use FastyBird\Module\Devices\States as DevicesStates;
 use FastyBird\Module\Devices\Utilities as DevicesUtilities;
@@ -35,7 +35,7 @@ use function usort;
 /**
  * @property-read API\Transformer $transformer
  * @property-read Helpers\Property $propertyStateHelper
- * @property-read DevicesModels\Channels\Properties\PropertiesRepository $channelPropertiesRepository
+ * @property-read PropertiesRepository $channelPropertiesRepository
  */
 trait TReading
 {

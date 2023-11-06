@@ -75,11 +75,11 @@ class Initialize extends Console\Command\Command
 	private const CHOICE_QUESTION_PARITY_EVEN = 'Even verification';
 
 	public function __construct(
-		private readonly DevicesModels\Connectors\ConnectorsRepository $connectorsRepository,
-		private readonly DevicesModels\Connectors\ConnectorsManager $connectorsManager,
-		private readonly DevicesModels\Connectors\Properties\PropertiesRepository $propertiesRepository,
-		private readonly DevicesModels\Connectors\Properties\PropertiesManager $propertiesManager,
-		private readonly DevicesModels\Connectors\Controls\ControlsManager $controlsManager,
+		private readonly DevicesModels\Entities\Connectors\ConnectorsRepository $connectorsRepository,
+		private readonly DevicesModels\Entities\Connectors\ConnectorsManager $connectorsManager,
+		private readonly DevicesModels\Entities\Connectors\Properties\PropertiesRepository $propertiesRepository,
+		private readonly DevicesModels\Entities\Connectors\Properties\PropertiesManager $propertiesManager,
+		private readonly DevicesModels\Entities\Connectors\Controls\ControlsManager $controlsManager,
 		private readonly Persistence\ManagerRegistry $managerRegistry,
 		private readonly Log\LoggerInterface $logger = new Log\NullLogger(),
 		string|null $name = null,

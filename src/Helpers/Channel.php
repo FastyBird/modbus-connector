@@ -42,7 +42,7 @@ final class Channel
 	use Nette\SmartObject;
 
 	public function __construct(
-		private readonly DevicesModels\Channels\Properties\PropertiesRepository $channelPropertiesRepository,
+		private readonly DevicesModels\Entities\Channels\Properties\PropertiesRepository $channelPropertiesRepository,
 	)
 	{
 	}

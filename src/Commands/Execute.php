@@ -52,7 +52,7 @@ class Execute extends Console\Command\Command
 	public const NAME = 'fb:modbus-connector:execute';
 
 	public function __construct(
-		private readonly DevicesModels\Connectors\ConnectorsRepository $connectorsRepository,
+		private readonly DevicesModels\Entities\Connectors\ConnectorsRepository $connectorsRepository,
 		private readonly Log\LoggerInterface $logger = new Log\NullLogger(),
 		string|null $name = null,
 	)
