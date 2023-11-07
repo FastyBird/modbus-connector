@@ -127,7 +127,7 @@ class Periodic implements Writer
 	private function handleCommunication(): void
 	{
 		foreach ($this->clients as $id => $client) {
-			$findDevicesQuery = new DevicesQueries\FindDevices();
+			$findDevicesQuery = new DevicesQueries\Entities\FindDevices();
 			$findDevicesQuery->byConnectorId(Uuid\Uuid::fromString($id));
 
 			foreach ($this->devicesRepository->findAllBy($findDevicesQuery) as $device) {
@@ -167,7 +167,7 @@ class Periodic implements Writer
 	{
 		$now = $this->dateTimeFactory->getNow();
 
-		$findChannelsQuery = new DevicesQueries\FindChannels();
+		$findChannelsQuery = new DevicesQueries\Entities\FindChannels();
 		$findChannelsQuery->forDevice($device);
 
 		$channels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\ModbusChannel::class);
@@ -175,7 +175,7 @@ class Periodic implements Writer
 		foreach ($channels as $channel) {
 			assert($channel instanceof Entities\ModbusChannel);
 
-			$findChannelPropertiesQuery = new DevicesQueries\FindChannelProperties();
+			$findChannelPropertiesQuery = new DevicesQueries\Entities\FindChannelProperties();
 			$findChannelPropertiesQuery->forChannel($channel);
 
 			foreach ($this->channelPropertiesRepository->findAllBy($findChannelPropertiesQuery) as $property) {

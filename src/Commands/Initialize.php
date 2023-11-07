@@ -168,7 +168,7 @@ class Initialize extends Console\Command\Command
 
 		$question->setValidator(function (string|null $answer) {
 			if ($answer !== '' && $answer !== null) {
-				$findConnectorQuery = new DevicesQueries\FindConnectors();
+				$findConnectorQuery = new DevicesQueries\Entities\FindConnectors();
 				$findConnectorQuery->byIdentifier($answer);
 
 				if (
@@ -192,7 +192,7 @@ class Initialize extends Console\Command\Command
 			for ($i = 1; $i <= 100; $i++) {
 				$identifier = sprintf($identifierPattern, $i);
 
-				$findConnectorQuery = new DevicesQueries\FindConnectors();
+				$findConnectorQuery = new DevicesQueries\Entities\FindConnectors();
 				$findConnectorQuery->byIdentifier($identifier);
 
 				if (
@@ -345,7 +345,7 @@ class Initialize extends Console\Command\Command
 			return;
 		}
 
-		$findConnectorPropertyQuery = new DevicesQueries\FindConnectorProperties();
+		$findConnectorPropertyQuery = new DevicesQueries\Entities\FindConnectorProperties();
 		$findConnectorPropertyQuery->forConnector($connector);
 		$findConnectorPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE);
 
@@ -409,31 +409,31 @@ class Initialize extends Console\Command\Command
 			$stopBits = $this->askRtuStopBits($io, $connector);
 		}
 
-		$findConnectorPropertyQuery = new DevicesQueries\FindConnectorProperties();
+		$findConnectorPropertyQuery = new DevicesQueries\Entities\FindConnectorProperties();
 		$findConnectorPropertyQuery->forConnector($connector);
 		$findConnectorPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_INTERFACE);
 
 		$interfaceProperty = $this->propertiesRepository->findOneBy($findConnectorPropertyQuery);
 
-		$findConnectorPropertyQuery = new DevicesQueries\FindConnectorProperties();
+		$findConnectorPropertyQuery = new DevicesQueries\Entities\FindConnectorProperties();
 		$findConnectorPropertyQuery->forConnector($connector);
 		$findConnectorPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_BAUD_RATE);
 
 		$baudRateProperty = $this->propertiesRepository->findOneBy($findConnectorPropertyQuery);
 
-		$findConnectorPropertyQuery = new DevicesQueries\FindConnectorProperties();
+		$findConnectorPropertyQuery = new DevicesQueries\Entities\FindConnectorProperties();
 		$findConnectorPropertyQuery->forConnector($connector);
 		$findConnectorPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_BYTE_SIZE);
 
 		$byteSizeProperty = $this->propertiesRepository->findOneBy($findConnectorPropertyQuery);
 
-		$findConnectorPropertyQuery = new DevicesQueries\FindConnectorProperties();
+		$findConnectorPropertyQuery = new DevicesQueries\Entities\FindConnectorProperties();
 		$findConnectorPropertyQuery->forConnector($connector);
 		$findConnectorPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_PARITY);
 
 		$dataParityProperty = $this->propertiesRepository->findOneBy($findConnectorPropertyQuery);
 
-		$findConnectorPropertyQuery = new DevicesQueries\FindConnectorProperties();
+		$findConnectorPropertyQuery = new DevicesQueries\Entities\FindConnectorProperties();
 		$findConnectorPropertyQuery->forConnector($connector);
 		$findConnectorPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_STOP_BITS);
 
@@ -910,7 +910,7 @@ class Initialize extends Console\Command\Command
 	{
 		$connectors = [];
 
-		$findConnectorsQuery = new DevicesQueries\FindConnectors();
+		$findConnectorsQuery = new DevicesQueries\Entities\FindConnectors();
 
 		$systemConnectors = $this->connectorsRepository->findAllBy(
 			$findConnectorsQuery,
@@ -951,7 +951,7 @@ class Initialize extends Console\Command\Command
 			$identifier = array_search($answer, $connectors, true);
 
 			if ($identifier !== false) {
-				$findConnectorQuery = new DevicesQueries\FindConnectors();
+				$findConnectorQuery = new DevicesQueries\Entities\FindConnectors();
 				$findConnectorQuery->byIdentifier($identifier);
 
 				$connector = $this->connectorsRepository->findOneBy(

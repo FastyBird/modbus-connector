@@ -331,7 +331,7 @@ class Tcp implements Client
 	 */
 	private function handleCommunication(): void
 	{
-		$findDevicesQuery = new DevicesQueries\FindDevices();
+		$findDevicesQuery = new DevicesQueries\Entities\FindDevices();
 		$findDevicesQuery->forConnector($this->connector);
 
 		foreach ($this->devicesRepository->findAllBy($findDevicesQuery, Entities\ModbusDevice::class) as $device) {
@@ -438,7 +438,7 @@ class Tcp implements Client
 
 		$coilsAddresses = $discreteInputsAddresses = $holdingAddresses = $inputsAddresses = [];
 
-		$findChannelsQuery = new DevicesQueries\FindChannels();
+		$findChannelsQuery = new DevicesQueries\Entities\FindChannels();
 		$findChannelsQuery->forDevice($device);
 
 		foreach ($this->channelsRepository->findAllBy($findChannelsQuery, Entities\ModbusChannel::class) as $channel) {
@@ -447,7 +447,7 @@ class Tcp implements Client
 			$address = $channel->getAddress();
 
 			if (!is_int($address)) {
-				$findChannelPropertiesQuery = new DevicesQueries\FindChannelProperties();
+				$findChannelPropertiesQuery = new DevicesQueries\Entities\FindChannelProperties();
 				$findChannelPropertiesQuery->forChannel($channel);
 
 				foreach ($this->channelPropertiesRepository->findAllBy($findChannelPropertiesQuery) as $property) {
@@ -636,7 +636,7 @@ class Tcp implements Client
 							if ($channel !== null) {
 								$this->processedReadRegister[$channel->getIdentifier()] = $now;
 
-								$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+								$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelProperties();
 								$findChannelPropertyQuery->forChannel($channel);
 								$findChannelPropertyQuery->byIdentifier(
 									Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE,
@@ -695,7 +695,7 @@ class Tcp implements Client
 							if ($channel !== null) {
 								$this->processedReadRegister[$channel->getIdentifier()] = $now;
 
-								$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+								$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelProperties();
 								$findChannelPropertyQuery->forChannel($channel);
 								$findChannelPropertyQuery->byIdentifier(
 									Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE,
@@ -771,7 +771,7 @@ class Tcp implements Client
 	{
 		$now = $this->dateTimeFactory->getNow();
 
-		$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+		$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelProperties();
 		$findChannelPropertyQuery->forChannel($channel);
 		$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
 

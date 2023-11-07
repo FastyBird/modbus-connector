@@ -118,7 +118,7 @@ class Exchange implements Writer, ExchangeConsumers\Consumer
 				return;
 			}
 
-			$findPropertyQuery = new DevicesQueries\FindChannelProperties();
+			$findPropertyQuery = new DevicesQueries\Entities\FindChannelProperties();
 			$findPropertyQuery->byId($entity->getId());
 
 			$property = $this->propertiesRepository->findOneBy($findPropertyQuery);

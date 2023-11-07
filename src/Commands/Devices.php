@@ -208,7 +208,7 @@ class Devices extends Console\Command\Command
 
 		$question->setValidator(function (string|null $answer) {
 			if ($answer !== '' && $answer !== null) {
-				$findDeviceQuery = new DevicesQueries\FindDevices();
+				$findDeviceQuery = new DevicesQueries\Entities\FindDevices();
 				$findDeviceQuery->byIdentifier($answer);
 
 				if (
@@ -229,7 +229,7 @@ class Devices extends Console\Command\Command
 			for ($i = 1; $i <= 100; $i++) {
 				$identifier = sprintf($identifierPattern, $i);
 
-				$findDeviceQuery = new DevicesQueries\FindDevices();
+				$findDeviceQuery = new DevicesQueries\Entities\FindDevices();
 				$findDeviceQuery->byIdentifier($identifier);
 
 				if (
@@ -403,31 +403,31 @@ class Devices extends Console\Command\Command
 
 		$address = $ipAddress = $port = $unitId = null;
 
-		$findDevicePropertyQuery = new DevicesQueries\FindDeviceProperties();
+		$findDevicePropertyQuery = new DevicesQueries\Entities\FindDeviceProperties();
 		$findDevicePropertyQuery->forDevice($device);
 		$findDevicePropertyQuery->byIdentifier(Types\DevicePropertyIdentifier::IDENTIFIER_ADDRESS);
 
 		$addressProperty = $this->devicePropertiesRepository->findOneBy($findDevicePropertyQuery);
 
-		$findDevicePropertyQuery = new DevicesQueries\FindDeviceProperties();
+		$findDevicePropertyQuery = new DevicesQueries\Entities\FindDeviceProperties();
 		$findDevicePropertyQuery->forDevice($device);
 		$findDevicePropertyQuery->byIdentifier(Types\DevicePropertyIdentifier::IDENTIFIER_IP_ADDRESS);
 
 		$ipAddressProperty = $this->devicePropertiesRepository->findOneBy($findDevicePropertyQuery);
 
-		$findDevicePropertyQuery = new DevicesQueries\FindDeviceProperties();
+		$findDevicePropertyQuery = new DevicesQueries\Entities\FindDeviceProperties();
 		$findDevicePropertyQuery->forDevice($device);
 		$findDevicePropertyQuery->byIdentifier(Types\DevicePropertyIdentifier::IDENTIFIER_IP_ADDRESS_PORT);
 
 		$portProperty = $this->devicePropertiesRepository->findOneBy($findDevicePropertyQuery);
 
-		$findDevicePropertyQuery = new DevicesQueries\FindDeviceProperties();
+		$findDevicePropertyQuery = new DevicesQueries\Entities\FindDeviceProperties();
 		$findDevicePropertyQuery->forDevice($device);
 		$findDevicePropertyQuery->byIdentifier(Types\DevicePropertyIdentifier::IDENTIFIER_UNIT_ID);
 
 		$unitIdProperty = $this->devicePropertiesRepository->findOneBy($findDevicePropertyQuery);
 
-		$findDevicePropertyQuery = new DevicesQueries\FindDeviceProperties();
+		$findDevicePropertyQuery = new DevicesQueries\Entities\FindDeviceProperties();
 		$findDevicePropertyQuery->forDevice($device);
 		$findDevicePropertyQuery->byIdentifier(Types\DevicePropertyIdentifier::IDENTIFIER_BYTE_ORDER);
 
@@ -591,7 +591,7 @@ class Devices extends Console\Command\Command
 			return;
 		}
 
-		$findChannelsQuery = new DevicesQueries\FindChannels();
+		$findChannelsQuery = new DevicesQueries\Entities\FindChannels();
 		$findChannelsQuery->forDevice($device);
 
 		$channels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\ModbusChannel::class);
@@ -867,25 +867,25 @@ class Devices extends Console\Command\Command
 			$format = $this->askRegisterFormat($io, $dataType, $channel);
 		}
 
-		$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+		$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelProperties();
 		$findChannelPropertyQuery->forChannel($channel);
 		$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::IDENTIFIER_ADDRESS);
 
 		$addressProperty = $this->channelPropertiesRepository->findOneBy($findChannelPropertyQuery);
 
-		$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+		$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelProperties();
 		$findChannelPropertyQuery->forChannel($channel);
 		$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::IDENTIFIER_TYPE);
 
 		$typeProperty = $this->channelPropertiesRepository->findOneBy($findChannelPropertyQuery);
 
-		$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+		$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelProperties();
 		$findChannelPropertyQuery->forChannel($channel);
 		$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::IDENTIFIER_READING_DELAY);
 
 		$readingDelayProperty = $this->channelPropertiesRepository->findOneBy($findChannelPropertyQuery);
 
-		$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+		$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelProperties();
 		$findChannelPropertyQuery->forChannel($channel);
 		$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
 
@@ -987,7 +987,7 @@ class Devices extends Console\Command\Command
 			}
 		}
 
-		$findChannelsQuery = new DevicesQueries\FindChannels();
+		$findChannelsQuery = new DevicesQueries\Entities\FindChannels();
 		$findChannelsQuery->forDevice($device);
 
 		$channels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\ModbusChannel::class);
@@ -1067,7 +1067,7 @@ class Devices extends Console\Command\Command
 			}
 		}
 
-		$findChannelsQuery = new DevicesQueries\FindChannels();
+		$findChannelsQuery = new DevicesQueries\Entities\FindChannels();
 		$findChannelsQuery->forDevice($device);
 
 		$channels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\ModbusChannel::class);
@@ -1088,7 +1088,7 @@ class Devices extends Console\Command\Command
 	 */
 	private function listRegisters(Style\SymfonyStyle $io, Entities\ModbusDevice $device): void
 	{
-		$findChannelsQuery = new DevicesQueries\FindChannels();
+		$findChannelsQuery = new DevicesQueries\Entities\FindChannels();
 		$findChannelsQuery->forDevice($device);
 
 		$deviceChannels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\ModbusChannel::class);
@@ -1118,7 +1118,7 @@ class Devices extends Console\Command\Command
 		foreach ($deviceChannels as $index => $channel) {
 			assert($channel instanceof Entities\ModbusChannel);
 
-			$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+			$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelProperties();
 			$findChannelPropertyQuery->forChannel($channel);
 			$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
 
@@ -1137,7 +1137,7 @@ class Devices extends Console\Command\Command
 
 		$io->newLine();
 
-		$findChannelsQuery = new DevicesQueries\FindChannels();
+		$findChannelsQuery = new DevicesQueries\Entities\FindChannels();
 		$findChannelsQuery->forDevice($device);
 
 		$channels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\ModbusChannel::class);
@@ -1172,7 +1172,7 @@ class Devices extends Console\Command\Command
 				throw new Exceptions\Runtime('Device hardware address have to be numeric');
 			}
 
-			$findDevicesQuery = new DevicesQueries\FindDevices();
+			$findDevicesQuery = new DevicesQueries\Entities\FindDevices();
 			$findDevicesQuery->forConnector($connector);
 
 			foreach ($this->devicesRepository->findAllBy(
@@ -1260,7 +1260,7 @@ class Devices extends Console\Command\Command
 				throw new Exceptions\Runtime('Device unit identifier have to be numeric');
 			}
 
-			$findDevicesQuery = new DevicesQueries\FindDevices();
+			$findDevicesQuery = new DevicesQueries\Entities\FindDevices();
 			$findDevicesQuery->forConnector($connector);
 
 			foreach ($this->devicesRepository->findAllBy(
@@ -1491,7 +1491,7 @@ class Devices extends Console\Command\Command
 		);
 		$question->setValidator(function (string|null $answer) use ($device, $channel) {
 			if (strval(intval($answer)) === strval($answer)) {
-				$findChannelsQuery = new DevicesQueries\FindChannels();
+				$findChannelsQuery = new DevicesQueries\Entities\FindChannels();
 				$findChannelsQuery->forDevice($device);
 
 				$channels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\ModbusChannel::class);
@@ -1524,7 +1524,7 @@ class Devices extends Console\Command\Command
 					$end = intval($matches[2]);
 
 					if ($start < $end) {
-						$findChannelsQuery = new DevicesQueries\FindChannels();
+						$findChannelsQuery = new DevicesQueries\Entities\FindChannels();
 						$findChannelsQuery->forDevice($device);
 
 						$channels = $this->channelsRepository->findAllBy(
@@ -1629,7 +1629,7 @@ class Devices extends Console\Command\Command
 				: MetadataTypes\DataType::DATA_TYPE_BUTTON;
 
 			if ($channel !== null) {
-				$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+				$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelProperties();
 				$findChannelPropertyQuery->forChannel($channel);
 				$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
 
@@ -1785,7 +1785,7 @@ class Devices extends Console\Command\Command
 		$existingProperty = null;
 
 		if ($channel !== null) {
-			$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+			$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelProperties();
 			$findChannelPropertyQuery->forChannel($channel);
 			$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
 
@@ -2006,7 +2006,7 @@ class Devices extends Console\Command\Command
 		$existingProperty = null;
 
 		if ($channel !== null) {
-			$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+			$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelProperties();
 			$findChannelPropertyQuery->forChannel($channel);
 			$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
 
@@ -2244,7 +2244,7 @@ class Devices extends Console\Command\Command
 	{
 		$connectors = [];
 
-		$findConnectorsQuery = new DevicesQueries\FindConnectors();
+		$findConnectorsQuery = new DevicesQueries\Entities\FindConnectors();
 
 		$systemConnectors = $this->connectorsRepository->findAllBy(
 			$findConnectorsQuery,
@@ -2285,7 +2285,7 @@ class Devices extends Console\Command\Command
 			$identifier = array_search($answer, $connectors, true);
 
 			if ($identifier !== false) {
-				$findConnectorQuery = new DevicesQueries\FindConnectors();
+				$findConnectorQuery = new DevicesQueries\Entities\FindConnectors();
 				$findConnectorQuery->byIdentifier($identifier);
 
 				$connector = $this->connectorsRepository->findOneBy(
@@ -2318,7 +2318,7 @@ class Devices extends Console\Command\Command
 	{
 		$devices = [];
 
-		$findDevicesQuery = new DevicesQueries\FindDevices();
+		$findDevicesQuery = new DevicesQueries\Entities\FindDevices();
 		$findDevicesQuery->forConnector($connector);
 
 		$connectorDevices = $this->devicesRepository->findAllBy($findDevicesQuery, Entities\ModbusDevice::class);
@@ -2356,7 +2356,7 @@ class Devices extends Console\Command\Command
 			$identifier = array_search($answer, $devices, true);
 
 			if ($identifier !== false) {
-				$findDeviceQuery = new DevicesQueries\FindDevices();
+				$findDeviceQuery = new DevicesQueries\Entities\FindDevices();
 				$findDeviceQuery->byIdentifier($identifier);
 				$findDeviceQuery->forConnector($connector);
 
@@ -2411,7 +2411,7 @@ class Devices extends Console\Command\Command
 			return null;
 		}
 
-		$findChannelQuery = new DevicesQueries\FindChannels();
+		$findChannelQuery = new DevicesQueries\Entities\FindChannels();
 		$findChannelQuery->forDevice($device);
 		$findChannelQuery->byIdentifier($registerIdentifier);
 
@@ -2446,7 +2446,7 @@ class Devices extends Console\Command\Command
 	{
 		$channels = [];
 
-		$findChannelsQuery = new DevicesQueries\FindChannels();
+		$findChannelsQuery = new DevicesQueries\Entities\FindChannels();
 		$findChannelsQuery->forDevice($device);
 
 		$deviceChannels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\ModbusChannel::class);

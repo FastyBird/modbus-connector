@@ -125,7 +125,7 @@ class Execute extends Console\Command\Command
 		) {
 			$connectorId = $input->getOption('connector');
 
-			$findConnectorQuery = new DevicesQueries\FindConnectors();
+			$findConnectorQuery = new DevicesQueries\Entities\FindConnectors();
 
 			if (Uuid\Uuid::isValid($connectorId)) {
 				$findConnectorQuery->byId(Uuid\Uuid::fromString($connectorId));
@@ -143,7 +143,7 @@ class Execute extends Console\Command\Command
 		} else {
 			$connectors = [];
 
-			$findConnectorsQuery = new DevicesQueries\FindConnectors();
+			$findConnectorsQuery = new DevicesQueries\Entities\FindConnectors();
 
 			$systemConnectors = $this->connectorsRepository->findAllBy(
 				$findConnectorsQuery,
@@ -171,7 +171,7 @@ class Execute extends Console\Command\Command
 			if (count($connectors) === 1) {
 				$connectorIdentifier = array_key_first($connectors);
 
-				$findConnectorQuery = new DevicesQueries\FindConnectors();
+				$findConnectorQuery = new DevicesQueries\Entities\FindConnectors();
 				$findConnectorQuery->byIdentifier($connectorIdentifier);
 
 				$connector = $this->connectorsRepository->findOneBy(
@@ -222,7 +222,7 @@ class Execute extends Console\Command\Command
 					return Console\Command\Command::FAILURE;
 				}
 
-				$findConnectorQuery = new DevicesQueries\FindConnectors();
+				$findConnectorQuery = new DevicesQueries\Entities\FindConnectors();
 				$findConnectorQuery->byIdentifier($connectorIdentifierKey);
 
 				$connector = $this->connectorsRepository->findOneBy(

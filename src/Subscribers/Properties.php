@@ -74,7 +74,7 @@ final class Properties implements Common\EventSubscriber
 
 		// Check for valid entity
 		if ($entity instanceof Entities\ModbusDevice) {
-			$findDevicePropertyQuery = new DevicesQueries\FindDeviceProperties();
+			$findDevicePropertyQuery = new DevicesQueries\Entities\FindDeviceProperties();
 			$findDevicePropertyQuery->forDevice($entity);
 			$findDevicePropertyQuery->byIdentifier(Types\DevicePropertyIdentifier::IDENTIFIER_STATE);
 

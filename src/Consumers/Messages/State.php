@@ -65,7 +65,7 @@ final class State implements Consumer
 			return false;
 		}
 
-		$findDeviceQuery = new DevicesQueries\FindDevices();
+		$findDeviceQuery = new DevicesQueries\Entities\FindDevices();
 		$findDeviceQuery->byConnectorId($entity->getConnector());
 		$findDeviceQuery->byIdentifier($entity->getIdentifier());
 
@@ -91,7 +91,7 @@ final class State implements Consumer
 				|| $entity->getState()->equalsValue(Metadata\Types\ConnectionState::STATE_LOST)
 				|| $entity->getState()->equalsValue(Metadata\Types\ConnectionState::STATE_UNKNOWN)
 			) {
-				$findDevicePropertiesQuery = new DevicesQueries\FindDeviceProperties();
+				$findDevicePropertiesQuery = new DevicesQueries\Entities\FindDeviceProperties();
 				$findDevicePropertiesQuery->forDevice($device);
 
 				foreach ($this->devicePropertiesRepository->findAllBy($findDevicePropertiesQuery) as $property) {
@@ -107,7 +107,7 @@ final class State implements Consumer
 					);
 				}
 
-				$findChannelsQuery = new DevicesQueries\FindChannels();
+				$findChannelsQuery = new DevicesQueries\Entities\FindChannels();
 				$findChannelsQuery->forDevice($device);
 
 				$channels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\ModbusChannel::class);

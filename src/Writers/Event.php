@@ -126,7 +126,7 @@ class Event implements Writer, EventDispatcher\EventSubscriberInterface
 				assert($channel instanceof Entities\ModbusChannel);
 
 			} else {
-				$findChannelQuery = new Queries\FindChannels();
+				$findChannelQuery = new Queries\Entities\FindChannels();
 				$findChannelQuery->byId($property->getChannel());
 
 				$channel = $this->channelsRepository->findOneBy($findChannelQuery, Entities\ModbusChannel::class);

@@ -57,7 +57,7 @@ final class Channel
 		Types\ChannelPropertyIdentifier $type,
 	): float|bool|int|string|MetadataTypes\ButtonPayload|MetadataTypes\SwitchPayload|MetadataTypes\CoverPayload|DateTimeInterface|null
 	{
-		$findChannelPropertyQuery = new DevicesQueries\FindChannelProperties();
+		$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelProperties();
 		$findChannelPropertyQuery->forChannel($channel);
 		$findChannelPropertyQuery->byIdentifier(strval($type->getValue()));
 
