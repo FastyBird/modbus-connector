@@ -23,7 +23,7 @@ use FastyBird\Connector\Modbus\Helpers;
 use FastyBird\DateTimeFactory;
 use FastyBird\Library\Bootstrap\Helpers as BootstrapHelpers;
 use FastyBird\Library\Exchange\Consumers as ExchangeConsumers;
-use FastyBird\Library\Metadata\Entities as MetadataEntities;
+use FastyBird\Library\Metadata\Documents as MetadataDocuments;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
@@ -94,7 +94,7 @@ class Exchange implements Writer, ExchangeConsumers\Consumer
 	public function consume(
 		MetadataTypes\ModuleSource|MetadataTypes\PluginSource|MetadataTypes\ConnectorSource|MetadataTypes\AutomatorSource $source,
 		MetadataTypes\RoutingKey $routingKey,
-		MetadataEntities\Entity|null $entity,
+		MetadataDocuments\Document|null $entity,
 	): void
 	{
 		foreach ($this->clients as $id => $client) {
@@ -109,11 +109,11 @@ class Exchange implements Writer, ExchangeConsumers\Consumer
 	public function processClient(
 		Uuid\UuidInterface $connectorId,
 		MetadataTypes\ModuleSource|MetadataTypes\PluginSource|MetadataTypes\ConnectorSource|MetadataTypes\AutomatorSource $source,
-		MetadataEntities\Entity|null $entity,
+		MetadataDocuments\Document|null $entity,
 		Clients\Client $client,
 	): void
 	{
-		if ($entity instanceof MetadataEntities\DevicesModule\ChannelDynamicProperty) {
+		if ($entity instanceof MetadataDocuments\DevicesModule\ChannelDynamicProperty) {
 			if ($entity->getExpectedValue() === null || $entity->getPending() !== true) {
 				return;
 			}

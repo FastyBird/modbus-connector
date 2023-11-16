@@ -16,7 +16,7 @@
 namespace FastyBird\Connector\Modbus\Clients;
 
 use FastyBird\Connector\Modbus\Entities;
-use FastyBird\Library\Metadata\Entities as MetadataEntities;
+use FastyBird\Library\Metadata\Documents as MetadataDocuments;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
 use React\Promise;
 
@@ -47,7 +47,7 @@ interface Client
 	public function writeChannelProperty(
 		Entities\ModbusDevice $device,
 		Entities\ModbusChannel $channel,
-		DevicesEntities\Channels\Properties\Dynamic|MetadataEntities\DevicesModule\ChannelDynamicProperty $property,
+		DevicesEntities\Channels\Properties\Dynamic|MetadataDocuments\DevicesModule\ChannelDynamicProperty $property,
 	): Promise\PromiseInterface;
 
 }

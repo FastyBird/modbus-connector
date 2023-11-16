@@ -142,6 +142,7 @@ trait TReading
 	 * @throws Exceptions\InvalidState
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws MetadataExceptions\MalformedInput
 	 */
 	private function processAnalogRegistersResponse(
 		Entities\Clients\ReadRequest $request,

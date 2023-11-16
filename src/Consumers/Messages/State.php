@@ -15,6 +15,7 @@
 
 namespace FastyBird\Connector\Modbus\Consumers\Messages;
 
+use Doctrine\DBAL;
 use FastyBird\Connector\Modbus\Consumers\Consumer;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Helpers;
@@ -55,9 +56,12 @@ final class State implements Consumer
 	}
 
 	/**
+	 * @throws DBAL\Exception
 	 * @throws DevicesExceptions\InvalidState
+	 * @throws DevicesExceptions\Runtime
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws MetadataExceptions\MalformedInput
 	 */
 	public function consume(Entities\Messages\Entity $entity): bool
 	{
