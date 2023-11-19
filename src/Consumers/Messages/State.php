@@ -57,6 +57,7 @@ final class State implements Consumer
 
 	/**
 	 * @throws DBAL\Exception
+	 * @throws DevicesExceptions\InvalidArgument
 	 * @throws DevicesExceptions\InvalidState
 	 * @throws DevicesExceptions\Runtime
 	 * @throws MetadataExceptions\InvalidArgument
@@ -106,7 +107,7 @@ final class State implements Consumer
 					$this->propertyStateHelper->setValue(
 						$property,
 						Nette\Utils\ArrayHash::from([
-							DevicesStates\Property::VALID_KEY => false,
+							DevicesStates\Property::VALID_FIELD => false,
 						]),
 					);
 				}
@@ -125,7 +126,7 @@ final class State implements Consumer
 						$this->propertyStateHelper->setValue(
 							$property,
 							Nette\Utils\ArrayHash::from([
-								DevicesStates\Property::VALID_KEY => false,
+								DevicesStates\Property::VALID_FIELD => false,
 							]),
 						);
 					}

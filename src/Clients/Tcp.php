@@ -458,9 +458,9 @@ class Tcp implements Client
 					$this->propertyStateHelper->setValue(
 						$property,
 						Utils\ArrayHash::from([
-							DevicesStates\Property::VALID_KEY => false,
-							DevicesStates\Property::EXPECTED_VALUE_KEY => null,
-							DevicesStates\Property::PENDING_KEY => false,
+							DevicesStates\Property::VALID_FIELD => false,
+							DevicesStates\Property::EXPECTED_VALUE_FIELD => null,
+							DevicesStates\Property::PENDING_FIELD => false,
 						]),
 					);
 				}
@@ -648,14 +648,14 @@ class Tcp implements Client
 									$this->propertyStateHelper->setValue(
 										$property,
 										Utils\ArrayHash::from([
-											DevicesStates\Property::ACTUAL_VALUE_KEY => DevicesUtilities\ValueHelper::flattenValue(
+											DevicesStates\Property::ACTUAL_VALUE_FIELD => DevicesUtilities\ValueHelper::flattenValue(
 												$this->transformer->transformValueFromDevice(
 													$property->getDataType(),
 													$property->getFormat(),
 													$value,
 												),
 											),
-											DevicesStates\Property::VALID_KEY => true,
+											DevicesStates\Property::VALID_FIELD => true,
 										]),
 									);
 								}
@@ -707,7 +707,7 @@ class Tcp implements Client
 									$this->propertyStateHelper->setValue(
 										$property,
 										Utils\ArrayHash::from([
-											DevicesStates\Property::VALID_KEY => false,
+											DevicesStates\Property::VALID_FIELD => false,
 										]),
 									);
 								}
