@@ -23,6 +23,7 @@ use FastyBird\Connector\Modbus\Helpers;
 use FastyBird\DateTimeFactory;
 use FastyBird\Library\Bootstrap\Helpers as BootstrapHelpers;
 use FastyBird\Library\Exchange\Consumers as ExchangeConsumers;
+use FastyBird\Library\Exchange\Exceptions as ExchangeExceptions;
 use FastyBird\Library\Metadata\Documents as MetadataDocuments;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
@@ -65,6 +66,9 @@ class Exchange implements Writer, ExchangeConsumers\Consumer
 	{
 	}
 
+	/**
+	 * @throws ExchangeExceptions\InvalidArgument
+	 */
 	public function connect(
 		Entities\ModbusConnector $connector,
 		Clients\Client $client,
@@ -75,6 +79,9 @@ class Exchange implements Writer, ExchangeConsumers\Consumer
 		$this->consumer->enable(self::class);
 	}
 
+	/**
+	 * @throws ExchangeExceptions\InvalidArgument
+	 */
 	public function disconnect(
 		Entities\ModbusConnector $connector,
 		Clients\Client $client,
