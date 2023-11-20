@@ -19,11 +19,11 @@ use DateTimeInterface;
 use FastyBird\Connector\Modbus\Types;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
+use FastyBird\Library\Metadata\Utilities as MetadataUtilities;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
 use FastyBird\Module\Devices\Models as DevicesModels;
 use FastyBird\Module\Devices\Queries as DevicesQueries;
-use FastyBird\Module\Devices\Utilities as DevicesUtilities;
 use Nette;
 use function is_int;
 use function strval;
@@ -70,7 +70,7 @@ final class Channel
 
 			if ($type->getValue() === Types\ChannelPropertyIdentifier::IDENTIFIER_TYPE) {
 				if (Types\ChannelType::isValidValue($configuration->getValue())) {
-					return DevicesUtilities\ValueHelper::flattenValue($configuration->getValue());
+					return MetadataUtilities\ValueHelper::flattenValue($configuration->getValue());
 				}
 
 				return null;

@@ -22,12 +22,12 @@ use FastyBird\Connector\Modbus\Helpers;
 use FastyBird\Connector\Modbus\Types;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
+use FastyBird\Library\Metadata\Utilities as MetadataUtilities;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
 use FastyBird\Module\Devices\Models\Entities\Channels\Properties\PropertiesRepository;
 use FastyBird\Module\Devices\Queries as DevicesQueries;
 use FastyBird\Module\Devices\States as DevicesStates;
-use FastyBird\Module\Devices\Utilities as DevicesUtilities;
 use Nette\Utils;
 use function array_splice;
 use function usort;
@@ -229,7 +229,7 @@ trait TReading
 			$this->propertyStateHelper->setValue(
 				$property,
 				Utils\ArrayHash::from([
-					DevicesStates\Property::ACTUAL_VALUE_FIELD => DevicesUtilities\ValueHelper::flattenValue(
+					DevicesStates\Property::ACTUAL_VALUE_FIELD => MetadataUtilities\ValueHelper::flattenValue(
 						$this->transformer->transformValueFromDevice(
 							$property->getDataType(),
 							$property->getFormat(),

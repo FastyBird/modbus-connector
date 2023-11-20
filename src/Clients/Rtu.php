@@ -621,7 +621,7 @@ class Rtu implements Client
 									$this->propertyStateHelper->setValue(
 										$property,
 										Utils\ArrayHash::from([
-											DevicesStates\Property::ACTUAL_VALUE_FIELD => DevicesUtilities\ValueHelper::flattenValue(
+											DevicesStates\Property::ACTUAL_VALUE_FIELD => Metadata\Utilities\ValueHelper::flattenValue(
 												$this->transformer->transformValueFromDevice(
 													$property->getDataType(),
 													$property->getFormat(),

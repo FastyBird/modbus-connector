@@ -21,8 +21,8 @@ use FastyBird\Connector\Modbus\Types;
 use FastyBird\Connector\Modbus\ValueObjects;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
+use FastyBird\Library\Metadata\Utilities as MetadataUtilities;
 use FastyBird\Library\Metadata\ValueObjects as MetadataValueObjects;
-use FastyBird\Module\Devices\Utilities as DevicesUtilities;
 use Nette;
 use Nette\Utils;
 use function array_filter;
@@ -265,13 +265,13 @@ final class Transformer
 				$filtered = array_values(array_filter(
 					$format->getItems(),
 					static fn (string $item): bool => Utils\Strings::lower(
-						strval(DevicesUtilities\ValueHelper::flattenValue($value)),
+						strval(MetadataUtilities\ValueHelper::flattenValue($value)),
 					) === $item,
 				));
 
 				if (count($filtered) === 1) {
 					return new ValueObjects\DeviceData(
-						DevicesUtilities\ValueHelper::flattenValue($value),
+						MetadataUtilities\ValueHelper::flattenValue($value),
 						MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING),
 					);
 				}
@@ -282,7 +282,7 @@ final class Transformer
 					$format->getItems(),
 					static fn (array $item): bool => $item[0] !== null
 							&& Utils\Strings::lower(strval($item[0]->getValue())) === Utils\Strings::lower(
-								strval(DevicesUtilities\ValueHelper::flattenValue($value)),
+								strval(MetadataUtilities\ValueHelper::flattenValue($value)),
 							),
 				));
 
