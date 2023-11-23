@@ -157,7 +157,7 @@ class Exchange implements Writer, ExchangeConsumers\Consumer
 						]),
 					);
 				})
-				->otherwise(function (Throwable $ex) use ($connectorId, $device, $channel, $property): void {
+				->catch(function (Throwable $ex) use ($connectorId, $device, $channel, $property): void {
 					$this->logger->error(
 						'Could write new property state',
 						[

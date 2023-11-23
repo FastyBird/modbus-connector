@@ -243,7 +243,7 @@ class Periodic implements Writer
 
 								unset($this->processedProperties[$property->getPlainId()]);
 							})
-							->otherwise(function (Throwable $ex) use ($device, $channel, $property): void {
+							->catch(function (Throwable $ex) use ($device, $channel, $property): void {
 								$this->logger->error(
 									'Could not write new property state',
 									[

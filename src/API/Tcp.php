@@ -76,6 +76,8 @@ class Tcp
 	/**
 	 * (0x01) Read Coils
 	 *
+	 * @return Promise\PromiseInterface<Entities\API\ReadDigitalInputs>
+	 *
 	 * @throws Exception
 	 * @throws Exceptions\InvalidState
 	 * @throws InvalidArgumentException
@@ -102,6 +104,8 @@ class Tcp
 
 	/**
 	 * (0x02) Read Discrete Inputs
+	 *
+	 * @return Promise\PromiseInterface<Entities\API\ReadDigitalInputs>
 	 *
 	 * @throws Exception
 	 * @throws Exceptions\InvalidState
@@ -130,6 +134,8 @@ class Tcp
 	/**
 	 * (0x03) Read Holding Registers
 	 *
+	 * @return Promise\PromiseInterface<Entities\API\ReadAnalogInputs>
+	 *
 	 * @throws Exception
 	 * @throws Exceptions\InvalidState
 	 * @throws InvalidArgumentException
@@ -157,6 +163,8 @@ class Tcp
 	/**
 	 * (0x04) Read Input Registers
 	 *
+	 * @return Promise\PromiseInterface<Entities\API\ReadAnalogInputs>
+	 *
 	 * @throws Exception
 	 * @throws Exceptions\InvalidState
 	 * @throws InvalidArgumentException
@@ -183,6 +191,8 @@ class Tcp
 
 	/**
 	 * (0x05) Write Single Coil
+	 *
+	 * @return Promise\PromiseInterface<Entities\API\WriteCoil>
 	 *
 	 * @throws Exception
 	 * @throws Exceptions\InvalidState
@@ -252,7 +262,7 @@ class Tcp
 					current($valueUnpacked) === 0xFF00,
 				));
 			})
-			->otherwise(static function (Throwable $ex) use ($deferred): void {
+			->catch(static function (Throwable $ex) use ($deferred): void {
 				$deferred->reject($ex);
 			});
 
@@ -263,6 +273,8 @@ class Tcp
 	 * (0x06) Write Single Register
 	 *
 	 * @param array<int> $value
+	 *
+	 * @return Promise\PromiseInterface<Entities\API\WriteHoldingRegister>
 	 *
 	 * @throws Exception
 	 * @throws Exceptions\InvalidState
@@ -340,7 +352,7 @@ class Tcp
 					));
 				},
 			)
-			->otherwise(static function (Throwable $ex) use ($deferred): void {
+			->catch(static function (Throwable $ex) use ($deferred): void {
 				$deferred->reject($ex);
 			});
 
@@ -348,6 +360,8 @@ class Tcp
 	}
 
 	/**
+	 * @return Promise\PromiseInterface<Entities\API\ReadDigitalInputs>
+	 *
 	 * @throws Exception
 	 * @throws Exceptions\InvalidState
 	 * @throws InvalidArgumentException
@@ -425,7 +439,7 @@ class Tcp
 					array_combine(array_keys($addresses), array_values($bits)),
 				));
 			})
-			->otherwise(static function (Throwable $ex) use ($deferred): void {
+			->catch(static function (Throwable $ex) use ($deferred): void {
 				$deferred->reject($ex);
 			});
 
@@ -433,6 +447,8 @@ class Tcp
 	}
 
 	/**
+	 * @return Promise\PromiseInterface<Entities\API\ReadAnalogInputs>
+	 *
 	 * @throws Exception
 	 * @throws Exceptions\InvalidState
 	 * @throws InvalidArgumentException
@@ -501,7 +517,7 @@ class Tcp
 					));
 				},
 			)
-			->otherwise(static function (Throwable $ex) use ($deferred): void {
+			->catch(static function (Throwable $ex) use ($deferred): void {
 				$deferred->reject($ex);
 			});
 
@@ -509,6 +525,8 @@ class Tcp
 	}
 
 	/**
+	 * @return Promise\PromiseInterface<string>
+	 *
 	 * @throws InvalidArgumentException
 	 */
 	private function sendRequest(
@@ -598,7 +616,7 @@ class Tcp
 					$deferred->reject($ex);
 				});
 			})
-			->otherwise(static function (Throwable $ex) use ($deferred): void {
+			->catch(static function (Throwable $ex) use ($deferred): void {
 				$deferred->reject($ex);
 			});
 

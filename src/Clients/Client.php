@@ -43,6 +43,8 @@ interface Client
 
 	/**
 	 * Write data to DPS
+	 *
+	 * @return Promise\PromiseInterface<bool>
 	 */
 	public function writeChannelProperty(
 		Entities\ModbusDevice $device,

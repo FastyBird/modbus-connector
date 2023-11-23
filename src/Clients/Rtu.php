@@ -177,6 +177,8 @@ class Rtu implements Client
 	}
 
 	/**
+	 * @return Promise\PromiseInterface<bool>
+	 *
 	 * @throws DevicesExceptions\InvalidState
 	 * @throws Exception
 	 * @throws Exceptions\InvalidArgument
@@ -340,7 +342,7 @@ class Rtu implements Client
 			}
 
 			// Register writing failed
-			return Promise\resolve();
+			return Promise\resolve(true);
 		}
 
 		return Promise\reject(new Exceptions\InvalidArgument('Provided property state is in invalid state'));
