@@ -80,7 +80,7 @@ class Periodic implements Writer
 		private readonly DevicesModels\Entities\Channels\ChannelsRepository $channelsRepository,
 		private readonly DevicesModels\Entities\Channels\Properties\PropertiesRepository $channelPropertiesRepository,
 		private readonly DevicesUtilities\DeviceConnection $deviceConnectionManager,
-		private readonly DevicesUtilities\ChannelPropertiesStates $channelPropertiesStates,
+		private readonly DevicesUtilities\ChannelPropertiesStates $channelPropertiesStatesManager,
 		private readonly DateTimeFactory\Factory $dateTimeFactory,
 		private readonly EventLoop\LoopInterface $eventLoop,
 		private readonly Log\LoggerInterface $logger = new Log\NullLogger(),
@@ -188,7 +188,7 @@ class Periodic implements Writer
 					continue;
 				}
 
-				$state = $this->channelPropertiesStates->getValue($property);
+				$state = $this->channelPropertiesStatesManager->getValue($property);
 
 				if ($state === null) {
 					continue;

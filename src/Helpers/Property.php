@@ -37,8 +37,8 @@ final class Property
 	use Nette\SmartObject;
 
 	public function __construct(
-		private readonly DevicesUtilities\DevicePropertiesStates $devicePropertiesStateManager,
-		private readonly DevicesUtilities\ChannelPropertiesStates $channelPropertiesStateManager,
+		private readonly DevicesUtilities\DevicePropertiesStates $devicePropertiesStatesManager,
+		private readonly DevicesUtilities\ChannelPropertiesStates $channelPropertiesStatesManager,
 	)
 	{
 	}
@@ -60,9 +60,9 @@ final class Property
 			$property instanceof DevicesEntities\Devices\Properties\Dynamic
 			|| $property instanceof MetadataDocuments\DevicesModule\DeviceDynamicProperty
 		) {
-			$this->devicePropertiesStateManager->setValue($property, $data);
+			$this->devicePropertiesStatesManager->setValue($property, $data);
 		} else {
-			$this->channelPropertiesStateManager->setValue($property, $data);
+			$this->channelPropertiesStatesManager->setValue($property, $data);
 		}
 	}
 

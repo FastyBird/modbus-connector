@@ -102,7 +102,7 @@ class Tcp implements Client
 		private readonly DevicesModels\Entities\Channels\ChannelsRepository $channelsRepository,
 		private readonly DevicesModels\Entities\Channels\Properties\PropertiesRepository $channelPropertiesRepository,
 		private readonly DevicesUtilities\DeviceConnection $deviceConnectionManager,
-		private readonly DevicesUtilities\ChannelPropertiesStates $channelPropertiesStates,
+		private readonly DevicesUtilities\ChannelPropertiesStates $channelPropertiesStatesManager,
 		private readonly DateTimeFactory\Factory $dateTimeFactory,
 		private readonly EventLoop\LoopInterface $eventLoop,
 		private readonly Log\LoggerInterface $logger = new Log\NullLogger(),
@@ -152,7 +152,7 @@ class Tcp implements Client
 		DevicesEntities\Channels\Properties\Dynamic|MetadataDocuments\DevicesModule\ChannelDynamicProperty $property,
 	): Promise\PromiseInterface
 	{
-		$state = $this->channelPropertiesStates->getValue($property);
+		$state = $this->channelPropertiesStatesManager->getValue($property);
 
 		$ipAddress = $device->getIpAddress();
 
@@ -766,16 +766,16 @@ class Tcp implements Client
 	{
 		$now = $this->dateTimeFactory->getNow();
 
-		$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelProperties();
+		$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelDynamicProperties();
 		$findChannelPropertyQuery->forChannel($channel);
 		$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
 
-		$property = $this->channelPropertiesRepository->findOneBy($findChannelPropertyQuery);
+		$property = $this->channelPropertiesRepository->findOneBy(
+			$findChannelPropertyQuery,
+			DevicesEntities\Channels\Properties\Dynamic::class,
+		);
 
-		if (
-			!$property instanceof DevicesEntities\Channels\Properties\Dynamic
-			|| !$property->isQueryable()
-		) {
+		if ($property === null || !$property->isQueryable()) {
 			return null;
 		}
 
