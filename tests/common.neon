@@ -54,6 +54,7 @@ contributteTranslation:
         fallback: [en_US, en]
     localeResolvers: []
     dirs:
+        - %appDir%/../src/Translations
         - %vendorDir%/fastybird/json-api/src/Translations
 
 nettrineDbal:

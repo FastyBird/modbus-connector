@@ -30,18 +30,18 @@ use function is_string;
 class ModbusDevice extends DevicesEntities\Devices\Device
 {
 
-	public const DEVICE_TYPE = 'modbus';
+	public const TYPE = 'modbus';
 
-	private const DEFAULT_TCP_PORT = 502;
+	public const DEFAULT_TCP_PORT = 502;
 
 	public function getType(): string
 	{
-		return self::DEVICE_TYPE;
+		return self::TYPE;
 	}
 
 	public function getDiscriminatorName(): string
 	{
-		return self::DEVICE_TYPE;
+		return self::TYPE;
 	}
 
 	public function getSource(): MetadataTypes\ConnectorSource
@@ -109,7 +109,7 @@ class ModbusDevice extends DevicesEntities\Devices\Device
 		$property = $this->properties
 			->filter(
 			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-				static fn (DevicesEntities\Devices\Properties\Property $property): bool => $property->getIdentifier() === Types\DevicePropertyIdentifier::IDENTIFIER_ADDRESS
+				static fn (DevicesEntities\Devices\Properties\Property $property): bool => $property->getIdentifier() === Types\DevicePropertyIdentifier::ADDRESS
 			)
 			->first();
 
@@ -132,7 +132,7 @@ class ModbusDevice extends DevicesEntities\Devices\Device
 		$property = $this->properties
 			->filter(
 			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-				static fn (DevicesEntities\Devices\Properties\Property $property): bool => $property->getIdentifier() === Types\DevicePropertyIdentifier::IDENTIFIER_IP_ADDRESS
+				static fn (DevicesEntities\Devices\Properties\Property $property): bool => $property->getIdentifier() === Types\DevicePropertyIdentifier::IP_ADDRESS
 			)
 			->first();
 
@@ -155,7 +155,7 @@ class ModbusDevice extends DevicesEntities\Devices\Device
 		$property = $this->properties
 			->filter(
 			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-				static fn (DevicesEntities\Devices\Properties\Property $property): bool => $property->getIdentifier() === Types\DevicePropertyIdentifier::IDENTIFIER_IP_ADDRESS_PORT
+				static fn (DevicesEntities\Devices\Properties\Property $property): bool => $property->getIdentifier() === Types\DevicePropertyIdentifier::PORT
 			)
 			->first();
 
@@ -178,7 +178,7 @@ class ModbusDevice extends DevicesEntities\Devices\Device
 		$property = $this->properties
 			->filter(
 			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-				static fn (DevicesEntities\Devices\Properties\Property $property): bool => $property->getIdentifier() === Types\DevicePropertyIdentifier::IDENTIFIER_BYTE_ORDER
+				static fn (DevicesEntities\Devices\Properties\Property $property): bool => $property->getIdentifier() === Types\DevicePropertyIdentifier::BYTE_ORDER
 			)
 			->first();
 
@@ -190,7 +190,7 @@ class ModbusDevice extends DevicesEntities\Devices\Device
 			return Types\ByteOrder::get($property->getValue());
 		}
 
-		return Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_BIG);
+		return Types\ByteOrder::get(Types\ByteOrder::BIG);
 	}
 
 	/**
@@ -202,7 +202,7 @@ class ModbusDevice extends DevicesEntities\Devices\Device
 		$property = $this->properties
 			->filter(
 			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-				static fn (DevicesEntities\Devices\Properties\Property $property): bool => $property->getIdentifier() === Types\DevicePropertyIdentifier::IDENTIFIER_UNIT_ID
+				static fn (DevicesEntities\Devices\Properties\Property $property): bool => $property->getIdentifier() === Types\DevicePropertyIdentifier::UNIT_ID
 			)
 			->first();
 

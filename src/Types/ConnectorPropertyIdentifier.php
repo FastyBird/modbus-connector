@@ -32,17 +32,22 @@ class ConnectorPropertyIdentifier extends Consistence\Enum\Enum
 	/**
 	 * Define device states
 	 */
-	public const IDENTIFIER_CLIENT_MODE = 'mode';
+	public const CLIENT_MODE = 'mode';
 
-	public const IDENTIFIER_RTU_INTERFACE = 'rtu_interface';
+	public const RTU_INTERFACE = 'rtu_interface';
 
-	public const IDENTIFIER_RTU_BYTE_SIZE = 'rtu_byte_size';
+	public const RTU_BYTE_SIZE = 'rtu_byte_size';
 
-	public const IDENTIFIER_RTU_BAUD_RATE = 'rtu_baud_rate';
+	public const RTU_BAUD_RATE = 'rtu_baud_rate';
 
-	public const IDENTIFIER_RTU_PARITY = 'rtu_parity';
+	public const RTU_PARITY = 'rtu_parity';
 
-	public const IDENTIFIER_RTU_STOP_BITS = 'rtu_stop_bits';
+	public const RTU_STOP_BITS = 'rtu_stop_bits';
+
+	public function getValue(): string
+	{
+		return strval(parent::getValue());
+	}
 
 	public function __toString(): string
 	{

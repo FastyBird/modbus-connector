@@ -15,6 +15,8 @@
 
 namespace FastyBird\Connector\Modbus\Entities\Messages;
 
+use Orisai\ObjectMapper;
+
 /**
  * Modbus base message data entity interface
  *
@@ -23,7 +25,7 @@ namespace FastyBird\Connector\Modbus\Entities\Messages;
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-interface Entity
+interface Entity extends ObjectMapper\MappedObject
 {
 
 	/**

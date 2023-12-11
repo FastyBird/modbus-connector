@@ -16,19 +16,19 @@
 namespace FastyBird\Connector\Modbus\Commands;
 
 use FastyBird\Connector\Modbus\Entities;
+use FastyBird\Connector\Modbus\Exceptions;
+use FastyBird\Connector\Modbus\Queries;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
-use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Commands as DevicesCommands;
-use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
 use FastyBird\Module\Devices\Models as DevicesModels;
-use FastyBird\Module\Devices\Queries as DevicesQueries;
-use Psr\Log;
+use Nette\Localization;
 use Ramsey\Uuid;
 use Symfony\Component\Console;
 use Symfony\Component\Console\Input;
 use Symfony\Component\Console\Output;
 use Symfony\Component\Console\Style;
+use function array_key_exists;
 use function array_key_first;
 use function array_search;
 use function array_values;
@@ -53,7 +53,7 @@ class Execute extends Console\Command\Command
 
 	public function __construct(
 		private readonly DevicesModels\Entities\Connectors\ConnectorsRepository $connectorsRepository,
-		private readonly Log\LoggerInterface $logger = new Log\NullLogger(),
+		private readonly Localization\Translator $translator,
 		string|null $name = null,
 	)
 	{
@@ -74,7 +74,7 @@ class Execute extends Console\Command\Command
 						'connector',
 						'c',
 						Input\InputOption::VALUE_OPTIONAL,
-						'Run devices module connector',
+						'Connector ID or identifier',
 						true,
 					),
 				]),
@@ -101,13 +101,13 @@ class Execute extends Console\Command\Command
 
 		$io = new Style\SymfonyStyle($input, $output);
 
-		$io->title('Modbus connector - service');
+		$io->title($this->translator->translate('//modbus-connector.cmd.execute.title'));
 
-		$io->note('This action will run connector service.');
+		$io->note($this->translator->translate('//modbus-connector.cmd.execute.subtitle'));
 
 		if ($input->getOption('no-interaction') === false) {
 			$question = new Console\Question\ConfirmationQuestion(
-				'Would you like to continue?',
+				$this->translator->translate('//modbus-connector.cmd.base.questions.continue'),
 				false,
 			);
 
@@ -125,7 +125,7 @@ class Execute extends Console\Command\Command
 		) {
 			$connectorId = $input->getOption('connector');
 
-			$findConnectorQuery = new DevicesQueries\Entities\FindConnectors();
+			$findConnectorQuery = new Queries\Entities\FindConnectors();
 
 			if (Uuid\Uuid::isValid($connectorId)) {
 				$findConnectorQuery->byId(Uuid\Uuid::fromString($connectorId));
@@ -136,14 +136,16 @@ class Execute extends Console\Command\Command
 			$connector = $this->connectorsRepository->findOneBy($findConnectorQuery, Entities\ModbusConnector::class);
 
 			if ($connector === null) {
-				$io->warning('Connector was not found in system');
+				$io->warning(
+					$this->translator->translate('//modbus-connector.cmd.execute.messages.connector.notFound'),
+				);
 
 				return Console\Command\Command::FAILURE;
 			}
 		} else {
 			$connectors = [];
 
-			$findConnectorsQuery = new DevicesQueries\Entities\FindConnectors();
+			$findConnectorsQuery = new Queries\Entities\FindConnectors();
 
 			$systemConnectors = $this->connectorsRepository->findAllBy(
 				$findConnectorsQuery,
@@ -152,26 +154,24 @@ class Execute extends Console\Command\Command
 			usort(
 				$systemConnectors,
 				// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-				static fn (DevicesEntities\Connectors\Connector $a, DevicesEntities\Connectors\Connector $b): int => $a->getIdentifier() <=> $b->getIdentifier()
+				static fn (Entities\ModbusConnector $a, Entities\ModbusConnector $b): int => $a->getIdentifier() <=> $b->getIdentifier()
 			);
 
 			foreach ($systemConnectors as $connector) {
-				assert($connector instanceof Entities\ModbusConnector);
-
 				$connectors[$connector->getIdentifier()] = $connector->getIdentifier()
 					. ($connector->getName() !== null ? ' [' . $connector->getName() . ']' : '');
 			}
 
 			if (count($connectors) === 0) {
-				$io->warning('No connectors registered in system');
+				$io->warning($this->translator->translate('//modbus-connector.cmd.base.messages.noConnectors'));
 
-				return Console\Command\Command::FAILURE;
+				return Console\Command\Command::SUCCESS;
 			}
 
 			if (count($connectors) === 1) {
 				$connectorIdentifier = array_key_first($connectors);
 
-				$findConnectorQuery = new DevicesQueries\Entities\FindConnectors();
+				$findConnectorQuery = new Queries\Entities\FindConnectors();
 				$findConnectorQuery->byIdentifier($connectorIdentifier);
 
 				$connector = $this->connectorsRepository->findOneBy(
@@ -180,16 +180,18 @@ class Execute extends Console\Command\Command
 				);
 
 				if ($connector === null) {
-					$io->warning('Connector was not found in system');
+					$io->warning(
+						$this->translator->translate('//modbus-connector.cmd.execute.messages.connector.notFound'),
+					);
 
 					return Console\Command\Command::FAILURE;
 				}
 
 				if ($input->getOption('no-interaction') === false) {
 					$question = new Console\Question\ConfirmationQuestion(
-						sprintf(
-							'Would you like to execute "%s" connector',
-							$connector->getName() ?? $connector->getIdentifier(),
+						$this->translator->translate(
+							'//modbus-connector.cmd.execute.questions.execute',
+							['connector' => $connector->getName() ?? $connector->getIdentifier()],
 						),
 						false,
 					);
@@ -200,54 +202,61 @@ class Execute extends Console\Command\Command
 				}
 			} else {
 				$question = new Console\Question\ChoiceQuestion(
-					'Please select connector to execute',
+					$this->translator->translate('//modbus-connector.cmd.execute.questions.select.connector'),
 					array_values($connectors),
 				);
-
-				$question->setErrorMessage('Selected connector: %s is not valid.');
-
-				$connectorIdentifierKey = array_search($io->askQuestion($question), $connectors, true);
-
-				if ($connectorIdentifierKey === false) {
-					$io->error('Something went wrong, connector could not be loaded');
-
-					$this->logger->alert(
-						'Could not read connector identifier from console answer',
-						[
-							'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
-							'type' => 'execute-cmd',
-						],
-					);
-
-					return Console\Command\Command::FAILURE;
-				}
-
-				$findConnectorQuery = new DevicesQueries\Entities\FindConnectors();
-				$findConnectorQuery->byIdentifier($connectorIdentifierKey);
-
-				$connector = $this->connectorsRepository->findOneBy(
-					$findConnectorQuery,
-					Entities\ModbusConnector::class,
+				$question->setErrorMessage(
+					$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 				);
-			}
+				$question->setValidator(
+					function (string|int|null $answer) use ($connectors): Entities\ModbusConnector {
+						if ($answer === null) {
+							throw new Exceptions\Runtime(
+								sprintf(
+									$this->translator->translate(
+										'//modbus-connector.cmd.base.messages.answerNotValid',
+									),
+									$answer,
+								),
+							);
+						}
 
-			if ($connector === null) {
-				$io->error('Something went wrong, connector could not be loaded');
+						if (array_key_exists($answer, array_values($connectors))) {
+							$answer = array_values($connectors)[$answer];
+						}
 
-				$this->logger->alert(
-					'Connector was not found',
-					[
-						'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
-						'type' => 'execute-cmd',
-					],
+						$identifier = array_search($answer, $connectors, true);
+
+						if ($identifier !== false) {
+							$findConnectorQuery = new Queries\Entities\FindConnectors();
+							$findConnectorQuery->byIdentifier($identifier);
+
+							$connector = $this->connectorsRepository->findOneBy(
+								$findConnectorQuery,
+								Entities\ModbusConnector::class,
+							);
+
+							if ($connector !== null) {
+								return $connector;
+							}
+						}
+
+						throw new Exceptions\Runtime(
+							sprintf(
+								$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+								$answer,
+							),
+						);
+					},
 				);
 
-				return Console\Command\Command::FAILURE;
+				$connector = $io->askQuestion($question);
+				assert($connector instanceof Entities\ModbusConnector);
 			}
 		}
 
 		if (!$connector->isEnabled()) {
-			$io->warning('Connector is disabled. Disabled connector could not be executed');
+			$io->warning($this->translator->translate('//modbus-connector.cmd.execute.messages.connector.disabled'));
 
 			return Console\Command\Command::SUCCESS;
 		}
@@ -255,16 +264,18 @@ class Execute extends Console\Command\Command
 		$serviceCmd = $symfonyApp->find(DevicesCommands\Connector::NAME);
 
 		$result = $serviceCmd->run(new Input\ArrayInput([
-			'--connector' => $connector->getPlainId(),
+			'--connector' => $connector->getId()->toString(),
 			'--no-interaction' => true,
 			'--quiet' => true,
 		]), $output);
 
 		if ($result !== Console\Command\Command::SUCCESS) {
-			$io->error('Something went wrong, service could not be processed.');
+			$io->error($this->translator->translate('//modbus-connector.cmd.execute.messages.error'));
+
+			return Console\Command\Command::FAILURE;
 		}
 
-		return $result;
+		return Console\Command\Command::SUCCESS;
 	}
 
 }

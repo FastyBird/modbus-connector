@@ -16,15 +16,16 @@
 namespace FastyBird\Connector\Modbus\DI;
 
 use Doctrine\Persistence;
+use FastyBird\Connector\Modbus;
 use FastyBird\Connector\Modbus\API;
 use FastyBird\Connector\Modbus\Clients;
 use FastyBird\Connector\Modbus\Commands;
 use FastyBird\Connector\Modbus\Connector;
-use FastyBird\Connector\Modbus\Consumers;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Fixtures;
 use FastyBird\Connector\Modbus\Helpers;
 use FastyBird\Connector\Modbus\Hydrators;
+use FastyBird\Connector\Modbus\Queue;
 use FastyBird\Connector\Modbus\Schemas;
 use FastyBird\Connector\Modbus\Subscribers;
 use FastyBird\Connector\Modbus\Writers;
@@ -70,9 +71,8 @@ class ModbusExtension extends DI\CompilerExtension
 			'writer' => Schema\Expect::anyOf(
 				Writers\Event::NAME,
 				Writers\Exchange::NAME,
-				Writers\Periodic::NAME,
 			)->default(
-				Writers\Periodic::NAME,
+				Writers\Exchange::NAME,
 			),
 		]);
 	}
@@ -83,38 +83,53 @@ class ModbusExtension extends DI\CompilerExtension
 		$configuration = $this->getConfig();
 		assert($configuration instanceof stdClass);
 
-		$writer = null;
+		$logger = $builder->addDefinition($this->prefix('logger'), new DI\Definitions\ServiceDefinition())
+			->setType(Modbus\Logger::class)
+			->setAutowired(false);
+
+		/**
+		 * WRITERS
+		 */
 
 		if ($configuration->writer === Writers\Event::NAME) {
-			$writer = $builder->addDefinition($this->prefix('writers.event'), new DI\Definitions\ServiceDefinition())
-				->setType(Writers\Event::class)
-				->setAutowired(false);
+			$builder->addFactoryDefinition($this->prefix('writers.event'))
+				->setImplement(Writers\EventFactory::class)
+				->getResultDefinition()
+				->setType(Writers\Event::class);
 		} elseif ($configuration->writer === Writers\Exchange::NAME) {
-			$writer = $builder->addDefinition($this->prefix('writers.exchange'), new DI\Definitions\ServiceDefinition())
+			$builder->addFactoryDefinition($this->prefix('writers.exchange'))
+				->setImplement(Writers\ExchangeFactory::class)
+				->getResultDefinition()
 				->setType(Writers\Exchange::class)
-				->setAutowired(false)
 				->addTag(ExchangeDI\ExchangeExtension::CONSUMER_STATE, false);
-		} elseif ($configuration->writer === Writers\Periodic::NAME) {
-			$writer = $builder->addDefinition($this->prefix('writers.periodic'), new DI\Definitions\ServiceDefinition())
-				->setType(Writers\Periodic::class)
-				->setAutowired(false);
 		}
 
-		$builder->addFactoryDefinition($this->prefix('client.rtu'))
+		/**
+		 * CLIENTS
+		 */
+
+		$builder->addFactoryDefinition($this->prefix('clients.rtu'))
 			->setImplement(Clients\RtuFactory::class)
 			->getResultDefinition()
 			->setType(Clients\Rtu::class)
 			->setArguments([
-				'writer' => $writer,
+				'logger' => $logger,
 			]);
 
-		$builder->addFactoryDefinition($this->prefix('client.tcp'))
+		$builder->addFactoryDefinition($this->prefix('clients.tcp'))
 			->setImplement(Clients\TcpFactory::class)
 			->getResultDefinition()
 			->setType(Clients\Tcp::class)
 			->setArguments([
-				'writer' => $writer,
+				'logger' => $logger,
 			]);
+
+		/**
+		 * API
+		 */
+
+		$builder->addDefinition($this->prefix('api.connectionsManager'), new DI\Definitions\ServiceDefinition())
+			->setType(API\ConnectionManager::class);
 
 		$builder->addFactoryDefinition($this->prefix('api.rtu'))
 			->setImplement(API\RtuFactory::class)
@@ -129,20 +144,69 @@ class ModbusExtension extends DI\CompilerExtension
 		$builder->addDefinition($this->prefix('api.transformer'), new DI\Definitions\ServiceDefinition())
 			->setType(API\Transformer::class);
 
+		/**
+		 * MESSAGES QUEUE
+		 */
+
 		$builder->addDefinition(
-			$this->prefix('consumers.messages.device.state'),
+			$this->prefix('queue.consumers.store.deviceConnectionState'),
 			new DI\Definitions\ServiceDefinition(),
 		)
-			->setType(Consumers\Messages\State::class);
-
-		$builder->addDefinition($this->prefix('consumers.messages'), new DI\Definitions\ServiceDefinition())
-			->setType(Consumers\Messages::class)
+			->setType(Queue\Consumers\StoreDeviceConnectionState::class)
 			->setArguments([
-				'consumers' => $builder->findByType(Consumers\Consumer::class),
+				'logger' => $logger,
 			]);
+
+		$builder->addDefinition(
+			$this->prefix('queue.consumers.store.channelPropertyState'),
+			new DI\Definitions\ServiceDefinition(),
+		)
+			->setType(Queue\Consumers\StoreChannelPropertyState::class)
+			->setArguments([
+				'logger' => $logger,
+			]);
+
+		$builder->addDefinition(
+			$this->prefix('queue.consumers.write.channelPropertyState'),
+			new DI\Definitions\ServiceDefinition(),
+		)
+			->setType(Queue\Consumers\WriteChannelPropertyState::class)
+			->setArguments([
+				'logger' => $logger,
+			]);
+
+		$builder->addDefinition(
+			$this->prefix('queue.consumers'),
+			new DI\Definitions\ServiceDefinition(),
+		)
+			->setType(Queue\Consumers::class)
+			->setArguments([
+				'consumers' => $builder->findByType(Queue\Consumer::class),
+				'logger' => $logger,
+			]);
+
+		$builder->addDefinition(
+			$this->prefix('queue.queue'),
+			new DI\Definitions\ServiceDefinition(),
+		)
+			->setType(Queue\Queue::class)
+			->setArguments([
+				'logger' => $logger,
+			]);
+
+		/**
+		 * SUBSCRIBERS
+		 */
 
 		$builder->addDefinition($this->prefix('subscribers.properties'), new DI\Definitions\ServiceDefinition())
 			->setType(Subscribers\Properties::class);
+
+		$builder->addDefinition($this->prefix('subscribers.controls'), new DI\Definitions\ServiceDefinition())
+			->setType(Subscribers\Controls::class);
+
+		/**
+		 * JSON-API SCHEMAS
+		 */
 
 		$builder->addDefinition($this->prefix('schemas.connector.modbus'), new DI\Definitions\ServiceDefinition())
 			->setType(Schemas\ModbusConnector::class);
@@ -153,6 +217,10 @@ class ModbusExtension extends DI\CompilerExtension
 		$builder->addDefinition($this->prefix('schemas.channel.modbus'), new DI\Definitions\ServiceDefinition())
 			->setType(Schemas\ModbusChannel::class);
 
+		/**
+		 * JSON-API HYDRATORS
+		 */
+
 		$builder->addDefinition($this->prefix('hydrators.connector.modbus'), new DI\Definitions\ServiceDefinition())
 			->setType(Hydrators\ModbusConnector::class);
 
@@ -162,29 +230,51 @@ class ModbusExtension extends DI\CompilerExtension
 		$builder->addDefinition($this->prefix('hydrators.channel.modbus'), new DI\Definitions\ServiceDefinition())
 			->setType(Hydrators\ModbusChannel::class);
 
-		$builder->addDefinition($this->prefix('helpers.property'), new DI\Definitions\ServiceDefinition())
-			->setType(Helpers\Property::class);
+		/**
+		 * HELPERS
+		 */
+
+		$builder->addDefinition($this->prefix('helpers.entity'), new DI\Definitions\ServiceDefinition())
+			->setType(Helpers\Entity::class);
+
+		$builder->addDefinition($this->prefix('helpers.connector'), new DI\Definitions\ServiceDefinition())
+			->setType(Helpers\Connector::class);
+
+		$builder->addDefinition($this->prefix('helpers.device'), new DI\Definitions\ServiceDefinition())
+			->setType(Helpers\Device::class);
+
+		$builder->addDefinition($this->prefix('helpers.channel'), new DI\Definitions\ServiceDefinition())
+			->setType(Helpers\Channel::class);
+
+		/**
+		 * COMMANDS
+		 */
+
+		$builder->addDefinition($this->prefix('commands.execute'), new DI\Definitions\ServiceDefinition())
+			->setType(Commands\Execute::class);
+
+		$builder->addDefinition($this->prefix('commands.install'), new DI\Definitions\ServiceDefinition())
+			->setType(Commands\Install::class)
+			->setArguments([
+				'logger' => $logger,
+			]);
+
+		/**
+		 * CONNECTOR
+		 */
 
 		$builder->addFactoryDefinition($this->prefix('executor.factory'))
 			->setImplement(Connector\ConnectorFactory::class)
 			->addTag(
 				DevicesDI\DevicesExtension::CONNECTOR_TYPE_TAG,
-				Entities\ModbusConnector::CONNECTOR_TYPE,
+				Entities\ModbusConnector::TYPE,
 			)
 			->getResultDefinition()
 			->setType(Connector\Connector::class)
 			->setArguments([
 				'clientsFactories' => $builder->findByType(Clients\ClientFactory::class),
+				'logger' => $logger,
 			]);
-
-		$builder->addDefinition($this->prefix('commands.initialize'), new DI\Definitions\ServiceDefinition())
-			->setType(Commands\Initialize::class);
-
-		$builder->addDefinition($this->prefix('commands.execute'), new DI\Definitions\ServiceDefinition())
-			->setType(Commands\Execute::class);
-
-		$builder->addDefinition($this->prefix('commands.devices'), new DI\Definitions\ServiceDefinition())
-			->setType(Commands\Devices::class);
 	}
 
 	/**

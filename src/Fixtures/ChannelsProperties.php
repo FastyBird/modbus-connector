@@ -53,7 +53,7 @@ final class ChannelsProperties extends DataFixtures\AbstractFixture implements D
 
 			$addressProperty = new DevicesEntities\Channels\Properties\Variable(
 				$channel,
-				ChannelPropertyIdentifier::IDENTIFIER_ADDRESS,
+				ChannelPropertyIdentifier::ADDRESS,
 			);
 			$addressProperty->setDataType(MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UINT));
 			$addressProperty->setValue(strval($i));

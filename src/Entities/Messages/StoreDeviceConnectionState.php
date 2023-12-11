@@ -1,13 +1,13 @@
 <?php declare(strict_types = 1);
 
 /**
- * DeviceState.php
+ * StoreDeviceConnectionState.php
  *
  * @license        More in LICENSE.md
  * @copyright      https://www.fastybird.com
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  * @package        FastyBird:ModbusConnector!
- * @subpackage     Properties
+ * @subpackage     Entities
  * @since          1.0.0
  *
  * @date           18.01.23
@@ -15,36 +15,30 @@
 
 namespace FastyBird\Connector\Modbus\Entities\Messages;
 
+use FastyBird\Library\Bootstrap\ObjectMapper as BootstrapObjectMapper;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use Ramsey\Uuid;
+use function array_merge;
 
 /**
  * Device state message entity
  *
  * @package        FastyBird:ModbusConnector!
- * @subpackage     Properties
+ * @subpackage     Entities
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-final class DeviceState implements Entity
+final class StoreDeviceConnectionState extends Device
 {
 
 	public function __construct(
-		private readonly Uuid\UuidInterface $connector,
-		private readonly string $identifier,
+		Uuid\UuidInterface $connector,
+		Uuid\UuidInterface $device,
+		#[BootstrapObjectMapper\Rules\ConsistenceEnumValue(class: MetadataTypes\ConnectionState::class)]
 		private readonly MetadataTypes\ConnectionState $state,
 	)
 	{
-	}
-
-	public function getConnector(): Uuid\UuidInterface
-	{
-		return $this->connector;
-	}
-
-	public function getIdentifier(): string
-	{
-		return $this->identifier;
+		parent::__construct($connector, $device);
 	}
 
 	public function getState(): MetadataTypes\ConnectionState
@@ -57,11 +51,9 @@ final class DeviceState implements Entity
 	 */
 	public function toArray(): array
 	{
-		return [
-			'connector' => $this->connector->toString(),
-			'identifier' => $this->getIdentifier(),
+		return array_merge(parent::toArray(), [
 			'state' => $this->getState()->getValue(),
-		];
+		]);
 	}
 
 }

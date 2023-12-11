@@ -29,7 +29,6 @@ use function array_filter;
 use function array_reverse;
 use function array_unique;
 use function array_values;
-use function boolval;
 use function count;
 use function current;
 use function floatval;
@@ -56,146 +55,6 @@ final class Transformer
 	use Nette\SmartObject;
 
 	private bool|null $machineUsingLittleEndian = null;
-
-	/**
-	 * @throws MetadataExceptions\InvalidState
-	 */
-	public function transformValueFromDevice(
-		MetadataTypes\DataType $dataType,
-		// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|MetadataValueObjects\EquationFormat|null $format,
-		string|int|float|bool|null $value,
-	): float|int|string|bool|MetadataTypes\SwitchPayload|MetadataTypes\ButtonPayload|MetadataTypes\CoverPayload|null
-	{
-		if ($value === null) {
-			return null;
-		}
-
-		if ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_BOOLEAN)) {
-			return is_bool($value) ? $value : boolval($value);
-		}
-
-		if ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_FLOAT)) {
-			$floatValue = floatval($value);
-
-			if ($format instanceof MetadataValueObjects\NumberRangeFormat) {
-				if ($format->getMin() !== null && $format->getMin() >= $floatValue) {
-					return null;
-				}
-
-				if ($format->getMax() !== null && $format->getMax() <= $floatValue) {
-					return null;
-				}
-			}
-
-			return $floatValue;
-		}
-
-		if (
-			$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_CHAR)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UCHAR)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SHORT)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_USHORT)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_INT)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UINT)
-		) {
-			$intValue = intval($value);
-
-			if ($format instanceof MetadataValueObjects\NumberRangeFormat) {
-				if ($format->getMin() !== null && $format->getMin() >= $intValue) {
-					return null;
-				}
-
-				if ($format->getMax() !== null && $format->getMax() <= $intValue) {
-					return null;
-				}
-			}
-
-			return $intValue;
-		}
-
-		if ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_STRING)) {
-			return strval($value);
-		}
-
-		if (
-			$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_ENUM)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SWITCH)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_BUTTON)
-		) {
-			if ($format instanceof MetadataValueObjects\StringEnumFormat) {
-				$filtered = array_values(array_filter(
-					$format->getItems(),
-					static fn (string $item): bool => Utils\Strings::lower(strval($value)) === $item,
-				));
-
-				if (count($filtered) === 1) {
-					if ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SWITCH)) {
-						return MetadataTypes\SwitchPayload::isValidValue(strval($value))
-							? MetadataTypes\SwitchPayload::get(
-								strval($value),
-							)
-							: null;
-					} elseif ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_BUTTON)) {
-						return MetadataTypes\ButtonPayload::isValidValue(strval($value))
-							? MetadataTypes\ButtonPayload::get(
-								strval($value),
-							)
-							: null;
-					} elseif ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_COVER)) {
-						return MetadataTypes\CoverPayload::isValidValue(strval($value))
-							? MetadataTypes\CoverPayload::get(
-								strval($value),
-							)
-							: null;
-					} else {
-						return strval($value);
-					}
-				}
-
-				return null;
-			} elseif ($format instanceof MetadataValueObjects\CombinedEnumFormat) {
-				$filtered = array_values(array_filter(
-					$format->getItems(),
-					static fn (array $item): bool => $item[1] !== null
-							&& Utils\Strings::lower(strval($item[1]->getValue())) === Utils\Strings::lower(
-								strval($value),
-							),
-				));
-
-				if (
-					count($filtered) === 1
-					&& $filtered[0][0] instanceof MetadataValueObjects\CombinedEnumFormatItem
-				) {
-					if ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SWITCH)) {
-						return MetadataTypes\SwitchPayload::isValidValue(strval($filtered[0][0]->getValue()))
-							? MetadataTypes\SwitchPayload::get(
-								strval($filtered[0][0]->getValue()),
-							)
-							: null;
-					} elseif ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_BUTTON)) {
-						return MetadataTypes\ButtonPayload::isValidValue(strval($filtered[0][0]->getValue()))
-							? MetadataTypes\ButtonPayload::get(
-								strval($filtered[0][0]->getValue()),
-							)
-							: null;
-					} elseif ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_COVER)) {
-						return MetadataTypes\CoverPayload::isValidValue(strval($filtered[0][0]->getValue()))
-							? MetadataTypes\CoverPayload::get(
-								strval($filtered[0][0]->getValue()),
-							)
-							: null;
-					} else {
-						return strval($filtered[0][0]->getValue());
-					}
-				}
-
-				return null;
-			}
-		}
-
-		return null;
-	}
 
 	/**
 	 * @throws MetadataExceptions\InvalidState
@@ -563,50 +422,50 @@ final class Transformer
 	{
 		if (count($bytes) === 2) {
 			if (
-				$byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_BIG_SWAP)
-				|| $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_BIG_LOW_WORD_FIRST)
+				$byteOrder->equalsValue(Types\ByteOrder::BIG_SWAP)
+				|| $byteOrder->equalsValue(Types\ByteOrder::BIG_LOW_WORD_FIRST)
 			) {
-				$byteOrder = Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_BIG);
+				$byteOrder = Types\ByteOrder::get(Types\ByteOrder::BIG);
 			} elseif (
-				$byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE_SWAP)
-				|| $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE_LOW_WORD_FIRST)
+				$byteOrder->equalsValue(Types\ByteOrder::LITTLE_SWAP)
+				|| $byteOrder->equalsValue(Types\ByteOrder::LITTLE_LOW_WORD_FIRST)
 			) {
-				$byteOrder = Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_LITTLE);
+				$byteOrder = Types\ByteOrder::get(Types\ByteOrder::LITTLE);
 			}
 		} elseif (count($bytes) === 4) {
 			if (
-				$byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_BIG_SWAP)
-				|| $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE_SWAP)
+				$byteOrder->equalsValue(Types\ByteOrder::BIG_SWAP)
+				|| $byteOrder->equalsValue(Types\ByteOrder::LITTLE_SWAP)
 			) {
 				$bytes = [$bytes[1], $bytes[0], $bytes[3], $bytes[2]];
 
 			} elseif (
-				$byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_BIG_LOW_WORD_FIRST)
-				|| $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE_LOW_WORD_FIRST)
+				$byteOrder->equalsValue(Types\ByteOrder::BIG_LOW_WORD_FIRST)
+				|| $byteOrder->equalsValue(Types\ByteOrder::LITTLE_LOW_WORD_FIRST)
 			) {
 				$bytes = [$bytes[2], $bytes[3], $bytes[0], $bytes[1]];
 			}
 
 			if (
-				$byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_BIG_SWAP)
-				|| $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_BIG_LOW_WORD_FIRST)
+				$byteOrder->equalsValue(Types\ByteOrder::BIG_SWAP)
+				|| $byteOrder->equalsValue(Types\ByteOrder::BIG_LOW_WORD_FIRST)
 			) {
-				$byteOrder = Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_BIG);
+				$byteOrder = Types\ByteOrder::get(Types\ByteOrder::BIG);
 			} elseif (
-				$byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE_SWAP)
-				|| $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE_LOW_WORD_FIRST)
+				$byteOrder->equalsValue(Types\ByteOrder::LITTLE_SWAP)
+				|| $byteOrder->equalsValue(Types\ByteOrder::LITTLE_LOW_WORD_FIRST)
 			) {
-				$byteOrder = Types\ByteOrder::get(Types\ByteOrder::BYTE_ORDER_LITTLE);
+				$byteOrder = Types\ByteOrder::get(Types\ByteOrder::LITTLE);
 			}
 		}
 
 		if (
 			(
 				$this->isLittleEndian()
-				&& $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE)
+				&& $byteOrder->equalsValue(Types\ByteOrder::LITTLE)
 			) || (
 				!$this->isLittleEndian()
-				&& $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_BIG)
+				&& $byteOrder->equalsValue(Types\ByteOrder::BIG)
 			)
 		) {
 			// If machine is using same byte order as device
@@ -615,10 +474,10 @@ final class Transformer
 		} elseif (
 			(
 				!$this->isLittleEndian()
-				&& $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE)
+				&& $byteOrder->equalsValue(Types\ByteOrder::LITTLE)
 			) || (
 				$this->isLittleEndian()
-				&& $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_BIG)
+				&& $byteOrder->equalsValue(Types\ByteOrder::BIG)
 			)
 		) {
 			// If machine is using different byte order than device, do byte order swap
@@ -658,9 +517,9 @@ final class Transformer
 
 		// For all little byte orders, perform bytes order swap
 		if (
-			$byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE)
-			|| $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE_SWAP)
-			|| $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE_LOW_WORD_FIRST)
+			$byteOrder->equalsValue(Types\ByteOrder::LITTLE)
+			|| $byteOrder->equalsValue(Types\ByteOrder::LITTLE_SWAP)
+			|| $byteOrder->equalsValue(Types\ByteOrder::LITTLE_LOW_WORD_FIRST)
 		) {
 			$bytearray = array_reverse($bytearray);
 		}
@@ -668,8 +527,8 @@ final class Transformer
 		if (
 			$bytes === 4
 			&& (
-				$byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_BIG_SWAP)
-				|| $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE_SWAP)
+				$byteOrder->equalsValue(Types\ByteOrder::BIG_SWAP)
+				|| $byteOrder->equalsValue(Types\ByteOrder::LITTLE_SWAP)
 			)
 		) {
 			$bytearray = [$bytearray[1], $bytearray[0], $bytearray[3], $bytearray[2]];
@@ -677,8 +536,8 @@ final class Transformer
 		} elseif (
 			$bytes === 4
 			&& (
-				$byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_BIG_LOW_WORD_FIRST)
-				|| $byteOrder->equalsValue(Types\ByteOrder::BYTE_ORDER_LITTLE_LOW_WORD_FIRST)
+				$byteOrder->equalsValue(Types\ByteOrder::BIG_LOW_WORD_FIRST)
+				|| $byteOrder->equalsValue(Types\ByteOrder::LITTLE_LOW_WORD_FIRST)
 			)
 		) {
 			$bytearray = [$bytearray[2], $bytearray[3], $bytearray[0], $bytearray[1]];

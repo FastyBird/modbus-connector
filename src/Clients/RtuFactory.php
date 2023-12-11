@@ -15,8 +15,8 @@
 
 namespace FastyBird\Connector\Modbus\Clients;
 
-use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Types;
+use FastyBird\Library\Metadata\Documents as MetadataDocuments;
 
 /**
  * Modbus RTU devices client factory
@@ -29,8 +29,8 @@ use FastyBird\Connector\Modbus\Types;
 interface RtuFactory extends ClientFactory
 {
 
-	public const MODE = Types\ClientMode::MODE_RTU;
+	public const MODE = Types\ClientMode::RTU;
 
-	public function create(Entities\ModbusConnector $connector): Rtu;
+	public function create(MetadataDocuments\DevicesModule\Connector $connector): Rtu;
 
 }

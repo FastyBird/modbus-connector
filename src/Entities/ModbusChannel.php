@@ -58,7 +58,7 @@ class ModbusChannel extends DevicesEntities\Channels\Channel
 		$property = $this->properties
 			->filter(
 			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-				static fn (DevicesEntities\Channels\Properties\Property $property): bool => $property->getIdentifier() === Types\ChannelPropertyIdentifier::IDENTIFIER_ADDRESS
+				static fn (DevicesEntities\Channels\Properties\Property $property): bool => $property->getIdentifier() === Types\ChannelPropertyIdentifier::ADDRESS
 			)
 			->first();
 
@@ -81,7 +81,7 @@ class ModbusChannel extends DevicesEntities\Channels\Channel
 		$property = $this->properties
 			->filter(
 			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-				static fn (DevicesEntities\Channels\Properties\Property $property): bool => $property->getIdentifier() === Types\ChannelPropertyIdentifier::IDENTIFIER_TYPE
+				static fn (DevicesEntities\Channels\Properties\Property $property): bool => $property->getIdentifier() === Types\ChannelPropertyIdentifier::TYPE
 			)
 			->first();
 
@@ -105,7 +105,7 @@ class ModbusChannel extends DevicesEntities\Channels\Channel
 		$property = $this->properties
 			->filter(
 			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-				static fn (DevicesEntities\Channels\Properties\Property $property): bool => $property->getIdentifier() === Types\ChannelPropertyIdentifier::IDENTIFIER_READING_DELAY
+				static fn (DevicesEntities\Channels\Properties\Property $property): bool => $property->getIdentifier() === Types\ChannelPropertyIdentifier::READING_DELAY
 			)
 			->first();
 

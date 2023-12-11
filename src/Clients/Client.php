@@ -15,11 +15,6 @@
 
 namespace FastyBird\Connector\Modbus\Clients;
 
-use FastyBird\Connector\Modbus\Entities;
-use FastyBird\Library\Metadata\Documents as MetadataDocuments;
-use FastyBird\Module\Devices\Entities as DevicesEntities;
-use React\Promise;
-
 /**
  * Modbus device client interface
  *
@@ -40,16 +35,5 @@ interface Client
 	 * Destroy servers/clients
 	 */
 	public function disconnect(): void;
-
-	/**
-	 * Write data to DPS
-	 *
-	 * @return Promise\PromiseInterface<bool>
-	 */
-	public function writeChannelProperty(
-		Entities\ModbusDevice $device,
-		Entities\ModbusChannel $channel,
-		DevicesEntities\Channels\Properties\Dynamic|MetadataDocuments\DevicesModule\ChannelDynamicProperty $property,
-	): Promise\PromiseInterface;
 
 }

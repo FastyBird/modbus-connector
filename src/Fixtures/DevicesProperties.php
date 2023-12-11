@@ -49,7 +49,7 @@ final class DevicesProperties extends DataFixtures\AbstractFixture implements Da
 
 		$addressProperty = new DevicesEntities\Devices\Properties\Variable(
 			$device,
-			Types\DevicePropertyIdentifier::IDENTIFIER_ADDRESS,
+			Types\DevicePropertyIdentifier::ADDRESS,
 		);
 		$addressProperty->setDataType(MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UINT));
 		$addressProperty->setValue('1');

@@ -16,6 +16,7 @@
 namespace FastyBird\Connector\Modbus\Types;
 
 use Consistence;
+use function intval;
 use function strval;
 
 /**
@@ -32,11 +33,16 @@ class Parity extends Consistence\Enum\Enum
 	/**
 	 * Define versions
 	 */
-	public const PARITY_NONE = 0;
+	public const NONE = 0;
 
-	public const PARITY_ODD = 1;
+	public const ODD = 1;
 
-	public const PARITY_EVEN = 2;
+	public const EVEN = 2;
+
+	public function getValue(): int
+	{
+		return intval(parent::getValue());
+	}
 
 	public function __toString(): string
 	{

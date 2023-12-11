@@ -34,7 +34,7 @@ final class ModbusDevice extends DevicesSchemas\Devices\Device
 	/**
 	 * Define entity schema type string
 	 */
-	public const SCHEMA_TYPE = MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS . '/device/' . Entities\ModbusDevice::DEVICE_TYPE;
+	public const SCHEMA_TYPE = MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS . '/device/' . Entities\ModbusDevice::TYPE;
 
 	public function getEntityClass(): string
 	{

@@ -16,6 +16,7 @@
 namespace FastyBird\Connector\Modbus\Entities\Clients;
 
 use FastyBird\Connector\Modbus\Entities;
+use FastyBird\Library\Metadata\Documents as MetadataDocuments;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use Nette;
 
@@ -34,7 +35,7 @@ abstract class ReadAddress implements Entities\API\Entity
 
 	public function __construct(
 		private readonly int $address,
-		private readonly Entities\ModbusChannel $channel,
+		private readonly MetadataDocuments\DevicesModule\Channel $channel,
 		private readonly MetadataTypes\DataType $dataType,
 	)
 	{
@@ -45,7 +46,7 @@ abstract class ReadAddress implements Entities\API\Entity
 		return $this->address;
 	}
 
-	public function getChannel(): Entities\ModbusChannel
+	public function getChannel(): MetadataDocuments\DevicesModule\Channel
 	{
 		return $this->channel;
 	}

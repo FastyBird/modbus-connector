@@ -1,0 +1,251 @@
+#
+# Connector translations
+#
+# @language       en_US
+#
+# @license        More in LICENSE.md
+# @copyright      https://www.fastybird.com
+# @author         Adam Kadlec <adam.kadlec@fastybird.com>
+# @package        FastyBird:ModbusConnector!
+# @subpackage     Translations
+# @since          1.0.0
+#
+# @date           29.08.23
+#
+
+cmd:
+    base:
+        questions:
+            continue: "Would you like to continue?"
+            whatToDo: "What would you like to do?"
+            exit: "Do you want to exit?"
+
+        messages:
+            noConnectors: "No Modbus connectors registered in system."
+            answerNotValid: "Selected answer: \"%s\" is not valid."
+
+    execute:
+        title: "Modbus connector - service"
+        subtitle: "This action will run connector service"
+
+        questions:
+            execute: "Would you like to execute \"%connector%\" connector"
+            select:
+                connector: "Please select connector to execute"
+
+        messages:
+            connector:
+                notFound: "Connector was not found in system."
+                disabled: "Connector is disabled. Disabled connector could not be executed."
+            error: "Something went wrong, connector was terminated."
+
+    install:
+        title: "Modbus connector - installer"
+        subtitle: "This action will create|update|delete connector configuration"
+
+        actions:
+            create:
+                connector: "Create connector"
+                device: "Create device"
+                register: "Configure register"
+            update:
+                connector: "Edit connector"
+                device: "Edit device"
+                register: "Edit register"
+            remove:
+                connector: "Delete connector"
+                device: "Delete device"
+                register: "Delete register"
+            manage:
+                connector: "Manage connector"
+                device: "Manage device"
+                register: "Manage register"
+            list:
+                connectors: "List connectors"
+                devices: "List devices"
+                registers: "List registers"
+            nothing: "Nothing"
+
+        questions:
+            create:
+                connector: "Would you like to create new connector configuration?"
+                devices: "Would you like to configure connector device(s)?"
+                device: "Would you like to create new device in connector?"
+                registers: "Would you like to configure device register(s)?"
+                register: "Would you like to configure another device register?"
+            manage:
+                devices: "Would you like to manage connector devices?"
+                registers: "Would you like to manage device registers?"
+            select:
+                item:
+                    connector: "Please select connector to manage"
+                    device: "Please select device to manage"
+                    register: "Please select register to manage"
+                connector:
+                    mode: "In what mode should this connector communicate with Modbus devices?"
+                    baudRate: "What communication baud rate devices use?"
+                    byteSize: "What communication byte size devices uses?"
+                    dataParity: "What parity checking devices use?"
+                    stopBits: "How many stop bits devices use?"
+                device:
+                    byteOrder: "What byte order device uses?"
+                register:
+                    createType: "What type of register you would like to add?"
+                    updateType: "What type of register you want to configure?"
+                    valueDataType: "What type of data type provided value is?"
+            provide:
+                connector:
+                    identifier: "Provide connector identifier"
+                    name: "Provide connector name"
+                    rtuInterface: "Provide interface path"
+                device:
+                    identifier: "Provide device identifier"
+                    name: "Provide device name"
+                    stationAddress: "Provide device station address"
+                    ipAddress: "Provide device IP address"
+                    port: "Provide device IP address port"
+                    unitIdentifier: "Provide device unit identifier"
+                register:
+                    address: "Provide register address. It have to be number"
+                    addresses: "Provide register address. It could be single number or range like 1-2"
+                    name: "Provide register name (optional)"
+                    readingDelay: "Provide register sampling time (s)"
+                    dataType: "What type of data type this register has"
+                switch:
+                    readOnValue: "Provide read value representing Switch ON"
+                    readOffValue: "Provide read value representing Switch OFF"
+                    readToggleValue: "Provide read value representing Switch TOGGLE"
+                    writeOnValue: "Provide write value representing Switch ON"
+                    writeOffValue: "Provide write value representing Switch OFF"
+                    writeToggleValue: "Provide write value representing Switch TOGGLE"
+                button:
+                    readPressValue: "Provide read value representing Button PRESSED"
+                    readReleaseValue: "Provide read value representing Button RELEASED"
+                    readClickValue: "Provide read value representing Button CLICKED"
+                    readDoubleClickValue: "Provide read value representing Button DOUBLE CLICKED"
+                    readTripleClickValue: "Provide read value representing Button TRIPLE CLICKED"
+                    readLongClickValue: "Provide read value representing Button LONG CLICKED"
+                    readExtraLongClickValue: "Provide read value representing Button EXTRA LONG CLICKED"
+                    writePressValue: "Provide write value representing Button PRESSED"
+                    writeReleaseValue: "Provide write value representing Button RELEASED"
+                    writeClickValue: "Provide write value representing Button CLICKED"
+                    writeDoubleClickValue: "Provide write value representing Button DOUBLE CLICKED"
+                    writeTripleClickValue: "Provide write value representing Button TRIPLE CLICKED"
+                    writeLongClickValue: "Provide write value representing Button LONG CLICKED"
+                    writeExtraLongClickValue: "Provide write value representing Button EXTRA LONG CLICKED"
+            changeMode: "Do you want to change connector devices support?"
+            disable:
+                connector: "Do you want to disable connector?"
+            enable:
+                connector: "Do you want to enable connector?"
+            skipValue: "Are you sure to skip this value?"
+            switch:
+                hasOn: "Does register support Switch ON action?"
+                hasOff: "Does register support Switch OFF action?"
+                hasToggle: "Does register support Switch TOGGLE action?"
+            button:
+                hasPress: "Does register support Button PRESSED action?"
+                hasRelease: "Does register support Button RELEASED action?"
+                hasClick: "Does register support Button CLICKED action?"
+                hasDoubleClick: "Does register support Button DOUBLE CLICKED action?"
+                hasTripleClick: "Does register support Button TRIPLE CLICKED action?"
+                hasLongClick: "Does register support Button LONG CLICKED action?"
+                hasExtraLongClick: "Does register support Button EXTRA LONG CLICKED action?"
+
+        answers:
+            mode:
+                rtu: "Modbus devices over serial line"
+                tcp: "Modbus devices over TCP network"
+            parity:
+                none: "None"
+                odd: "Odd verification"
+                even: "Even verification"
+            endian:
+                big: "Big-Endian"
+                bigSwap: "Swapped Big-Endian"
+                little: "Little-Endian"
+                littleSwap: "Swappd Little-Endian"
+            registerType:
+                discreteInput: "Discrete Input"
+                coil: "Coil"
+                inputRegister: "Input Register"
+                holdingRegister: "Holding Register"
+
+        data:
+            name: "Name"
+            type: "Type"
+            address: "Address"
+            dataType: "Data Type"
+            readingDelay: "Samping time (in seconds)"
+            devicesCnt: "# Devices"
+            discreteInputRegistersCnt: "# Discrete inputs"
+            coilRegistersCnt: "# Coils"
+            inputRegistersCnt: "# Input registers"
+            holdingRegistersCnt: "# Holding registers"
+
+        messages:
+            identifier:
+                connector:
+                    used: "This identifier is already used."
+                    missing: "Connector identifier have to be provided."
+                device:
+                    used: "This identifier is already used."
+                    missing: "Device identifier have to provided."
+            create:
+                connector:
+                    success: "Connector \"%name%\" was successfully created."
+                    error: "Something went wrong, connector could not be created. An error was logged."
+                device:
+                    success: "Device \"%name%\" was successfully created."
+                    error: "Something went wrong, device could not be created. Error was logged."
+                registers:
+                    success: "Registers for device \"%name%\" were successfully created."
+                    error: "Something went wrong, device registers could not be created. Error was logged."
+            update:
+                connector:
+                    success: "Connector \"%name%\" was successfully updated."
+                    error: "Something went wrong, connector could not be updated. An error was logged."
+                device:
+                    success: "Device \"%name%\" was successfully updated."
+                    error: "Something went wrong, device could not be updated. Error was logged."
+                register:
+                    success: "Device register \"%name%\" was successfully updated."
+                    error: "Something went wrong, device register could not be updated. Error was logged."
+            remove:
+                connector:
+                    success: "Connector \"%name%\" was successfully removed."
+                    error: "Something went wrong, connector could not be removed. An error was logged."
+                device:
+                    success: "Device \"%name%\" was successfully removed."
+                    error: "Something went wrong, device could not be removed. Error was logged."
+                register:
+                    success: "Device register \"%name%\" was successfully removed."
+                    error: "Something went wrong, device register could not be removed. Error was logged."
+            noConnector: "Connector could not be loaded"
+            noDevices: "No devices registered in selected connector."
+            noRegisters: "No registers registered in selected device."
+            deviceStationAddressTaken: "Device station address already taken"
+            unitIdentifierTaken: "Device unit identifier already taken"
+            registerAddressTaken: "Provided register address \"%address%\" from provided range is already taken"
+            switch:
+                readOnValueError: "Provide valid value for Switch ON reading"
+                readOffValueError: "Provide valid value for Switch OFF reading"
+                readToggleValueError: "Provide valid value for Switch TOGGLE reading"
+                writeOnValueError: "Provide valid value for Switch ON writing"
+                writeOffValueError: "Provide valid value for Switch OFF writing"
+                writeToggleValueError: "Provide valid value for Switch TOGGLE writing"
+            button:
+                readPressValueError: "Provide valid value for Button PRESSED reading"
+                readReleaseValueError: "Provide valid value for Button RELEASED reading"
+                readClickValueError: "Provide valid value for Button CLICKED reading"
+                readDoubleClickValueError: "Provide valid value for Button DOUBLE CLICKED reading"
+                readTripleClickValueError: "Provide valid value for Button TRIPLE CLICKED reading"
+                readLongClickValueError: "Provide valid value for Button LONG CLICKED reading"
+                readExtraLongClickValueError: "Provide valid value for Button EXTRA LONG CLICKED reading"
+                writePressValueError: "Provide valid value for Button PRESSED writing"
+                writeReleaseValueError: "Provide valid value for Button RELEASED writing"
+                writeClickValueError: "Provide valid value for Button CLICKED writing"
+                writeDoubleClickValueError: "Provide valid value for Button DOUBLE CLICKED writing"
+                writeTripleClickValueError: "Provide valid value for Button TRIPLE CLICKED writing"
+                writeLongClickValueError: "Provide valid value for Button LONG CLICKED writing"
+                writeExtraLongClickValueError: "Provide valid value for Button EXTRA LONG CLICKED writing"

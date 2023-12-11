@@ -76,7 +76,7 @@ final class Properties implements Common\EventSubscriber
 		if ($entity instanceof Entities\ModbusDevice) {
 			$findDevicePropertyQuery = new DevicesQueries\Entities\FindDeviceProperties();
 			$findDevicePropertyQuery->forDevice($entity);
-			$findDevicePropertyQuery->byIdentifier(Types\DevicePropertyIdentifier::IDENTIFIER_STATE);
+			$findDevicePropertyQuery->byIdentifier(Types\DevicePropertyIdentifier::STATE);
 
 			$stateProperty = $this->propertiesRepository->findOneBy($findDevicePropertyQuery);
 
@@ -93,8 +93,8 @@ final class Properties implements Common\EventSubscriber
 					'format' => [
 						MetadataTypes\ConnectionState::STATE_CONNECTED,
 						MetadataTypes\ConnectionState::STATE_DISCONNECTED,
-						MetadataTypes\ConnectionState::STATE_STOPPED,
 						MetadataTypes\ConnectionState::STATE_LOST,
+						MetadataTypes\ConnectionState::STATE_ALERT,
 						MetadataTypes\ConnectionState::STATE_UNKNOWN,
 					],
 					'settable' => false,
@@ -104,14 +104,14 @@ final class Properties implements Common\EventSubscriber
 				$this->propertiesManager->create(Utils\ArrayHash::from([
 					'device' => $entity,
 					'entity' => DevicesEntities\Devices\Properties\Dynamic::class,
-					'identifier' => Types\DevicePropertyIdentifier::IDENTIFIER_STATE,
+					'identifier' => Types\DevicePropertyIdentifier::STATE,
 					'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_ENUM),
 					'unit' => null,
 					'format' => [
 						MetadataTypes\ConnectionState::STATE_CONNECTED,
 						MetadataTypes\ConnectionState::STATE_DISCONNECTED,
-						MetadataTypes\ConnectionState::STATE_STOPPED,
 						MetadataTypes\ConnectionState::STATE_LOST,
+						MetadataTypes\ConnectionState::STATE_ALERT,
 						MetadataTypes\ConnectionState::STATE_UNKNOWN,
 					],
 					'settable' => false,
@@ -124,19 +124,19 @@ final class Properties implements Common\EventSubscriber
 		) {
 			if (
 				(
-					$entity->getIdentifier() === Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE
+					$entity->getIdentifier() === Types\ConnectorPropertyIdentifier::CLIENT_MODE
 					&& !Types\ClientMode::isValidValue($entity->getValue())
 				) || (
-					$entity->getIdentifier() === Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_BYTE_SIZE
+					$entity->getIdentifier() === Types\ConnectorPropertyIdentifier::RTU_BYTE_SIZE
 					&& !Types\ByteSize::isValidValue($entity->getValue())
 				) || (
-					$entity->getIdentifier() === Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_BAUD_RATE
+					$entity->getIdentifier() === Types\ConnectorPropertyIdentifier::RTU_BAUD_RATE
 					&& !Types\BaudRate::isValidValue($entity->getValue())
 				) || (
-					$entity->getIdentifier() === Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_PARITY
+					$entity->getIdentifier() === Types\ConnectorPropertyIdentifier::RTU_PARITY
 					&& !Types\Parity::isValidValue($entity->getValue())
 				) || (
-					$entity->getIdentifier() === Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_STOP_BITS
+					$entity->getIdentifier() === Types\ConnectorPropertyIdentifier::RTU_STOP_BITS
 					&& !Types\StopBits::isValidValue($entity->getValue())
 				)
 			) {
@@ -151,7 +151,7 @@ final class Properties implements Common\EventSubscriber
 		) {
 			if (
 				(
-					$entity->getIdentifier() === Types\DevicePropertyIdentifier::IDENTIFIER_BYTE_ORDER
+					$entity->getIdentifier() === Types\DevicePropertyIdentifier::BYTE_ORDER
 					&& !Types\ByteOrder::isValidValue($entity->getValue())
 				)
 			) {

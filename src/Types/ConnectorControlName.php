@@ -33,7 +33,12 @@ class ConnectorControlName extends Consistence\Enum\Enum
 	/**
 	 * Define device states
 	 */
-	public const NAME_REBOOT = MetadataTypes\ControlName::NAME_REBOOT;
+	public const REBOOT = MetadataTypes\ControlName::NAME_REBOOT;
+
+	public function getValue(): string
+	{
+		return strval(parent::getValue());
+	}
 
 	public function __toString(): string
 	{

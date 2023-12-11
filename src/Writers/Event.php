@@ -15,25 +15,12 @@
 
 namespace FastyBird\Connector\Modbus\Writers;
 
-use DateTimeInterface;
-use FastyBird\Connector\Modbus\Clients;
 use FastyBird\Connector\Modbus\Entities;
-use FastyBird\Connector\Modbus\Helpers;
-use FastyBird\Connector\Modbus\Queries;
-use FastyBird\DateTimeFactory;
-use FastyBird\Library\Bootstrap\Helpers as BootstrapHelpers;
-use FastyBird\Library\Metadata\Types as MetadataTypes;
+use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Module\Devices\Events as DevicesEvents;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
-use FastyBird\Module\Devices\Models as DevicesModels;
-use FastyBird\Module\Devices\States as DevicesStates;
-use Nette;
-use Nette\Utils;
-use Psr\Log;
-use Ramsey\Uuid;
+use FastyBird\Module\Devices\Queries as DevicesQueries;
 use Symfony\Component\EventDispatcher;
-use Throwable;
-use function assert;
 
 /**
  * Event based properties writer
@@ -43,24 +30,10 @@ use function assert;
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-class Event implements Writer, EventDispatcher\EventSubscriberInterface
+class Event extends Periodic implements Writer, EventDispatcher\EventSubscriberInterface
 {
 
-	use Nette\SmartObject;
-
 	public const NAME = 'event';
-
-	/** @var array<string, Clients\Client> */
-	private array $clients = [];
-
-	public function __construct(
-		private readonly Helpers\Property $propertyStateHelper,
-		private readonly DateTimeFactory\Factory $dateTimeFactory,
-		private readonly DevicesModels\Entities\Channels\ChannelsRepository $channelsRepository,
-		private readonly Log\LoggerInterface $logger = new Log\NullLogger(),
-	)
-	{
-	}
 
 	public static function getSubscribedEvents(): array
 	{
@@ -70,41 +43,12 @@ class Event implements Writer, EventDispatcher\EventSubscriberInterface
 		];
 	}
 
-	public function connect(
-		Entities\ModbusConnector $connector,
-		Clients\Client $client,
-	): void
-	{
-		$this->clients[$connector->getPlainId()] = $client;
-	}
-
-	public function disconnect(
-		Entities\ModbusConnector $connector,
-		Clients\Client $client,
-	): void
-	{
-		unset($this->clients[$connector->getPlainId()]);
-	}
-
 	/**
 	 * @throws DevicesExceptions\InvalidState
+	 * @throws Exceptions\Runtime
 	 */
 	public function stateChanged(
 		DevicesEvents\ChannelPropertyStateEntityCreated|DevicesEvents\ChannelPropertyStateEntityUpdated $event,
-	): void
-	{
-		foreach ($this->clients as $id => $client) {
-			$this->processClient(Uuid\Uuid::fromString($id), $event, $client);
-		}
-	}
-
-	/**
-	 * @throws DevicesExceptions\InvalidState
-	 */
-	public function processClient(
-		Uuid\UuidInterface $connectorId,
-		DevicesEvents\ChannelPropertyStateEntityCreated|DevicesEvents\ChannelPropertyStateEntityUpdated $event,
-		Clients\Client $client,
 	): void
 	{
 		$property = $event->getProperty();
@@ -115,64 +59,41 @@ class Event implements Writer, EventDispatcher\EventSubscriberInterface
 			return;
 		}
 
-		$findChannelQuery = new Queries\Entities\FindChannels();
+		$findChannelQuery = new DevicesQueries\Configuration\FindChannels();
 		$findChannelQuery->byId($property->getChannel());
+		$findChannelQuery->byType(Entities\ModbusChannel::TYPE);
 
-		$channel = $this->channelsRepository->findOneBy($findChannelQuery, Entities\ModbusChannel::class);
+		$channel = $this->channelsConfigurationRepository->findOneBy($findChannelQuery);
 
 		if ($channel === null) {
 			return;
 		}
 
-		if (!$channel->getDevice()->getConnector()->getId()->equals($connectorId)) {
+		$findDeviceQuery = new DevicesQueries\Configuration\FindDevices();
+		$findDeviceQuery->byId($channel->getDevice());
+		$findDeviceQuery->byType(Entities\ModbusDevice::TYPE);
+
+		$device = $this->devicesConfigurationRepository->findOneBy($findDeviceQuery);
+
+		if ($device === null) {
 			return;
 		}
 
-		$device = $channel->getDevice();
+		if (!$device->getConnector()->equals($this->connector->getId())) {
+			return;
+		}
 
-		assert($device instanceof Entities\ModbusDevice);
-
-		$client->writeChannelProperty($device, $channel, $property)
-			->then(function () use ($property): void {
-				$this->propertyStateHelper->setValue(
-					$property,
-					Utils\ArrayHash::from([
-						DevicesStates\Property::PENDING_FIELD => $this->dateTimeFactory->getNow()->format(
-							DateTimeInterface::ATOM,
-						),
-					]),
-				);
-			})
-			->catch(function (Throwable $ex) use ($connectorId, $device, $channel, $property): void {
-				$this->logger->error(
-					'Could write new property state',
-					[
-						'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
-						'type' => 'event-writer',
-						'exception' => BootstrapHelpers\Logger::buildException($ex),
-						'connector' => [
-							'id' => $connectorId->toString(),
-						],
-						'device' => [
-							'id' => $device->getPlainId(),
-						],
-						'channel' => [
-							'id' => $channel->getPlainId(),
-						],
-						'property' => [
-							'id' => $property->getId()->toString(),
-						],
-					],
-				);
-
-				$this->propertyStateHelper->setValue(
-					$property,
-					Utils\ArrayHash::from([
-						DevicesStates\Property::EXPECTED_VALUE_FIELD => null,
-						DevicesStates\Property::PENDING_FIELD => false,
-					]),
-				);
-			});
+		$this->queue->append(
+			$this->entityHelper->create(
+				Entities\Messages\WriteChannelPropertyState::class,
+				[
+					'connector' => $device->getConnector(),
+					'device' => $device->getId(),
+					'channel' => $channel->getId(),
+					'property' => $property->getId(),
+				],
+			),
+		);
 	}
 
 }

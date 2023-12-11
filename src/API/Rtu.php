@@ -20,6 +20,7 @@ use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Types;
 use Nette;
+use Nette\Utils;
 use function array_combine;
 use function array_fill;
 use function array_keys;
@@ -29,6 +30,7 @@ use function array_values;
 use function count;
 use function current;
 use function decbin;
+use function get_loaded_extensions;
 use function pack;
 use function str_repeat;
 use function str_split;
@@ -36,7 +38,6 @@ use function strlen;
 use function strrev;
 use function substr;
 use function unpack;
-use function usleep;
 
 /**
  * Modbus RTU API interface
@@ -55,10 +56,61 @@ class Rtu
 
 	private const MODBUS_ERROR = 'C1station/C1error/C1exception/';
 
+	private API\Interfaces\Serial $interface;
+
+	private bool $isOpen = false;
+
+	/**
+	 * @throws Exceptions\InvalidState
+	 */
 	public function __construct(
-		private readonly API\Interfaces\Serial $interface,
+		Types\BaudRate $baudRate,
+		Types\ByteSize $byteSize,
+		Types\StopBits $stopBits,
+		Types\Parity $parity,
+		string $interface,
 	)
 	{
+		$configuration = new API\Interfaces\Configuration(
+			$baudRate,
+			$byteSize,
+			$stopBits,
+			$parity,
+			false,
+			false,
+		);
+
+		$useDio = false;
+
+		foreach (get_loaded_extensions() as $extension) {
+			if (Utils\Strings::contains('dio', Utils\Strings::lower($extension))) {
+				$useDio = true;
+
+				break;
+			}
+		}
+
+		$this->interface = $useDio
+			? new API\Interfaces\SerialDio($interface, $configuration)
+			: new API\Interfaces\SerialFile($interface, $configuration);
+	}
+
+	/**
+	 * @throws Exceptions\InvalidState
+	 */
+	public function open(): void
+	{
+		$this->interface->open();
+		$this->isOpen = true;
+	}
+
+	/**
+	 * @throws Exceptions\InvalidState
+	 */
+	public function close(): void
+	{
+		$this->isOpen = false;
+		$this->interface->close();
 	}
 
 	/**
@@ -91,7 +143,7 @@ class Rtu
 	): string|Entities\API\ReadDigitalInputs
 	{
 		return $this->readDigitalRegisters(
-			Types\ModbusFunction::get(Types\ModbusFunction::FUNCTION_CODE_READ_COIL),
+			Types\ModbusFunction::get(Types\ModbusFunction::READ_COIL),
 			$station,
 			$startingAddress,
 			$quantity,
@@ -115,7 +167,7 @@ class Rtu
 	): string|Entities\API\ReadDigitalInputs
 	{
 		return $this->readDigitalRegisters(
-			Types\ModbusFunction::get(Types\ModbusFunction::FUNCTION_CODE_READ_DISCRETE),
+			Types\ModbusFunction::get(Types\ModbusFunction::READ_DISCRETE),
 			$station,
 			$startingAddress,
 			$quantity,
@@ -139,7 +191,7 @@ class Rtu
 	): string|Entities\API\ReadAnalogInputs
 	{
 		return $this->readAnalogRegisters(
-			Types\ModbusFunction::get(Types\ModbusFunction::FUNCTION_CODE_READ_HOLDINGS_REGISTERS),
+			Types\ModbusFunction::get(Types\ModbusFunction::READ_HOLDINGS_REGISTERS),
 			$station,
 			$startingAddress,
 			$quantity,
@@ -163,7 +215,7 @@ class Rtu
 	): string|Entities\API\ReadAnalogInputs
 	{
 		return $this->readAnalogRegisters(
-			Types\ModbusFunction::get(Types\ModbusFunction::FUNCTION_CODE_READ_INPUTS_REGISTERS),
+			Types\ModbusFunction::get(Types\ModbusFunction::READ_INPUTS_REGISTERS),
 			$station,
 			$startingAddress,
 			$quantity,
@@ -186,7 +238,7 @@ class Rtu
 		bool $raw = false,
 	): string|Entities\API\WriteCoil
 	{
-		$functionCode = Types\ModbusFunction::get(Types\ModbusFunction::FUNCTION_CODE_WRITE_SINGLE_COIL);
+		$functionCode = Types\ModbusFunction::get(Types\ModbusFunction::WRITE_SINGLE_COIL);
 
 		// Pack header (transform to binary)
 		$request = pack('C2n1', $station, $functionCode->getValue(), $coilAddress);
@@ -239,10 +291,10 @@ class Rtu
 	{
 		$functionCode = count($value) === 2
 			? Types\ModbusFunction::get(
-				Types\ModbusFunction::FUNCTION_CODE_WRITE_SINGLE_HOLDING_REGISTER,
+				Types\ModbusFunction::WRITE_SINGLE_HOLDING_REGISTER,
 			)
 			: Types\ModbusFunction::get(
-				Types\ModbusFunction::FUNCTION_CODE_WRITE_MULTIPLE_HOLDINGS_REGISTERS,
+				Types\ModbusFunction::WRITE_MULTIPLE_HOLDINGS_REGISTERS,
 			);
 
 		// Pack header (transform to binary)
@@ -288,9 +340,11 @@ class Rtu
 	 */
 	private function sendRequest(string $request): string
 	{
-		$this->interface->send($request);
+		if (!$this->isOpen) {
+			throw new Exceptions\ModbusRtu('Connection was closed');
+		}
 
-		usleep((int) (0.1 * 1000_000));
+		$this->interface->send($request);
 
 		$response = $this->interface->read();
 

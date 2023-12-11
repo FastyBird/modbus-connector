@@ -31,16 +31,16 @@ use function is_string;
 class ModbusConnector extends DevicesEntities\Connectors\Connector
 {
 
-	public const CONNECTOR_TYPE = 'modbus';
+	public const TYPE = 'modbus';
 
 	public function getType(): string
 	{
-		return self::CONNECTOR_TYPE;
+		return self::TYPE;
 	}
 
 	public function getDiscriminatorName(): string
 	{
-		return self::CONNECTOR_TYPE;
+		return self::TYPE;
 	}
 
 	public function getSource(): MetadataTypes\ConnectorSource
@@ -58,7 +58,7 @@ class ModbusConnector extends DevicesEntities\Connectors\Connector
 		$property = $this->properties
 			->filter(
 				// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-				static fn (DevicesEntities\Connectors\Properties\Property $property): bool => $property->getIdentifier() === Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE
+				static fn (DevicesEntities\Connectors\Properties\Property $property): bool => $property->getIdentifier() === Types\ConnectorPropertyIdentifier::CLIENT_MODE
 			)
 			->first();
 
@@ -81,7 +81,7 @@ class ModbusConnector extends DevicesEntities\Connectors\Connector
 		$property = $this->properties
 			->filter(
 			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-				static fn (DevicesEntities\Connectors\Properties\Property $property): bool => $property->getIdentifier() === Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_BYTE_SIZE
+				static fn (DevicesEntities\Connectors\Properties\Property $property): bool => $property->getIdentifier() === Types\ConnectorPropertyIdentifier::RTU_BYTE_SIZE
 			)
 			->first();
 
@@ -105,7 +105,7 @@ class ModbusConnector extends DevicesEntities\Connectors\Connector
 		$property = $this->properties
 			->filter(
 			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-				static fn (DevicesEntities\Connectors\Properties\Property $property): bool => $property->getIdentifier() === Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_BAUD_RATE
+				static fn (DevicesEntities\Connectors\Properties\Property $property): bool => $property->getIdentifier() === Types\ConnectorPropertyIdentifier::RTU_BAUD_RATE
 			)
 			->first();
 
@@ -117,7 +117,7 @@ class ModbusConnector extends DevicesEntities\Connectors\Connector
 			return Types\BaudRate::get($property->getValue());
 		}
 
-		return Types\BaudRate::get(Types\BaudRate::BAUD_RATE_9600);
+		return Types\BaudRate::get(Types\BaudRate::RATE_9600);
 	}
 
 	/**
@@ -129,7 +129,7 @@ class ModbusConnector extends DevicesEntities\Connectors\Connector
 		$property = $this->properties
 			->filter(
 			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-				static fn (DevicesEntities\Connectors\Properties\Property $property): bool => $property->getIdentifier() === Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_PARITY
+				static fn (DevicesEntities\Connectors\Properties\Property $property): bool => $property->getIdentifier() === Types\ConnectorPropertyIdentifier::RTU_PARITY
 			)
 			->first();
 
@@ -141,7 +141,7 @@ class ModbusConnector extends DevicesEntities\Connectors\Connector
 			return Types\Parity::get($property->getValue());
 		}
 
-		return Types\Parity::get(Types\Parity::PARITY_NONE);
+		return Types\Parity::get(Types\Parity::NONE);
 	}
 
 	/**
@@ -153,7 +153,7 @@ class ModbusConnector extends DevicesEntities\Connectors\Connector
 		$property = $this->properties
 			->filter(
 			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-				static fn (DevicesEntities\Connectors\Properties\Property $property): bool => $property->getIdentifier() === Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_STOP_BITS
+				static fn (DevicesEntities\Connectors\Properties\Property $property): bool => $property->getIdentifier() === Types\ConnectorPropertyIdentifier::RTU_STOP_BITS
 			)
 			->first();
 
@@ -165,7 +165,7 @@ class ModbusConnector extends DevicesEntities\Connectors\Connector
 			return Types\StopBits::get($property->getValue());
 		}
 
-		return Types\StopBits::get(Types\StopBits::STOP_BIT_ONE);
+		return Types\StopBits::get(Types\StopBits::ONE);
 	}
 
 	/**
@@ -177,7 +177,7 @@ class ModbusConnector extends DevicesEntities\Connectors\Connector
 		$property = $this->properties
 			->filter(
 			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-				static fn (DevicesEntities\Connectors\Properties\Property $property): bool => $property->getIdentifier() === Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_INTERFACE
+				static fn (DevicesEntities\Connectors\Properties\Property $property): bool => $property->getIdentifier() === Types\ConnectorPropertyIdentifier::RTU_INTERFACE
 			)
 			->first();
 

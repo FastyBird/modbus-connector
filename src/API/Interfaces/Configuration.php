@@ -53,10 +53,10 @@ final class Configuration
 		bool $isCanonical = true,
 	)
 	{
-		$this->baudRate = $baudRate ?? Types\BaudRate::get(Types\BaudRate::BAUD_RATE_9600);
+		$this->baudRate = $baudRate ?? Types\BaudRate::get(Types\BaudRate::RATE_9600);
 		$this->dataBits = $dataBits ?? Types\ByteSize::get(Types\ByteSize::SIZE_8);
-		$this->stopBits = $stopBits ?? Types\StopBits::get(Types\StopBits::STOP_BIT_ONE);
-		$this->parity = $parity ?? Types\Parity::get(Types\Parity::PARITY_NONE);
+		$this->stopBits = $stopBits ?? Types\StopBits::get(Types\StopBits::ONE);
+		$this->parity = $parity ?? Types\Parity::get(Types\Parity::NONE);
 
 		$this->flowControl = $flowControl ? 1 : 0;
 		$this->isCanonical = $isCanonical ? 1 : 0;

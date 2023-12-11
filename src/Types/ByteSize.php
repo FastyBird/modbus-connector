@@ -16,6 +16,7 @@
 namespace FastyBird\Connector\Modbus\Types;
 
 use Consistence;
+use function intval;
 use function strval;
 
 /**
@@ -41,6 +42,11 @@ class ByteSize extends Consistence\Enum\Enum
 	public const SIZE_7 = 7;
 
 	public const SIZE_8 = 8;
+
+	public function getValue(): int
+	{
+		return intval(parent::getValue());
+	}
 
 	/**
 	 * @return array<int>

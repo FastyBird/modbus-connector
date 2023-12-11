@@ -15,15 +15,23 @@
 
 namespace FastyBird\Connector\Modbus\Connector;
 
+use FastyBird\Connector\Modbus;
 use FastyBird\Connector\Modbus\Clients;
-use FastyBird\Connector\Modbus\Consumers;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Exceptions;
+use FastyBird\Connector\Modbus\Helpers;
+use FastyBird\Connector\Modbus\Queue;
+use FastyBird\Connector\Modbus\Writers;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
+use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Connectors as DevicesConnectors;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
+use FastyBird\Module\Devices\Events as DevicesEvents;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
+use FastyBird\Module\Devices\Models as DevicesModels;
+use FastyBird\Module\Devices\Queries as DevicesQueries;
 use Nette;
+use Psr\EventDispatcher as PsrEventDispatcher;
 use React\EventLoop;
 use ReflectionClass;
 use function array_key_exists;
@@ -47,7 +55,9 @@ final class Connector implements DevicesConnectors\Connector
 
 	private Clients\Client|null $client = null;
 
-	private EventLoop\TimerInterface|null $consumerTimer = null;
+	private Writers\Writer|null $writer = null;
+
+	private EventLoop\TimerInterface|null $consumersTimer = null;
 
 	/**
 	 * @param array<Clients\ClientFactory> $clientsFactories
@@ -55,15 +65,21 @@ final class Connector implements DevicesConnectors\Connector
 	public function __construct(
 		private readonly DevicesEntities\Connectors\Connector $connector,
 		private readonly array $clientsFactories,
-		private readonly Consumers\Messages $consumer,
+		private readonly Helpers\Connector $connectorHelper,
+		private readonly Writers\WriterFactory $writerFactory,
+		private readonly Queue\Queue $queue,
+		private readonly Queue\Consumers $consumers,
+		private readonly Modbus\Logger $logger,
+		private readonly DevicesModels\Configuration\Connectors\Repository $connectorsConfigurationRepository,
 		private readonly EventLoop\LoopInterface $eventLoop,
+		private readonly PsrEventDispatcher\EventDispatcherInterface|null $dispatcher = null,
 	)
 	{
 	}
 
 	/**
+	 * @throws DevicesExceptions\InvalidState
 	 * @throws Exceptions\InvalidState
-	 * @throws DevicesExceptions\Terminate
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
 	 */
@@ -71,7 +87,39 @@ final class Connector implements DevicesConnectors\Connector
 	{
 		assert($this->connector instanceof Entities\ModbusConnector);
 
-		$mode = $this->connector->getClientMode();
+		$this->logger->info(
+			'Starting Modbus connector service',
+			[
+				'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+				'type' => 'connector',
+				'connector' => [
+					'id' => $this->connector->getId()->toString(),
+				],
+			],
+		);
+
+		$findConnectorQuery = new DevicesQueries\Configuration\FindConnectors();
+		$findConnectorQuery->byId($this->connector->getId());
+		$findConnectorQuery->byType(Entities\ModbusConnector::TYPE);
+
+		$connector = $this->connectorsConfigurationRepository->findOneBy($findConnectorQuery);
+
+		if ($connector === null) {
+			$this->logger->error(
+				'Connector could not be loaded',
+				[
+					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+					'type' => 'connector',
+					'connector' => [
+						'id' => $this->connector->getId()->toString(),
+					],
+				],
+			);
+
+			return;
+		}
+
+		$mode = $this->connectorHelper->getClientMode($connector);
 
 		foreach ($this->clientsFactories as $clientFactory) {
 			$rc = new ReflectionClass($clientFactory);
@@ -82,41 +130,86 @@ final class Connector implements DevicesConnectors\Connector
 				array_key_exists(Clients\ClientFactory::MODE_CONSTANT_NAME, $constants)
 				&& $mode->equalsValue($constants[Clients\ClientFactory::MODE_CONSTANT_NAME])
 			) {
-				$this->client = $clientFactory->create($this->connector);
+				$this->client = $clientFactory->create($connector);
 			}
 		}
 
 		if ($this->client === null) {
-			throw new DevicesExceptions\Terminate('Connector client is not configured');
+			$this->dispatcher?->dispatch(
+				new DevicesEvents\TerminateConnector(
+					MetadataTypes\ConnectorSource::get(MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS),
+					'Connector client is not configured',
+				),
+			);
+
+			return;
 		}
 
 		$this->client->connect();
 
-		$this->consumerTimer = $this->eventLoop->addPeriodicTimer(
+		$this->writer = $this->writerFactory->create($connector);
+		$this->writer->connect();
+
+		$this->consumersTimer = $this->eventLoop->addPeriodicTimer(
 			self::QUEUE_PROCESSING_INTERVAL,
 			async(function (): void {
-				$this->consumer->consume();
+				$this->consumers->consume();
 			}),
+		);
+
+		$this->logger->info(
+			'Modbus connector service has been started',
+			[
+				'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+				'type' => 'connector',
+				'connector' => [
+					'id' => $this->connector->getId()->toString(),
+				],
+			],
 		);
 	}
 
 	public function discover(): void
 	{
-		// TODO: Implement it
+		assert($this->connector instanceof Entities\ModbusConnector);
+
+		$this->logger->error(
+			'Devices discovery is not allowed for Modbus connector type',
+			[
+				'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+				'type' => 'connector',
+				'connector' => [
+					'id' => $this->connector->getId()->toString(),
+				],
+			],
+		);
 	}
 
 	public function terminate(): void
 	{
 		$this->client?->disconnect();
 
-		if ($this->consumerTimer !== null) {
-			$this->eventLoop->cancelTimer($this->consumerTimer);
+		$this->writer?->disconnect();
+
+		if ($this->consumersTimer !== null && $this->queue->isEmpty()) {
+			$this->eventLoop->cancelTimer($this->consumersTimer);
 		}
+
+		$this->logger->info(
+			'Modbus connector has been terminated',
+			[
+				'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+				'type' => 'connector',
+				'connector' => [
+					'id' => $this->connector->getId()->toString(),
+				],
+			],
+		);
 	}
 
 	public function hasUnfinishedTasks(): bool
 	{
-		return !$this->consumer->isEmpty() && $this->consumerTimer !== null;
+		return !$this->queue->isEmpty() && $this->consumersTimer !== null;
 	}
 
 }

@@ -68,7 +68,7 @@ final class SerialDio extends Serial
 			throw new Exceptions\InvalidState('Setting blocking error');
 		}
 
-		if (!stream_set_timeout($this->resource, 0, 2_000)) {
+		if (!stream_set_timeout($this->resource, 0, 100_000)) {
 			throw new Exceptions\InvalidState('Setting timeout error');
 		}
 	}

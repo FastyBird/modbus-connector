@@ -19,23 +19,23 @@ use FastyBird\Connector\Modbus\API;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Helpers;
+use FastyBird\Connector\Modbus\Queue;
 use FastyBird\Connector\Modbus\Types;
+use FastyBird\Library\Metadata\Documents as MetadataDocuments;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
-use FastyBird\Library\Metadata\Utilities as MetadataUtilities;
-use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
 use FastyBird\Module\Devices\Models as DevicesModels;
 use FastyBird\Module\Devices\Queries as DevicesQueries;
-use FastyBird\Module\Devices\States as DevicesStates;
-use Nette\Utils;
 use function array_splice;
 use function usort;
 
 /**
  * @property-read API\Transformer $transformer
- * @property-read Helpers\Property $propertyStateHelper
- * @property-read DevicesModels\Entities\Channels\Properties\PropertiesRepository $channelPropertiesRepository
+ * @property-read Helpers\Entity $entityHelper
+ * @property-read Helpers\Device $deviceHelper
+ * @property-read Queue\Queue $queue
+ * @property-read DevicesModels\Configuration\Channels\Properties\Repository $channelsPropertiesConfigurationRepository
  */
 trait TReading
 {
@@ -139,28 +139,97 @@ trait TReading
 
 	/**
 	 * @throws DevicesExceptions\InvalidState
-	 * @throws DevicesExceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
+	 * @throws Exceptions\Runtime
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
-	 * @throws MetadataExceptions\MalformedInput
+	 */
+	private function processDigitalRegistersResponse(
+		Entities\Clients\ReadRequest $request,
+		Entities\API\ReadDigitalInputs $response,
+		MetadataDocuments\DevicesModule\Device $device,
+	): void
+	{
+		foreach ($response->getRegisters() as $address => $value) {
+			if ($request instanceof Entities\Clients\ReadCoilsRequest) {
+				$channel = $this->deviceHelper->findChannelByType(
+					$device,
+					$address,
+					Types\ChannelType::get(Types\ChannelType::COIL),
+				);
+
+			} elseif ($request instanceof Entities\Clients\ReadDiscreteInputsRequest) {
+				$channel = $this->deviceHelper->findChannelByType(
+					$device,
+					$address,
+					Types\ChannelType::get(Types\ChannelType::DISCRETE_INPUT),
+				);
+
+			} else {
+				continue;
+			}
+
+			if ($channel === null) {
+				throw new Exceptions\InvalidState(
+					'Register could not be loaded. Received data could not be handled',
+				);
+			}
+
+			$findChannelPropertyQuery = new DevicesQueries\Configuration\FindChannelDynamicProperties();
+			$findChannelPropertyQuery->forChannel($channel);
+			$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::VALUE);
+
+			$property = $this->channelsPropertiesConfigurationRepository->findOneBy(
+				$findChannelPropertyQuery,
+				MetadataDocuments\DevicesModule\ChannelDynamicProperty::class,
+			);
+
+			if (!$property instanceof MetadataDocuments\DevicesModule\ChannelDynamicProperty) {
+				throw new Exceptions\InvalidState(
+					'Register value storage could not be loaded. Received data could not be handled',
+				);
+			}
+
+			$this->queue->append(
+				$this->entityHelper->create(
+					Entities\Messages\StoreChannelPropertyState::class,
+					[
+						'connector' => $device->getConnector(),
+						'device' => $device->getId(),
+						'channel' => $channel->getId(),
+						'property' => $property->getId(),
+						'value' => $value,
+					],
+				),
+			);
+		}
+	}
+
+	/**
+	 * @throws DevicesExceptions\InvalidState
+	 * @throws Exceptions\InvalidState
+	 * @throws Exceptions\Runtime
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidState
 	 */
 	private function processAnalogRegistersResponse(
 		Entities\Clients\ReadRequest $request,
 		Entities\API\ReadAnalogInputs $response,
-		Entities\ModbusDevice $device,
+		MetadataDocuments\DevicesModule\Device $device,
 	): void
 	{
 		$registersBytes = $response->getRegisters();
 
 		foreach ($request->getAddresses() as $requestAddress) {
 			if ($request instanceof Entities\Clients\ReadHoldingsRegistersRequest) {
-				$channel = $device->findChannelByType(
+				$channel = $this->deviceHelper->findChannelByType(
+					$device,
 					$requestAddress->getAddress(),
 					Types\ChannelType::get(Types\ChannelType::HOLDING_REGISTER),
 				);
 			} elseif ($request instanceof Entities\Clients\ReadInputsRegistersRequest) {
-				$channel = $device->findChannelByType(
+				$channel = $this->deviceHelper->findChannelByType(
+					$device,
 					$requestAddress->getAddress(),
 					Types\ChannelType::get(Types\ChannelType::INPUT_REGISTER),
 				);
@@ -174,13 +243,16 @@ trait TReading
 				);
 			}
 
-			$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelProperties();
+			$findChannelPropertyQuery = new DevicesQueries\Configuration\FindChannelDynamicProperties();
 			$findChannelPropertyQuery->forChannel($channel);
-			$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::IDENTIFIER_VALUE);
+			$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::VALUE);
 
-			$property = $this->channelPropertiesRepository->findOneBy($findChannelPropertyQuery);
+			$property = $this->channelsPropertiesConfigurationRepository->findOneBy(
+				$findChannelPropertyQuery,
+				MetadataDocuments\DevicesModule\ChannelDynamicProperty::class,
+			);
 
-			if (!$property instanceof DevicesEntities\Channels\Properties\Dynamic) {
+			if (!$property instanceof MetadataDocuments\DevicesModule\ChannelDynamicProperty) {
 				throw new Exceptions\InvalidState(
 					'Register value storage could not be loaded. Received data could not be handled',
 				);
@@ -215,29 +287,34 @@ trait TReading
 				|| $deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SHORT)
 				|| $deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_INT)
 			) {
-				$value = $this->transformer->unpackSignedInt($registerBytes, $device->getByteOrder());
+				$value = $this->transformer->unpackSignedInt(
+					$registerBytes,
+					$this->deviceHelper->getByteOrder($device),
+				);
 			} elseif (
 				$deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UCHAR)
 				|| $deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_USHORT)
 				|| $deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UINT)
 			) {
-				$value = $this->transformer->unpackUnsignedInt($registerBytes, $device->getByteOrder());
+				$value = $this->transformer->unpackUnsignedInt(
+					$registerBytes,
+					$this->deviceHelper->getByteOrder($device),
+				);
 			} elseif ($deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_FLOAT)) {
-				$value = $this->transformer->unpackFloat($registerBytes, $device->getByteOrder());
+				$value = $this->transformer->unpackFloat($registerBytes, $this->deviceHelper->getByteOrder($device));
 			}
 
-			$this->propertyStateHelper->setValue(
-				$property,
-				Utils\ArrayHash::from([
-					DevicesStates\Property::ACTUAL_VALUE_FIELD => MetadataUtilities\ValueHelper::flattenValue(
-						$this->transformer->transformValueFromDevice(
-							$property->getDataType(),
-							$property->getFormat(),
-							$value,
-						),
-					),
-					DevicesStates\Property::VALID_FIELD => true,
-				]),
+			$this->queue->append(
+				$this->entityHelper->create(
+					Entities\Messages\StoreChannelPropertyState::class,
+					[
+						'connector' => $device->getConnector(),
+						'device' => $device->getId(),
+						'channel' => $channel->getId(),
+						'property' => $property->getId(),
+						'value' => $value,
+					],
+				),
 			);
 		}
 	}

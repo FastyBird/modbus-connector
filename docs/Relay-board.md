@@ -1,4 +1,6 @@
-![Eletechsup N4D8B08 relay](https://github.com/FastyBird/modbus-connector/blob/main/docs/_media/N4D8B08_relay.jpg)
+<p align="center">
+	<img src="https://github.com/FastyBird/modbus-connector/blob/main/docs/_media/N4D8B08_relay.jpg" alt="Eletechsup N4D8B08 relay"/>
+</p>
 
 # Eletechsup N4D8B08 - multifunction RS485 relay
 
@@ -109,7 +111,7 @@ In the next steps will be configured read and write values.
   [5] i32
   [6] u32
   [7] f
- > 2
+ > 4
 ```
 
 ```shell
@@ -150,7 +152,7 @@ In the next steps will be configured read and write values.
   [5] i32
   [6] u32
   [7] f
- > 2
+ > 4
 ```
 
 ```shell
@@ -178,7 +180,7 @@ In the next steps will be configured read and write values.
   [5] i32
   [6] u32
   [7] f
- > 2
+ > 4
 ```
 
 So in short.

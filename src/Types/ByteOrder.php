@@ -32,17 +32,22 @@ class ByteOrder extends Consistence\Enum\Enum
 	/**
 	 * Define versions
 	 */
-	public const BYTE_ORDER_BIG = 'big';
+	public const BIG = 'big';
 
-	public const BYTE_ORDER_BIG_SWAP = 'big_swap';
+	public const BIG_SWAP = 'big_swap';
 
-	public const BYTE_ORDER_BIG_LOW_WORD_FIRST = 'big_lwf';
+	public const BIG_LOW_WORD_FIRST = 'big_lwf';
 
-	public const BYTE_ORDER_LITTLE = 'little';
+	public const LITTLE = 'little';
 
-	public const BYTE_ORDER_LITTLE_SWAP = 'little_swap';
+	public const LITTLE_SWAP = 'little_swap';
 
-	public const BYTE_ORDER_LITTLE_LOW_WORD_FIRST = 'little_lwf';
+	public const LITTLE_LOW_WORD_FIRST = 'little_lwf';
+
+	public function getValue(): string
+	{
+		return strval(parent::getValue());
+	}
 
 	public function __toString(): string
 	{

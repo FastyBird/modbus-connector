@@ -1,33 +1,35 @@
 <?php declare(strict_types = 1);
 
 /**
- * Consumer.php
+ * FindConnectors.php
  *
  * @license        More in LICENSE.md
  * @copyright      https://www.fastybird.com
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  * @package        FastyBird:ModbusConnector!
- * @subpackage     Consumers
+ * @subpackage     Queries
  * @since          1.0.0
  *
- * @date           18.01.23
+ * @date           07.12.23
  */
 
-namespace FastyBird\Connector\Modbus\Consumers;
+namespace FastyBird\Connector\Modbus\Queries\Entities;
 
 use FastyBird\Connector\Modbus\Entities;
+use FastyBird\Module\Devices\Queries as DevicesQueries;
 
 /**
- * Clients messages consumer interface
+ * Find connectors entities query
+ *
+ * @template T of Entities\ModbusConnector
+ * @extends  DevicesQueries\Entities\FindConnectors<T>
  *
  * @package        FastyBird:ModbusConnector!
- * @subpackage     Consumers
+ * @subpackage     Queries
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-interface Consumer
+class FindConnectors extends DevicesQueries\Entities\FindConnectors
 {
-
-	public function consume(Entities\Messages\Entity $entity): bool;
 
 }

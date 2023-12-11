@@ -33,17 +33,22 @@ class DevicePropertyIdentifier extends Consistence\Enum\Enum
 	/**
 	 * Define device states
 	 */
-	public const IDENTIFIER_STATE = MetadataTypes\DevicePropertyIdentifier::IDENTIFIER_STATE;
+	public const STATE = MetadataTypes\DevicePropertyIdentifier::IDENTIFIER_STATE;
 
-	public const IDENTIFIER_ADDRESS = MetadataTypes\DevicePropertyIdentifier::IDENTIFIER_ADDRESS;
+	public const ADDRESS = MetadataTypes\DevicePropertyIdentifier::IDENTIFIER_ADDRESS;
 
-	public const IDENTIFIER_IP_ADDRESS = MetadataTypes\DevicePropertyIdentifier::IDENTIFIER_IP_ADDRESS;
+	public const IP_ADDRESS = MetadataTypes\DevicePropertyIdentifier::IDENTIFIER_IP_ADDRESS;
 
-	public const IDENTIFIER_IP_ADDRESS_PORT = 'ip_address_port';
+	public const PORT = 'port';
 
-	public const IDENTIFIER_BYTE_ORDER = 'byte_order';
+	public const BYTE_ORDER = 'byte_order';
 
-	public const IDENTIFIER_UNIT_ID = 'unit_id';
+	public const UNIT_ID = 'unit_id';
+
+	public function getValue(): string
+	{
+		return strval(parent::getValue());
+	}
 
 	public function __toString(): string
 	{

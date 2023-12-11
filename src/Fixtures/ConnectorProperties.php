@@ -49,14 +49,14 @@ final class ConnectorProperties extends DataFixtures\AbstractFixture implements 
 
 		$clientModeProperty = new DevicesEntities\Connectors\Properties\Variable(
 			$connector,
-			Types\ConnectorPropertyIdentifier::IDENTIFIER_CLIENT_MODE,
+			Types\ConnectorPropertyIdentifier::CLIENT_MODE,
 		);
 		$clientModeProperty->setDataType(MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING));
-		$clientModeProperty->setValue(Types\ClientMode::MODE_RTU);
+		$clientModeProperty->setValue(Types\ClientMode::RTU);
 
 		$interfaceProperty = new DevicesEntities\Connectors\Properties\Variable(
 			$connector,
-			Types\ConnectorPropertyIdentifier::IDENTIFIER_RTU_INTERFACE,
+			Types\ConnectorPropertyIdentifier::RTU_INTERFACE,
 		);
 		$interfaceProperty->setDataType(MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING));
 		$interfaceProperty->setValue('/dev/ttyUSB0');

@@ -15,9 +15,6 @@
 
 namespace FastyBird\Connector\Modbus\Writers;
 
-use FastyBird\Connector\Modbus\Clients;
-use FastyBird\Connector\Modbus\Entities;
-
 /**
  * Properties writer interface
  *
@@ -29,14 +26,8 @@ use FastyBird\Connector\Modbus\Entities;
 interface Writer
 {
 
-	public function connect(
-		Entities\ModbusConnector $connector,
-		Clients\Client $client,
-	): void;
+	public function connect(): void;
 
-	public function disconnect(
-		Entities\ModbusConnector $connector,
-		Clients\Client $client,
-	): void;
+	public function disconnect(): void;
 
 }
