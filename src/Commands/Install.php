@@ -2412,10 +2412,12 @@ class Install extends Console\Command\Command
 			$findDevicesQuery = new Queries\Entities\FindDevices();
 			$findDevicesQuery->forConnector($connector);
 
-			foreach ($this->devicesRepository->findAllBy(
+			$devices = $this->devicesRepository->findAllBy(
 				$findDevicesQuery,
 				Entities\ModbusDevice::class,
-			) as $connectorDevice) {
+			);
+
+			foreach ($devices as $connectorDevice) {
 				if (
 					$connectorDevice->getAddress() === intval($answer)
 					&& ($device === null || !$device->getId()->equals($connectorDevice->getId()))
@@ -2526,10 +2528,12 @@ class Install extends Console\Command\Command
 			$findDevicesQuery = new Queries\Entities\FindDevices();
 			$findDevicesQuery->forConnector($connector);
 
-			foreach ($this->devicesRepository->findAllBy(
+			$devices = $this->devicesRepository->findAllBy(
 				$findDevicesQuery,
 				Entities\ModbusDevice::class,
-			) as $connectorDevice) {
+			);
+
+			foreach ($devices as $connectorDevice) {
 				if (
 					$connectorDevice->getUnitId() === intval($answer)
 					&& ($device === null || !$device->getId()->equals($connectorDevice->getId()))

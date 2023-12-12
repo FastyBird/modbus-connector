@@ -36,6 +36,11 @@ The connector supports two device interfaces, the first being RS485 on twisted w
 To use [Modbus](https://en.wikipedia.org/wiki/Modbus) devices with the [FastyBird](https://www.fastybird.com) [IoT](https://en.wikipedia.org/wiki/Internet_of_things) ecosystem, you will need to configure at least one connector.
 The connector can be configured using the [FastyBird](https://www.fastybird.com) [IoT](https://en.wikipedia.org/wiki/Internet_of_things) user interface or through the console.
 
+There are two types of connectors available for selection:
+
+- **RTU** - This connector uses serial line to communicate with devices.
+- **TCP/IP** - This connector uses LAN or WAN networks to communicate with devices.
+
 ## Configuring the Connectors, Devices and Registers through the Console
 
 To configure the connector through the console, run the following command:
