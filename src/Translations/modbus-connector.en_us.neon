@@ -213,12 +213,15 @@ cmd:
                     error: "Something went wrong, device register could not be updated. Error was logged."
             remove:
                 connector:
+                    confirm: "This action will remove \"%name%\" connector. This action can not be undone."
                     success: "Connector \"%name%\" was successfully removed."
                     error: "Something went wrong, connector could not be removed. An error was logged."
                 device:
+                    confirm: "This action will remove \"%name%\" device. This action can not be undone."
                     success: "Device \"%name%\" was successfully removed."
                     error: "Something went wrong, device could not be removed. Error was logged."
                 register:
+                    confirm: "This action will remove \"%name%\" registers. This action can not be undone."
                     success: "Device register \"%name%\" was successfully removed."
                     error: "Something went wrong, device register could not be removed. Error was logged."
             noConnector: "Connector could not be loaded"

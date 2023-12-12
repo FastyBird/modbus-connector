@@ -325,7 +325,7 @@ class Install extends Console\Command\Command
 		$connector = $this->askWhichConnector($io);
 
 		if ($connector === null) {
-			$io->warning($this->translator->translate('//modbus-connector.cmd.base.messages.noConnectors'));
+			$io->info($this->translator->translate('//modbus-connector.cmd.base.messages.noConnectors'));
 
 			$question = new Console\Question\ConfirmationQuestion(
 				$this->translator->translate('//modbus-connector.cmd.install.questions.create.connector'),
@@ -617,6 +617,13 @@ class Install extends Console\Command\Command
 
 			return;
 		}
+
+		$io->warning(
+			$this->translator->translate(
+				'//modbus-connector.cmd.install.messages.remove.connector.confirm',
+				['name' => $connector->getName() ?? $connector->getIdentifier()],
+			),
+		);
 
 		$question = new Console\Question\ConfirmationQuestion(
 			$this->translator->translate('//modbus-connector.cmd.base.questions.continue'),
@@ -929,7 +936,7 @@ class Install extends Console\Command\Command
 		$device = $this->askWhichDevice($io, $connector);
 
 		if ($device === null) {
-			$io->warning($this->translator->translate('//modbus-connector.cmd.install.messages.noDevices'));
+			$io->info($this->translator->translate('//modbus-connector.cmd.install.messages.noDevices'));
 
 			$question = new Console\Question\ConfirmationQuestion(
 				$this->translator->translate('//modbus-connector.cmd.install.questions.create.device'),
@@ -1153,10 +1160,17 @@ class Install extends Console\Command\Command
 		$device = $this->askWhichDevice($io, $connector);
 
 		if ($device === null) {
-			$io->warning($this->translator->translate('//modbus-connector.cmd.install.messages.noDevices'));
+			$io->info($this->translator->translate('//modbus-connector.cmd.install.messages.noDevices'));
 
 			return;
 		}
+
+		$io->warning(
+			$this->translator->translate(
+				'//modbus-connector.cmd.install.messages.remove.device.confirm',
+				['name' => $device->getName() ?? $device->getIdentifier()],
+			),
+		);
 
 		$question = new Console\Question\ConfirmationQuestion(
 			$this->translator->translate('//modbus-connector.cmd.base.questions.continue'),
@@ -1218,7 +1232,7 @@ class Install extends Console\Command\Command
 		$device = $this->askWhichDevice($io, $connector);
 
 		if ($device === null) {
-			$io->warning($this->translator->translate('//modbus-connector.cmd.install.messages.noDevices'));
+			$io->info($this->translator->translate('//modbus-connector.cmd.install.messages.noDevices'));
 
 			return;
 		}
@@ -1455,7 +1469,7 @@ class Install extends Console\Command\Command
 		$channel = $this->askWhichRegister($io, $device);
 
 		if ($channel === null) {
-			$io->warning($this->translator->translate('//modbus-connector.cmd.install.messages.noRegisters'));
+			$io->info($this->translator->translate('//modbus-connector.cmd.install.messages.noRegisters'));
 
 			$question = new Console\Question\ConfirmationQuestion(
 				$this->translator->translate('//modbus-connector.cmd.install.questions.create.registers'),
@@ -1635,10 +1649,17 @@ class Install extends Console\Command\Command
 		$channel = $this->askWhichRegister($io, $device);
 
 		if ($channel === null) {
-			$io->warning($this->translator->translate('//modbus-connector.cmd.install.messages.noRegisters'));
+			$io->info($this->translator->translate('//modbus-connector.cmd.install.messages.noRegisters'));
 
 			return;
 		}
+
+		$io->warning(
+			$this->translator->translate(
+				'//modbus-connector.cmd.install.messages.remove.register.confirm',
+				['name' => $channel->getName() ?? $channel->getIdentifier()],
+			),
+		);
 
 		$question = new Console\Question\ConfirmationQuestion(
 			$this->translator->translate('//modbus-connector.cmd.base.questions.continue'),
