@@ -210,6 +210,12 @@ If your device have more registers, you could continue answering and configuring
 
 With this console command you could manage all your connectors, their devices and registers. Just use the main menu to navigate to proper action.
 
+## Configuring the Connector with the FastyBird User Interface
+
+You can also configure the Modbus connector using the [FastyBird](https://www.fastybird.com)
+[IoT](https://en.wikipedia.org/wiki/Internet_of_things) user interface. For more information on how to do this, please refer
+to the [FastyBird](https://www.fastybird.com) [IoT](https://en.wikipedia.org/wiki/Internet_of_things) documentation.
+
 # Troubleshooting
 
 ## Combined Data Types
