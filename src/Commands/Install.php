@@ -86,6 +86,7 @@ class Install extends Console\Command\Command
 		private readonly DevicesModels\Entities\Channels\Properties\PropertiesRepository $channelsPropertiesRepository,
 		private readonly DevicesModels\Entities\Channels\Properties\PropertiesManager $channelsPropertiesManager,
 		private readonly Persistence\ManagerRegistry $managerRegistry,
+		private readonly BootstrapHelpers\Database $databaseHelper,
 		private readonly Localization\Translator $translator,
 		string|null $name = null,
 	)
@@ -270,6 +271,8 @@ class Install extends Console\Command\Command
 
 			// Commit all changes into database
 			$this->getOrmConnection()->commit();
+
+			$this->databaseHelper->clear();
 
 			$io->success(
 				$this->translator->translate(
@@ -562,6 +565,8 @@ class Install extends Console\Command\Command
 			// Commit all changes into database
 			$this->getOrmConnection()->commit();
 
+			$this->databaseHelper->clear();
+
 			$io->success(
 				$this->translator->translate(
 					'//modbus-connector.cmd.install.messages.update.connector.success',
@@ -645,6 +650,8 @@ class Install extends Console\Command\Command
 			// Commit all changes into database
 			$this->getOrmConnection()->commit();
 
+			$this->databaseHelper->clear();
+
 			$io->success(
 				$this->translator->translate(
 					'//modbus-connector.cmd.install.messages.remove.connector.success',
@@ -694,6 +701,9 @@ class Install extends Console\Command\Command
 
 	/**
 	 * @throws DevicesExceptions\InvalidState
+	 * @throws Exceptions\InvalidState
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidState
 	 */
 	private function listConnectors(Style\SymfonyStyle $io): void
 	{
@@ -715,6 +725,7 @@ class Install extends Console\Command\Command
 		$table->setHeaders([
 			'#',
 			$this->translator->translate('//modbus-connector.cmd.install.data.name'),
+			$this->translator->translate('//modbus-connector.cmd.install.data.mode'),
 			$this->translator->translate('//modbus-connector.cmd.install.data.devicesCnt'),
 		]);
 
@@ -727,6 +738,9 @@ class Install extends Console\Command\Command
 			$table->addRow([
 				$index + 1,
 				$connector->getName() ?? $connector->getIdentifier(),
+				$this->translator->translate(
+					'//modbus-connector.cmd.base.mode.' . $connector->getClientMode()->getValue(),
+				),
 				count($devices),
 			]);
 		}
@@ -881,6 +895,8 @@ class Install extends Console\Command\Command
 
 			// Commit all changes into database
 			$this->getOrmConnection()->commit();
+
+			$this->databaseHelper->clear();
 
 			$io->success(
 				$this->translator->translate(
@@ -1109,6 +1125,8 @@ class Install extends Console\Command\Command
 			// Commit all changes into database
 			$this->getOrmConnection()->commit();
 
+			$this->databaseHelper->clear();
+
 			$io->success(
 				$this->translator->translate(
 					'//modbus-connector.cmd.install.messages.update.device.success',
@@ -1191,6 +1209,8 @@ class Install extends Console\Command\Command
 
 			// Commit all changes into database
 			$this->getOrmConnection()->commit();
+
+			$this->databaseHelper->clear();
 
 			$io->success(
 				$this->translator->translate(
@@ -1401,6 +1421,8 @@ class Install extends Console\Command\Command
 			// Commit all changes into database
 			$this->getOrmConnection()->commit();
 
+			$this->databaseHelper->clear();
+
 			if ($addresses[0] === $addresses[1]) {
 				$io->success(
 					$this->translator->translate(
@@ -1609,6 +1631,8 @@ class Install extends Console\Command\Command
 			// Commit all changes into database
 			$this->getOrmConnection()->commit();
 
+			$this->databaseHelper->clear();
+
 			$io->success(
 				$this->translator->translate(
 					'//modbus-connector.cmd.install.messages.update.register.success',
@@ -1680,6 +1704,8 @@ class Install extends Console\Command\Command
 
 			// Commit all changes into database
 			$this->getOrmConnection()->commit();
+
+			$this->databaseHelper->clear();
 
 			$io->success(
 				$this->translator->translate(
@@ -1754,7 +1780,11 @@ class Install extends Console\Command\Command
 			$table->addRow([
 				$index + 1,
 				$channel->getName() ?? $channel->getIdentifier(),
-				strval($channel->getRegisterType()?->getValue()),
+				$channel->getRegisterType() !== null
+					? $this->translator->translate(
+						'//modbus-connector.cmd.base.registerType.' . $channel->getRegisterType()->getValue(),
+					)
+					: 'N/A',
 				$channel->getAddress(),
 				$valueProperty?->getDataType()->getValue(),
 				$channel->getReadingDelay(),

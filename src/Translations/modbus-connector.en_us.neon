@@ -24,6 +24,16 @@ cmd:
             noConnectors: "No Modbus connectors registered in system."
             answerNotValid: "Selected answer: \"%s\" is not valid."
 
+        mode:
+            rtu: "RTU"
+            tcp: "TCP/IP"
+
+        registerType:
+            discrete_input: "Discrete Input"
+            coil: "Coil"
+            input_register: "Input Register"
+            holding_register: "Holding Register"
+
     execute:
         title: "Modbus connector - service"
         subtitle: "This action will run connector service"
@@ -173,6 +183,7 @@ cmd:
 
         data:
             name: "Name"
+            mode: "Mode"
             type: "Type"
             address: "Address"
             dataType: "Data Type"
