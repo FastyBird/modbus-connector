@@ -104,7 +104,7 @@ You have to use same configuration as your devices use.
 After providing the necessary information, your new [Modbus](https://en.wikipedia.org/wiki/Modbus) connector will be ready for use.
 
 ```shell
- [OK] New connector "My Modbus" was successfully created                                                                
+ [OK] New connector "My Modbus" was successfully created
 ```
 
 ### Create device

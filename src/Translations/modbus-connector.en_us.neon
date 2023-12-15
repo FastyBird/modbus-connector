@@ -143,11 +143,12 @@ cmd:
                     writeTripleClickValue: "Provide write value representing Button TRIPLE CLICKED"
                     writeLongClickValue: "Provide write value representing Button LONG CLICKED"
                     writeExtraLongClickValue: "Provide write value representing Button EXTRA LONG CLICKED"
-            changeMode: "Do you want to change connector devices support?"
             disable:
                 connector: "Do you want to disable connector?"
             enable:
                 connector: "Do you want to enable connector?"
+            change:
+                mode: "Do you want to change connector devices support?"
             skipValue: "Are you sure to skip this value?"
             switch:
                 hasOn: "Does register support Switch ON action?"

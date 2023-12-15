@@ -355,7 +355,7 @@ class Install extends Console\Command\Command
 
 		} else {
 			$question = new Console\Question\ConfirmationQuestion(
-				$this->translator->translate('//modbus-connector.cmd.install.questions.changeMode'),
+				$this->translator->translate('//modbus-connector.cmd.install.questions.change.mode'),
 				false,
 			);
 
