@@ -306,9 +306,9 @@ class Install extends Console\Command\Command
 			true,
 		);
 
-		$createRegisters = (bool) $io->askQuestion($question);
+		$createDevices = (bool) $io->askQuestion($question);
 
-		if ($createRegisters) {
+		if ($createDevices) {
 			$this->createDevice($io, $connector);
 		}
 	}
@@ -712,13 +712,9 @@ class Install extends Console\Command\Command
 		$connectors = $this->connectorsRepository->findAllBy($findConnectorsQuery, Entities\ModbusConnector::class);
 		usort(
 			$connectors,
-			static function (Entities\ModbusConnector $a, Entities\ModbusConnector $b): int {
-				if ($a->getIdentifier() === $b->getIdentifier()) {
-					return $a->getName() <=> $b->getName();
-				}
-
-				return $a->getIdentifier() <=> $b->getIdentifier();
-			},
+			static fn (Entities\ModbusConnector $a, Entities\ModbusConnector $b): int => (
+				($a->getName() ?? $a->getIdentifier()) <=> ($b->getName() ?? $b->getIdentifier())
+			),
 		);
 
 		$table = new Console\Helper\Table($io);
@@ -1274,13 +1270,9 @@ class Install extends Console\Command\Command
 		$devices = $this->devicesRepository->findAllBy($findDevicesQuery, Entities\ModbusDevice::class);
 		usort(
 			$devices,
-			static function (Entities\ModbusDevice $a, Entities\ModbusDevice $b): int {
-				if ($a->getIdentifier() === $b->getIdentifier()) {
-					return $a->getName() <=> $b->getName();
-				}
-
-				return $a->getIdentifier() <=> $b->getIdentifier();
-			},
+			static fn (Entities\ModbusDevice $a, Entities\ModbusDevice $b): int => (
+				($a->getName() ?? $a->getIdentifier()) <=> ($b->getName() ?? $b->getIdentifier())
+			),
 		);
 
 		$table = new Console\Helper\Table($io);
@@ -1748,13 +1740,9 @@ class Install extends Console\Command\Command
 		$deviceChannels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\ModbusChannel::class);
 		usort(
 			$deviceChannels,
-			static function (Entities\ModbusChannel $a, Entities\ModbusChannel $b): int {
-				if ($a->getRegisterType() === $b->getRegisterType()) {
-					return $a->getAddress() <=> $b->getAddress();
-				}
-
-				return $a->getRegisterType() <=> $b->getRegisterType();
-			},
+			static fn (Entities\ModbusChannel $a, Entities\ModbusChannel $b): int => (
+				($a->getName() ?? $a->getIdentifier()) <=> ($b->getName() ?? $b->getIdentifier())
+			),
 		);
 
 		$table = new Console\Helper\Table($io);
@@ -3696,13 +3684,13 @@ class Install extends Console\Command\Command
 		);
 		usort(
 			$systemConnectors,
-			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-			static fn (Entities\ModbusConnector $a, Entities\ModbusConnector $b): int => $a->getIdentifier() <=> $b->getIdentifier()
+			static fn (Entities\ModbusConnector $a, Entities\ModbusConnector $b): int => (
+				($a->getName() ?? $a->getIdentifier()) <=> ($b->getName() ?? $b->getIdentifier())
+			),
 		);
 
 		foreach ($systemConnectors as $connector) {
-			$connectors[$connector->getIdentifier()] = $connector->getIdentifier()
-				. ($connector->getName() !== null ? ' [' . $connector->getName() . ']' : '');
+			$connectors[$connector->getIdentifier()] = $connector->getName() ?? $connector->getIdentifier();
 		}
 
 		if (count($connectors) === 0) {
@@ -3781,12 +3769,13 @@ class Install extends Console\Command\Command
 		);
 		usort(
 			$connectorDevices,
-			static fn (Entities\ModbusDevice $a, Entities\ModbusDevice $b): int => $a->getIdentifier() <=> $b->getIdentifier()
+			static fn (Entities\ModbusDevice $a, Entities\ModbusDevice $b): int => (
+				($a->getName() ?? $a->getIdentifier()) <=> ($b->getName() ?? $b->getIdentifier())
+			),
 		);
 
 		foreach ($connectorDevices as $device) {
-			$devices[$device->getIdentifier()] = $device->getIdentifier()
-				. ($device->getName() !== null ? ' [' . $device->getName() . ']' : '');
+			$devices[$device->getIdentifier()] = $device->getName() ?? $device->getIdentifier();
 		}
 
 		if (count($devices) === 0) {
@@ -3870,14 +3859,15 @@ class Install extends Console\Command\Command
 		);
 		usort(
 			$deviceChannels,
-			static fn (Entities\ModbusChannel $a, Entities\ModbusChannel $b): int => $a->getIdentifier() <=> $b->getIdentifier()
+			static fn (Entities\ModbusChannel $a, Entities\ModbusChannel $b): int => (
+				($a->getName() ?? $a->getIdentifier()) <=> ($b->getName() ?? $b->getIdentifier())
+			),
 		);
 
 		foreach ($deviceChannels as $channel) {
 			$channels[$channel->getIdentifier()] = sprintf(
-				'%s %s, Type: %s, Address: %d',
-				$channel->getIdentifier(),
-				($channel->getName() !== null ? ' [' . $channel->getName() . ']' : ''),
+				'%s, Type: %s, Address: %d',
+				($channel->getName() ?? $channel->getIdentifier()),
 				strval($channel->getRegisterType()?->getValue()),
 				$channel->getAddress(),
 			);
