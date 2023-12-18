@@ -15,6 +15,7 @@
 
 namespace FastyBird\Connector\Modbus\DI;
 
+use Contributte\Translation;
 use Doctrine\Persistence;
 use FastyBird\Connector\Modbus;
 use FastyBird\Connector\Modbus\API;
@@ -47,7 +48,7 @@ use const DIRECTORY_SEPARATOR;
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-class ModbusExtension extends DI\CompilerExtension
+class ModbusExtension extends DI\CompilerExtension implements Translation\DI\TranslationProviderInterface
 {
 
 	public const NAME = 'fbModbusConnector';
@@ -324,6 +325,16 @@ class ModbusExtension extends DI\CompilerExtension
 			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\Channels()]);
 			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\ChannelsProperties()]);
 		}
+	}
+
+	/**
+	 * @return array<string>
+	 */
+	public function getTranslationResources(): array
+	{
+		return [
+			__DIR__ . '/../Translations/',
+		];
 	}
 
 }
