@@ -310,6 +310,9 @@ class Install extends Console\Command\Command
 		$createDevices = (bool) $io->askQuestion($question);
 
 		if ($createDevices) {
+			$connector = $this->connectorsRepository->find($connector->getId(), Entities\ModbusConnector::class);
+			assert($connector instanceof Entities\ModbusConnector);
+
 			$this->createDevice($io, $connector);
 		}
 	}
@@ -605,6 +608,9 @@ class Install extends Console\Command\Command
 		if (!$manage) {
 			return;
 		}
+
+		$connector = $this->connectorsRepository->find($connector->getId(), Entities\ModbusConnector::class);
+		assert($connector instanceof Entities\ModbusConnector);
 
 		$this->askManageConnectorAction($io, $connector);
 	}
@@ -933,6 +939,9 @@ class Install extends Console\Command\Command
 		$createRegisters = (bool) $io->askQuestion($question);
 
 		if ($createRegisters) {
+			$device = $this->devicesRepository->find($device->getId(), Entities\ModbusDevice::class);
+			assert($device instanceof Entities\ModbusDevice);
+
 			$this->createRegister($io, $device);
 		}
 	}
@@ -1162,6 +1171,9 @@ class Install extends Console\Command\Command
 		if (!$manage) {
 			return;
 		}
+
+		$device = $this->devicesRepository->find($device->getId(), Entities\ModbusDevice::class);
+		assert($device instanceof Entities\ModbusDevice);
 
 		$this->askManageDeviceAction($io, $device);
 	}

@@ -32,7 +32,7 @@ Relay outputs registers have special data type which allow you to define read an
 
 When configuring relay registers you have to choose `Holding register`
 
-```shell
+```
  What type of device register you would like to add? [Discrete Input]:
   [0] Discrete Input
   [1] Coil
@@ -43,7 +43,7 @@ When configuring relay registers you have to choose `Holding register`
 
 In the next step you have to choose `swtich` data type, which allow you to define different values for writing and reading.
 
-```shell
+```
  What type of data type this register has [char]:
   [0] char
   [1] uchar
@@ -59,31 +59,31 @@ In the next step you have to choose `swtich` data type, which allow you to defin
 
 This device has 8 relay outputs with starting address for relays `1`
 
-```shell
+```
  Provide register address. It could be single number or range like 1-2:
  > 1-8
 ```
 
 Reading sampling time is time between readings in seconds. Connector will repeatedly read relay status.
 
-```shell
+```
  Provide register sampling time (s) [120]:
  > 120
 ```
 
 In the next steps will be configured read and write values.
 
-```shell
+```
  Does register support Switch ON action? (yes/no) [no]:
  > y
 ```
 
-```shell
+```
  Provide read value representing Switch ON:
  > 1
 ```
 
-```shell
+```
  What type of data type provided value has:
   [0] b
   [1] i8
@@ -96,12 +96,12 @@ In the next steps will be configured read and write values.
  > 2
 ```
 
-```shell
+```
  Provide write value representing Switch ON:
  > 256
 ```
 
-```shell
+```
  What type of data type provided value has:
   [0] b
   [1] i8
@@ -114,17 +114,17 @@ In the next steps will be configured read and write values.
  > 4
 ```
 
-```shell
+```
  Does register support Switch OFF action? (yes/no) [no]:
  > y
 ```
 
-```shell
+```
  Provide read value representing Switch OFF:
  > 0
 ```
 
-```shell
+```
  What type of data type provided value has:
   [0] b
   [1] i8
@@ -137,12 +137,12 @@ In the next steps will be configured read and write values.
  > 2
 ```
 
-```shell
+```
  Provide write value representing Switch OFF:
  > 512
 ```
 
-```shell
+```
  What type of data type provided value has:
   [0] b
   [1] i8
@@ -155,22 +155,22 @@ In the next steps will be configured read and write values.
  > 4
 ```
 
-```shell
+```
  Does register support Switch TOGGLE action? (yes/no) [no]:
  > y
 ```
 
-```shell
+```
  Provide read value representing Switch TOGGLE:
  >
 ```
 
-```shell
+```
  Provide write value representing Switch TOGGLE:
  > 768
 ```
 
-```shell
+```
  What type of data type provided value has:
   [0] b
   [1] i8
