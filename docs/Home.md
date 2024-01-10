@@ -16,9 +16,9 @@ This connector has some services divided into namespaces. All services are preco
 container automatically.
 
 ```
-\FastyBird\Connector\NsPanel
+\FastyBird\Connector\Modbus
   \API - Services and helpers related to API - for managing data exchange validation and data parsing
-  \Clients - Services which handle communication with NsPanel devices or clouds
+  \Clients - Services which handle communication with Modbus devices
   \Commands - Services used for user console interface
   \Entities - All entities used by connector
   \Helpers - Useful helpers for reading values, bulding entities etc.
@@ -44,13 +44,16 @@ Find fundamental details regarding the installation and configuration of this co
 This connector is equipped with interactive console. With this console commands you could manage almost all connector features.
 
 * **fb:modbus-connector:install**: is used for connector installation and configuration. With interactive menu you could manage connector and devices.
-* **fb:modbus-connector:execute**: is used for connector execution. It is simple command that will trigger all services which are related to communication with NsPanel devices and services with other [FastyBird](https://www.fastybird.com) [IoT](https://en.wikipedia.org/wiki/Internet_of_things) ecosystem services like state storage, or user interface communication.
+* **fb:modbus-connector:execute**: is used for connector execution. It is simple command that will trigger all services which are related to communication with Modbus devices and services with other [FastyBird](https://www.fastybird.com) [IoT](https://en.wikipedia.org/wiki/Internet_of_things) ecosystem services like state storage, or user interface communication.
 
 Each console command could be triggered like this :nerd_face:
 
 ```shell
 php bin/fb-console fb:modbus-connector:install
 ```
+
+> [!NOTE]
+The path to the console command may vary depending on your FastyBird application distribution. For more information, refer to the FastyBird documentation.
 
 # Troubleshooting
 
