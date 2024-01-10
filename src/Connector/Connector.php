@@ -22,14 +22,12 @@ use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Helpers;
 use FastyBird\Connector\Modbus\Queue;
 use FastyBird\Connector\Modbus\Writers;
+use FastyBird\Library\Metadata\Documents as MetadataDocuments;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Connectors as DevicesConnectors;
-use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Events as DevicesEvents;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
-use FastyBird\Module\Devices\Models as DevicesModels;
-use FastyBird\Module\Devices\Queries as DevicesQueries;
 use Nette;
 use Psr\EventDispatcher as PsrEventDispatcher;
 use React\EventLoop;
@@ -63,14 +61,13 @@ final class Connector implements DevicesConnectors\Connector
 	 * @param array<Clients\ClientFactory> $clientsFactories
 	 */
 	public function __construct(
-		private readonly DevicesEntities\Connectors\Connector $connector,
+		private readonly MetadataDocuments\DevicesModule\Connector $connector,
 		private readonly array $clientsFactories,
 		private readonly Helpers\Connector $connectorHelper,
 		private readonly Writers\WriterFactory $writerFactory,
 		private readonly Queue\Queue $queue,
 		private readonly Queue\Consumers $consumers,
 		private readonly Modbus\Logger $logger,
-		private readonly DevicesModels\Configuration\Connectors\Repository $connectorsConfigurationRepository,
 		private readonly EventLoop\LoopInterface $eventLoop,
 		private readonly PsrEventDispatcher\EventDispatcherInterface|null $dispatcher = null,
 	)
@@ -85,7 +82,7 @@ final class Connector implements DevicesConnectors\Connector
 	 */
 	public function execute(): void
 	{
-		assert($this->connector instanceof Entities\ModbusConnector);
+		assert($this->connector->getType() === Entities\ModbusConnector::TYPE);
 
 		$this->logger->info(
 			'Starting Modbus connector service',
@@ -98,28 +95,7 @@ final class Connector implements DevicesConnectors\Connector
 			],
 		);
 
-		$findConnectorQuery = new DevicesQueries\Configuration\FindConnectors();
-		$findConnectorQuery->byId($this->connector->getId());
-		$findConnectorQuery->byType(Entities\ModbusConnector::TYPE);
-
-		$connector = $this->connectorsConfigurationRepository->findOneBy($findConnectorQuery);
-
-		if ($connector === null) {
-			$this->logger->error(
-				'Connector could not be loaded',
-				[
-					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
-					'type' => 'connector',
-					'connector' => [
-						'id' => $this->connector->getId()->toString(),
-					],
-				],
-			);
-
-			return;
-		}
-
-		$mode = $this->connectorHelper->getClientMode($connector);
+		$mode = $this->connectorHelper->getClientMode($this->connector);
 
 		foreach ($this->clientsFactories as $clientFactory) {
 			$rc = new ReflectionClass($clientFactory);
@@ -130,7 +106,7 @@ final class Connector implements DevicesConnectors\Connector
 				array_key_exists(Clients\ClientFactory::MODE_CONSTANT_NAME, $constants)
 				&& $mode->equalsValue($constants[Clients\ClientFactory::MODE_CONSTANT_NAME])
 			) {
-				$this->client = $clientFactory->create($connector);
+				$this->client = $clientFactory->create($this->connector);
 			}
 		}
 
@@ -147,7 +123,7 @@ final class Connector implements DevicesConnectors\Connector
 
 		$this->client->connect();
 
-		$this->writer = $this->writerFactory->create($connector);
+		$this->writer = $this->writerFactory->create($this->connector);
 		$this->writer->connect();
 
 		$this->consumersTimer = $this->eventLoop->addPeriodicTimer(
@@ -171,7 +147,7 @@ final class Connector implements DevicesConnectors\Connector
 
 	public function discover(): void
 	{
-		assert($this->connector instanceof Entities\ModbusConnector);
+		assert($this->connector->getType() === Entities\ModbusConnector::TYPE);
 
 		$this->logger->error(
 			'Devices discovery is not allowed for Modbus connector type',
@@ -187,6 +163,8 @@ final class Connector implements DevicesConnectors\Connector
 
 	public function terminate(): void
 	{
+		assert($this->connector->getType() === Entities\ModbusConnector::TYPE);
+
 		$this->client?->disconnect();
 
 		$this->writer?->disconnect();
