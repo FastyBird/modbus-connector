@@ -24,7 +24,7 @@ With PEAR installed you could now install PECL extensions on you device.
 pecl install dio-0.2.1
 ```
 
-> **NOTE:**
+> [!NOTE]
 DIO extension is not released as stable, so you have to specify package version
 
 ## Activate DIO extension
