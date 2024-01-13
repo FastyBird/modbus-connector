@@ -30,7 +30,7 @@ use function is_string;
 class ModbusDevice extends DevicesEntities\Devices\Device
 {
 
-	public const TYPE = 'modbus';
+	public const TYPE = 'modbus-connector';
 
 	public const DEFAULT_TCP_PORT = 502;
 

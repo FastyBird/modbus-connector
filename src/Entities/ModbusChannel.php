@@ -30,7 +30,7 @@ use function is_string;
 class ModbusChannel extends DevicesEntities\Channels\Channel
 {
 
-	public const TYPE = 'modbus';
+	public const TYPE = 'modbus-connector';
 
 	public const READING_DELAY = 120.0;
 
