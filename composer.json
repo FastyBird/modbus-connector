@@ -42,6 +42,7 @@
     "fastybird/datetime-factory": "^0.6",
     "fastybird/devices-module": "dev-main",
     "fastybird/metadata-library": "dev-main",
+    "fastybird/tools-library": "dev-main",
     "nette/di": "^3.0",
     "nettrine/fixtures": "^0.6",
     "orisai/nette-object-mapper": "^0.1",
