@@ -35,7 +35,7 @@ and is licensed under [Apache2](http://www.apache.org/licenses/LICENSE-2.0).
 
 ## Requirements
 
-Modbus connector is tested against PHP 8.1 and require installed [Process Control](https://www.php.net/manual/en/book.pcntl.php)
+Modbus connector is tested against PHP 8.2 and require installed [Process Control](https://www.php.net/manual/en/book.pcntl.php)
 PHP extension.
 
 ## Installation

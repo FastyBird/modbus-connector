@@ -16,21 +16,19 @@
 namespace FastyBird\Connector\Modbus\Commands;
 
 use Doctrine\DBAL;
-use Doctrine\Persistence;
 use FastyBird\Connector\Modbus;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Queries;
 use FastyBird\Connector\Modbus\Types;
-use FastyBird\Library\Bootstrap\Exceptions as BootstrapExceptions;
-use FastyBird\Library\Bootstrap\Helpers as BootstrapHelpers;
+use FastyBird\Library\Application\Exceptions as ApplicationExceptions;
+use FastyBird\Library\Application\Helpers as ApplicationHelpers;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
+use FastyBird\Library\Metadata\Formats as MetadataFormats;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
-use FastyBird\Library\Metadata\ValueObjects as MetadataValueObjects;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
 use FastyBird\Module\Devices\Models as DevicesModels;
-use FastyBird\Module\Devices\Queries as DevicesQueries;
 use Nette\Localization;
 use Nette\Utils;
 use RuntimeException;
@@ -39,6 +37,8 @@ use Symfony\Component\Console\Input;
 use Symfony\Component\Console\Output;
 use Symfony\Component\Console\Style;
 use Throwable;
+use TypeError;
+use ValueError;
 use function array_combine;
 use function array_key_exists;
 use function array_map;
@@ -46,6 +46,7 @@ use function array_search;
 use function array_values;
 use function assert;
 use function count;
+use function in_array;
 use function intval;
 use function is_array;
 use function is_int;
@@ -86,8 +87,7 @@ class Install extends Console\Command\Command
 		private readonly DevicesModels\Entities\Channels\ChannelsManager $channelsManager,
 		private readonly DevicesModels\Entities\Channels\Properties\PropertiesRepository $channelsPropertiesRepository,
 		private readonly DevicesModels\Entities\Channels\Properties\PropertiesManager $channelsPropertiesManager,
-		private readonly BootstrapHelpers\Database $databaseHelper,
-		private readonly Persistence\ManagerRegistry $managerRegistry,
+		private readonly ApplicationHelpers\Database $databaseHelper,
 		private readonly Localization\Translator $translator,
 		string|null $name = null,
 	)
@@ -113,6 +113,8 @@ class Install extends Console\Command\Command
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
 	 * @throws RuntimeException
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	protected function execute(Input\InputInterface $input, Output\OutputInterface $output): int
 	{
@@ -136,6 +138,8 @@ class Install extends Console\Command\Command
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
 	 * @throws RuntimeException
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function createConnector(Style\SymfonyStyle $io): void
 	{
@@ -152,7 +156,7 @@ class Install extends Console\Command\Command
 
 				$connector = $this->connectorsRepository->findOneBy(
 					$findConnectorQuery,
-					Entities\ModbusConnector::class,
+					Entities\Connectors\Connector::class,
 				);
 
 				if ($connector !== null) {
@@ -180,7 +184,7 @@ class Install extends Console\Command\Command
 
 				$connector = $this->connectorsRepository->findOneBy(
 					$findConnectorQuery,
-					Entities\ModbusConnector::class,
+					Entities\Connectors\Connector::class,
 				);
 
 				if ($connector === null) {
@@ -201,7 +205,7 @@ class Install extends Console\Command\Command
 
 		$interface = $baudRate = $byteSize = $dataParity = $stopBits = null;
 
-		if ($mode->equalsValue(Types\ClientMode::RTU)) {
+		if ($mode === Types\ClientMode::RTU) {
 			$interface = $this->askConnectorInterface($io);
 			$baudRate = $this->askConnectorBaudRate($io);
 			$byteSize = $this->askConnectorByteSize($io);
@@ -211,67 +215,67 @@ class Install extends Console\Command\Command
 
 		try {
 			// Start transaction connection to the database
-			$this->getOrmConnection()->beginTransaction();
+			$this->databaseHelper->beginTransaction();
 
 			$connector = $this->connectorsManager->create(Utils\ArrayHash::from([
-				'entity' => Entities\ModbusConnector::class,
+				'entity' => Entities\Connectors\Connector::class,
 				'identifier' => $identifier,
 				'name' => $name,
 			]));
-			assert($connector instanceof Entities\ModbusConnector);
+			assert($connector instanceof Entities\Connectors\Connector);
 
 			$this->connectorsPropertiesManager->create(Utils\ArrayHash::from([
 				'entity' => DevicesEntities\Connectors\Properties\Variable::class,
-				'identifier' => Types\ConnectorPropertyIdentifier::CLIENT_MODE,
-				'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING),
-				'value' => $mode->getValue(),
+				'identifier' => Types\ConnectorPropertyIdentifier::CLIENT_MODE->value,
+				'dataType' => MetadataTypes\DataType::STRING,
+				'value' => $mode->value,
 				'connector' => $connector,
 			]));
 
-			if ($mode->equalsValue(Types\ClientMode::RTU)) {
+			if ($mode === Types\ClientMode::RTU) {
 				$this->connectorsPropertiesManager->create(Utils\ArrayHash::from([
 					'entity' => DevicesEntities\Connectors\Properties\Variable::class,
-					'identifier' => Types\ConnectorPropertyIdentifier::RTU_INTERFACE,
-					'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING),
+					'identifier' => Types\ConnectorPropertyIdentifier::RTU_INTERFACE->value,
+					'dataType' => MetadataTypes\DataType::STRING,
 					'value' => $interface,
 					'connector' => $connector,
 				]));
 
 				$this->connectorsPropertiesManager->create(Utils\ArrayHash::from([
 					'entity' => DevicesEntities\Connectors\Properties\Variable::class,
-					'identifier' => Types\ConnectorPropertyIdentifier::RTU_BAUD_RATE,
-					'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UINT),
-					'value' => $baudRate?->getValue(),
+					'identifier' => Types\ConnectorPropertyIdentifier::RTU_BAUD_RATE->value,
+					'dataType' => MetadataTypes\DataType::UINT,
+					'value' => $baudRate?->value,
 					'connector' => $connector,
 				]));
 
 				$this->connectorsPropertiesManager->create(Utils\ArrayHash::from([
 					'entity' => DevicesEntities\Connectors\Properties\Variable::class,
-					'identifier' => Types\ConnectorPropertyIdentifier::RTU_BYTE_SIZE,
-					'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UCHAR),
-					'value' => $byteSize?->getValue(),
+					'identifier' => Types\ConnectorPropertyIdentifier::RTU_BYTE_SIZE->value,
+					'dataType' => MetadataTypes\DataType::UCHAR,
+					'value' => $byteSize?->value,
 					'connector' => $connector,
 				]));
 
 				$this->connectorsPropertiesManager->create(Utils\ArrayHash::from([
 					'entity' => DevicesEntities\Connectors\Properties\Variable::class,
-					'identifier' => Types\ConnectorPropertyIdentifier::RTU_PARITY,
-					'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UCHAR),
-					'value' => $dataParity?->getValue(),
+					'identifier' => Types\ConnectorPropertyIdentifier::RTU_PARITY->value,
+					'dataType' => MetadataTypes\DataType::UCHAR,
+					'value' => $dataParity?->value,
 					'connector' => $connector,
 				]));
 
 				$this->connectorsPropertiesManager->create(Utils\ArrayHash::from([
 					'entity' => DevicesEntities\Connectors\Properties\Variable::class,
-					'identifier' => Types\ConnectorPropertyIdentifier::RTU_STOP_BITS,
-					'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UCHAR),
-					'value' => $stopBits?->getValue(),
+					'identifier' => Types\ConnectorPropertyIdentifier::RTU_STOP_BITS->value,
+					'dataType' => MetadataTypes\DataType::UCHAR,
+					'value' => $stopBits?->value,
 					'connector' => $connector,
 				]));
 			}
 
 			// Commit all changes into database
-			$this->getOrmConnection()->commit();
+			$this->databaseHelper->commitTransaction();
 
 			$io->success(
 				$this->translator->translate(
@@ -284,9 +288,9 @@ class Install extends Console\Command\Command
 			$this->logger->error(
 				'An unhandled error occurred',
 				[
-					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+					'source' => MetadataTypes\Sources\Connector::MODBUS->value,
 					'type' => 'install-cmd',
-					'exception' => BootstrapHelpers\Logger::buildException($ex),
+					'exception' => ApplicationHelpers\Logger::buildException($ex),
 				],
 			);
 
@@ -294,11 +298,6 @@ class Install extends Console\Command\Command
 
 			return;
 		} finally {
-			// Revert all changes when error occur
-			if ($this->getOrmConnection()->isTransactionActive()) {
-				$this->getOrmConnection()->rollBack();
-			}
-
 			$this->databaseHelper->clear();
 		}
 
@@ -310,8 +309,8 @@ class Install extends Console\Command\Command
 		$createDevices = (bool) $io->askQuestion($question);
 
 		if ($createDevices) {
-			$connector = $this->connectorsRepository->find($connector->getId(), Entities\ModbusConnector::class);
-			assert($connector instanceof Entities\ModbusConnector);
+			$connector = $this->connectorsRepository->find($connector->getId(), Entities\Connectors\Connector::class);
+			assert($connector instanceof Entities\Connectors\Connector);
 
 			$this->createDevice($io, $connector);
 		}
@@ -326,6 +325,8 @@ class Install extends Console\Command\Command
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
 	 * @throws RuntimeException
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function editConnector(Style\SymfonyStyle $io): void
 	{
@@ -348,7 +349,7 @@ class Install extends Console\Command\Command
 			return;
 		}
 
-		$findConnectorPropertyQuery = new DevicesQueries\Entities\FindConnectorProperties();
+		$findConnectorPropertyQuery = new Queries\Entities\FindConnectorProperties();
 		$findConnectorPropertyQuery->forConnector($connector);
 		$findConnectorPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::CLIENT_MODE);
 
@@ -399,8 +400,8 @@ class Install extends Console\Command\Command
 		$interface = $baudRate = $byteSize = $dataParity = $stopBits = null;
 
 		if (
-			$modeProperty?->getValue() === Types\ClientMode::RTU
-			|| $mode?->getValue() === Types\ClientMode::RTU
+			$modeProperty?->getValue() === Types\ClientMode::RTU->value
+			|| $mode === Types\ClientMode::RTU
 		) {
 			$interface = $this->askConnectorInterface($io, $connector);
 			$baudRate = $this->askConnectorBaudRate($io, $connector);
@@ -409,31 +410,31 @@ class Install extends Console\Command\Command
 			$stopBits = $this->askConnectorStopBits($io, $connector);
 		}
 
-		$findConnectorPropertyQuery = new DevicesQueries\Entities\FindConnectorProperties();
+		$findConnectorPropertyQuery = new Queries\Entities\FindConnectorProperties();
 		$findConnectorPropertyQuery->forConnector($connector);
 		$findConnectorPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::RTU_INTERFACE);
 
 		$interfaceProperty = $this->connectorsPropertiesRepository->findOneBy($findConnectorPropertyQuery);
 
-		$findConnectorPropertyQuery = new DevicesQueries\Entities\FindConnectorProperties();
+		$findConnectorPropertyQuery = new Queries\Entities\FindConnectorProperties();
 		$findConnectorPropertyQuery->forConnector($connector);
 		$findConnectorPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::RTU_BAUD_RATE);
 
 		$baudRateProperty = $this->connectorsPropertiesRepository->findOneBy($findConnectorPropertyQuery);
 
-		$findConnectorPropertyQuery = new DevicesQueries\Entities\FindConnectorProperties();
+		$findConnectorPropertyQuery = new Queries\Entities\FindConnectorProperties();
 		$findConnectorPropertyQuery->forConnector($connector);
 		$findConnectorPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::RTU_BYTE_SIZE);
 
 		$byteSizeProperty = $this->connectorsPropertiesRepository->findOneBy($findConnectorPropertyQuery);
 
-		$findConnectorPropertyQuery = new DevicesQueries\Entities\FindConnectorProperties();
+		$findConnectorPropertyQuery = new Queries\Entities\FindConnectorProperties();
 		$findConnectorPropertyQuery->forConnector($connector);
 		$findConnectorPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::RTU_PARITY);
 
 		$dataParityProperty = $this->connectorsPropertiesRepository->findOneBy($findConnectorPropertyQuery);
 
-		$findConnectorPropertyQuery = new DevicesQueries\Entities\FindConnectorProperties();
+		$findConnectorPropertyQuery = new Queries\Entities\FindConnectorProperties();
 		$findConnectorPropertyQuery->forConnector($connector);
 		$findConnectorPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::RTU_STOP_BITS);
 
@@ -441,13 +442,13 @@ class Install extends Console\Command\Command
 
 		try {
 			// Start transaction connection to the database
-			$this->getOrmConnection()->beginTransaction();
+			$this->databaseHelper->beginTransaction();
 
 			$connector = $this->connectorsManager->update($connector, Utils\ArrayHash::from([
 				'name' => $name === '' ? null : $name,
 				'enabled' => $enabled,
 			]));
-			assert($connector instanceof Entities\ModbusConnector);
+			assert($connector instanceof Entities\Connectors\Connector);
 
 			if ($modeProperty === null) {
 				if ($mode === null) {
@@ -456,9 +457,9 @@ class Install extends Console\Command\Command
 
 				$this->connectorsPropertiesManager->create(Utils\ArrayHash::from([
 					'entity' => DevicesEntities\Connectors\Properties\Variable::class,
-					'identifier' => Types\ConnectorPropertyIdentifier::CLIENT_MODE,
-					'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_ENUM),
-					'value' => $mode->getValue(),
+					'identifier' => Types\ConnectorPropertyIdentifier::CLIENT_MODE->value,
+					'dataType' => MetadataTypes\DataType::ENUM,
+					'value' => $mode->value,
 					'format' => [
 						Types\ClientMode::RTU,
 						Types\ClientMode::TCP,
@@ -467,19 +468,19 @@ class Install extends Console\Command\Command
 				]));
 			} elseif ($mode !== null) {
 				$this->connectorsPropertiesManager->update($modeProperty, Utils\ArrayHash::from([
-					'value' => $mode->getValue(),
+					'value' => $mode->value,
 				]));
 			}
 
 			if (
-				$modeProperty?->getValue() === Types\ClientMode::RTU
-				|| $mode?->getValue() === Types\ClientMode::RTU
+				$modeProperty?->getValue() === Types\ClientMode::RTU->value
+				|| $mode === Types\ClientMode::RTU
 			) {
 				if ($interfaceProperty === null) {
 					$this->connectorsPropertiesManager->create(Utils\ArrayHash::from([
 						'entity' => DevicesEntities\Connectors\Properties\Variable::class,
-						'identifier' => Types\ConnectorPropertyIdentifier::RTU_INTERFACE,
-						'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING),
+						'identifier' => Types\ConnectorPropertyIdentifier::RTU_INTERFACE->value,
+						'dataType' => MetadataTypes\DataType::STRING,
 						'value' => $interface,
 						'connector' => $connector,
 					]));
@@ -492,56 +493,56 @@ class Install extends Console\Command\Command
 				if ($baudRateProperty === null) {
 					$this->connectorsPropertiesManager->create(Utils\ArrayHash::from([
 						'entity' => DevicesEntities\Connectors\Properties\Variable::class,
-						'identifier' => Types\ConnectorPropertyIdentifier::RTU_BAUD_RATE,
-						'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UINT),
-						'value' => $baudRate?->getValue(),
+						'identifier' => Types\ConnectorPropertyIdentifier::RTU_BAUD_RATE->value,
+						'dataType' => MetadataTypes\DataType::UINT,
+						'value' => $baudRate?->value,
 						'connector' => $connector,
 					]));
 				} elseif ($baudRateProperty instanceof DevicesEntities\Connectors\Properties\Variable) {
 					$this->connectorsPropertiesManager->update($baudRateProperty, Utils\ArrayHash::from([
-						'value' => $baudRate?->getValue(),
+						'value' => $baudRate?->value,
 					]));
 				}
 
 				if ($byteSizeProperty === null) {
 					$this->connectorsPropertiesManager->create(Utils\ArrayHash::from([
 						'entity' => DevicesEntities\Connectors\Properties\Variable::class,
-						'identifier' => Types\ConnectorPropertyIdentifier::RTU_BYTE_SIZE,
-						'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UCHAR),
-						'value' => $byteSize?->getValue(),
+						'identifier' => Types\ConnectorPropertyIdentifier::RTU_BYTE_SIZE->value,
+						'dataType' => MetadataTypes\DataType::UCHAR,
+						'value' => $byteSize?->value,
 						'connector' => $connector,
 					]));
 				} elseif ($byteSizeProperty instanceof DevicesEntities\Connectors\Properties\Variable) {
 					$this->connectorsPropertiesManager->update($byteSizeProperty, Utils\ArrayHash::from([
-						'value' => $byteSize?->getValue(),
+						'value' => $byteSize?->value,
 					]));
 				}
 
 				if ($dataParityProperty === null) {
 					$this->connectorsPropertiesManager->create(Utils\ArrayHash::from([
 						'entity' => DevicesEntities\Connectors\Properties\Variable::class,
-						'identifier' => Types\ConnectorPropertyIdentifier::RTU_PARITY,
-						'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UCHAR),
-						'value' => $dataParity?->getValue(),
+						'identifier' => Types\ConnectorPropertyIdentifier::RTU_PARITY->value,
+						'dataType' => MetadataTypes\DataType::UCHAR,
+						'value' => $dataParity?->value,
 						'connector' => $connector,
 					]));
 				} elseif ($dataParityProperty instanceof DevicesEntities\Connectors\Properties\Variable) {
 					$this->connectorsPropertiesManager->update($dataParityProperty, Utils\ArrayHash::from([
-						'value' => $dataParity?->getValue(),
+						'value' => $dataParity?->value,
 					]));
 				}
 
 				if ($stopBitsProperty === null) {
 					$this->connectorsPropertiesManager->create(Utils\ArrayHash::from([
 						'entity' => DevicesEntities\Connectors\Properties\Variable::class,
-						'identifier' => Types\ConnectorPropertyIdentifier::RTU_STOP_BITS,
-						'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UCHAR),
-						'value' => $stopBits?->getValue(),
+						'identifier' => Types\ConnectorPropertyIdentifier::RTU_STOP_BITS->value,
+						'dataType' => MetadataTypes\DataType::UCHAR,
+						'value' => $stopBits?->value,
 						'connector' => $connector,
 					]));
 				} elseif ($stopBitsProperty instanceof DevicesEntities\Connectors\Properties\Variable) {
 					$this->connectorsPropertiesManager->update($stopBitsProperty, Utils\ArrayHash::from([
-						'value' => $stopBits?->getValue(),
+						'value' => $stopBits?->value,
 					]));
 				}
 			} else {
@@ -567,7 +568,7 @@ class Install extends Console\Command\Command
 			}
 
 			// Commit all changes into database
-			$this->getOrmConnection()->commit();
+			$this->databaseHelper->commitTransaction();
 
 			$io->success(
 				$this->translator->translate(
@@ -580,9 +581,9 @@ class Install extends Console\Command\Command
 			$this->logger->error(
 				'An unhandled error occurred',
 				[
-					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+					'source' => MetadataTypes\Sources\Connector::MODBUS->value,
 					'type' => 'install-cmd',
-					'exception' => BootstrapHelpers\Logger::buildException($ex),
+					'exception' => ApplicationHelpers\Logger::buildException($ex),
 				],
 			);
 
@@ -590,11 +591,6 @@ class Install extends Console\Command\Command
 
 			return;
 		} finally {
-			// Revert all changes when error occur
-			if ($this->getOrmConnection()->isTransactionActive()) {
-				$this->getOrmConnection()->rollBack();
-			}
-
 			$this->databaseHelper->clear();
 		}
 
@@ -609,17 +605,15 @@ class Install extends Console\Command\Command
 			return;
 		}
 
-		$connector = $this->connectorsRepository->find($connector->getId(), Entities\ModbusConnector::class);
-		assert($connector instanceof Entities\ModbusConnector);
+		$connector = $this->connectorsRepository->find($connector->getId(), Entities\Connectors\Connector::class);
+		assert($connector instanceof Entities\Connectors\Connector);
 
 		$this->askManageConnectorAction($io, $connector);
 	}
 
 	/**
-	 * @throws BootstrapExceptions\InvalidState
-	 * @throws DBAL\Exception
+	 * @throws ApplicationExceptions\InvalidState
 	 * @throws DevicesExceptions\InvalidState
-	 * @throws Exceptions\Runtime
 	 */
 	private function deleteConnector(Style\SymfonyStyle $io): void
 	{
@@ -651,12 +645,12 @@ class Install extends Console\Command\Command
 
 		try {
 			// Start transaction connection to the database
-			$this->getOrmConnection()->beginTransaction();
+			$this->databaseHelper->beginTransaction();
 
 			$this->connectorsManager->delete($connector);
 
 			// Commit all changes into database
-			$this->getOrmConnection()->commit();
+			$this->databaseHelper->commitTransaction();
 
 			$io->success(
 				$this->translator->translate(
@@ -669,19 +663,14 @@ class Install extends Console\Command\Command
 			$this->logger->error(
 				'An unhandled error occurred',
 				[
-					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+					'source' => MetadataTypes\Sources\Connector::MODBUS->value,
 					'type' => 'install-cmd',
-					'exception' => BootstrapHelpers\Logger::buildException($ex),
+					'exception' => ApplicationHelpers\Logger::buildException($ex),
 				],
 			);
 
 			$io->error($this->translator->translate('//modbus-connector.cmd.install.messages.remove.connector.error'));
 		} finally {
-			// Revert all changes when error occur
-			if ($this->getOrmConnection()->isTransactionActive()) {
-				$this->getOrmConnection()->rollBack();
-			}
-
 			$this->databaseHelper->clear();
 		}
 	}
@@ -693,6 +682,8 @@ class Install extends Console\Command\Command
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
 	 * @throws RuntimeException
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function manageConnector(Style\SymfonyStyle $io): void
 	{
@@ -712,15 +703,20 @@ class Install extends Console\Command\Command
 	 * @throws Exceptions\InvalidState
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function listConnectors(Style\SymfonyStyle $io): void
 	{
 		$findConnectorsQuery = new Queries\Entities\FindConnectors();
 
-		$connectors = $this->connectorsRepository->findAllBy($findConnectorsQuery, Entities\ModbusConnector::class);
+		$connectors = $this->connectorsRepository->findAllBy(
+			$findConnectorsQuery,
+			Entities\Connectors\Connector::class,
+		);
 		usort(
 			$connectors,
-			static fn (Entities\ModbusConnector $a, Entities\ModbusConnector $b): int => (
+			static fn (Entities\Connectors\Connector $a, Entities\Connectors\Connector $b): int => (
 				($a->getName() ?? $a->getIdentifier()) <=> ($b->getName() ?? $b->getIdentifier())
 			),
 		);
@@ -737,13 +733,13 @@ class Install extends Console\Command\Command
 			$findDevicesQuery = new Queries\Entities\FindDevices();
 			$findDevicesQuery->forConnector($connector);
 
-			$devices = $this->devicesRepository->findAllBy($findDevicesQuery, Entities\ModbusDevice::class);
+			$devices = $this->devicesRepository->findAllBy($findDevicesQuery, Entities\Devices\Device::class);
 
 			$table->addRow([
 				$index + 1,
 				$connector->getName() ?? $connector->getIdentifier(),
 				$this->translator->translate(
-					'//modbus-connector.cmd.base.mode.' . $connector->getClientMode()->getValue(),
+					'//modbus-connector.cmd.base.mode.' . $connector->getClientMode()->value,
 				),
 				count($devices),
 			]);
@@ -761,8 +757,10 @@ class Install extends Console\Command\Command
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
 	 * @throws RuntimeException
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
-	private function createDevice(Style\SymfonyStyle $io, Entities\ModbusConnector $connector): void
+	private function createDevice(Style\SymfonyStyle $io, Entities\Connectors\Connector $connector): void
 	{
 		$question = new Console\Question\Question(
 			$this->translator->translate('//modbus-connector.cmd.install.questions.provide.device.identifier'),
@@ -773,7 +771,7 @@ class Install extends Console\Command\Command
 				$findDeviceQuery = new Queries\Entities\FindDevices();
 				$findDeviceQuery->byIdentifier($answer);
 
-				$device = $this->devicesRepository->findOneBy($findDeviceQuery, Entities\ModbusDevice::class);
+				$device = $this->devicesRepository->findOneBy($findDeviceQuery, Entities\Devices\Device::class);
 
 				if ($device !== null) {
 					throw new Exceptions\Runtime(
@@ -798,7 +796,7 @@ class Install extends Console\Command\Command
 				$findDeviceQuery = new Queries\Entities\FindDevices();
 				$findDeviceQuery->byIdentifier($identifier);
 
-				$device = $this->devicesRepository->findOneBy($findDeviceQuery, Entities\ModbusDevice::class);
+				$device = $this->devicesRepository->findOneBy($findDeviceQuery, Entities\Devices\Device::class);
 
 				if ($device === null) {
 					break;
@@ -818,11 +816,11 @@ class Install extends Console\Command\Command
 
 		$address = $ipAddress = $port = $unitId = null;
 
-		if ($connector->getClientMode()->equalsValue(Types\ClientMode::RTU)) {
+		if ($connector->getClientMode() === Types\ClientMode::RTU) {
 			$address = $this->askDeviceAddress($io, $connector);
 		}
 
-		if ($connector->getClientMode()->equalsValue(Types\ClientMode::TCP)) {
+		if ($connector->getClientMode() === Types\ClientMode::TCP) {
 			$ipAddress = $this->askDeviceIpAddress($io);
 
 			if (
@@ -843,47 +841,47 @@ class Install extends Console\Command\Command
 
 		try {
 			// Start transaction connection to the database
-			$this->getOrmConnection()->beginTransaction();
+			$this->databaseHelper->beginTransaction();
 
 			$device = $this->devicesManager->create(Utils\ArrayHash::from([
-				'entity' => Entities\ModbusDevice::class,
+				'entity' => Entities\Devices\Device::class,
 				'connector' => $connector,
 				'identifier' => $identifier,
 				'name' => $name,
 			]));
-			assert($device instanceof Entities\ModbusDevice);
+			assert($device instanceof Entities\Devices\Device);
 
-			if ($connector->getClientMode()->equalsValue(Types\ClientMode::RTU)) {
+			if ($connector->getClientMode() === Types\ClientMode::RTU) {
 				$this->devicesPropertiesManager->create(Utils\ArrayHash::from([
 					'entity' => DevicesEntities\Devices\Properties\Variable::class,
-					'identifier' => Types\DevicePropertyIdentifier::ADDRESS,
-					'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UCHAR),
+					'identifier' => Types\DevicePropertyIdentifier::ADDRESS->value,
+					'dataType' => MetadataTypes\DataType::UCHAR,
 					'value' => $address,
 					'device' => $device,
 				]));
 			}
 
-			if ($connector->getClientMode()->equalsValue(Types\ClientMode::TCP)) {
+			if ($connector->getClientMode() === Types\ClientMode::TCP) {
 				$this->devicesPropertiesManager->create(Utils\ArrayHash::from([
 					'entity' => DevicesEntities\Devices\Properties\Variable::class,
-					'identifier' => Types\DevicePropertyIdentifier::IP_ADDRESS,
-					'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING),
+					'identifier' => Types\DevicePropertyIdentifier::IP_ADDRESS->value,
+					'dataType' => MetadataTypes\DataType::STRING,
 					'value' => $ipAddress,
 					'device' => $device,
 				]));
 
 				$this->devicesPropertiesManager->create(Utils\ArrayHash::from([
 					'entity' => DevicesEntities\Devices\Properties\Variable::class,
-					'identifier' => Types\DevicePropertyIdentifier::PORT,
-					'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UINT),
+					'identifier' => Types\DevicePropertyIdentifier::PORT->value,
+					'dataType' => MetadataTypes\DataType::UINT,
 					'value' => $port,
 					'device' => $device,
 				]));
 
 				$this->devicesPropertiesManager->create(Utils\ArrayHash::from([
 					'entity' => DevicesEntities\Devices\Properties\Variable::class,
-					'identifier' => Types\DevicePropertyIdentifier::UNIT_ID,
-					'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UCHAR),
+					'identifier' => Types\DevicePropertyIdentifier::UNIT_ID->value,
+					'dataType' => MetadataTypes\DataType::UCHAR,
 					'value' => $unitId,
 					'device' => $device,
 				]));
@@ -891,14 +889,14 @@ class Install extends Console\Command\Command
 
 			$this->devicesPropertiesManager->create(Utils\ArrayHash::from([
 				'entity' => DevicesEntities\Devices\Properties\Variable::class,
-				'identifier' => Types\DevicePropertyIdentifier::BYTE_ORDER,
-				'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING),
-				'value' => $byteOrder->getValue(),
+				'identifier' => Types\DevicePropertyIdentifier::BYTE_ORDER->value,
+				'dataType' => MetadataTypes\DataType::STRING,
+				'value' => $byteOrder->value,
 				'device' => $device,
 			]));
 
 			// Commit all changes into database
-			$this->getOrmConnection()->commit();
+			$this->databaseHelper->commitTransaction();
 
 			$io->success(
 				$this->translator->translate(
@@ -911,9 +909,9 @@ class Install extends Console\Command\Command
 			$this->logger->error(
 				'An unhandled error occurred',
 				[
-					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+					'source' => MetadataTypes\Sources\Connector::MODBUS->value,
 					'type' => 'install-cmd',
-					'exception' => BootstrapHelpers\Logger::buildException($ex),
+					'exception' => ApplicationHelpers\Logger::buildException($ex),
 				],
 			);
 
@@ -923,11 +921,6 @@ class Install extends Console\Command\Command
 
 			return;
 		} finally {
-			// Revert all changes when error occur
-			if ($this->getOrmConnection()->isTransactionActive()) {
-				$this->getOrmConnection()->rollBack();
-			}
-
 			$this->databaseHelper->clear();
 		}
 
@@ -939,8 +932,8 @@ class Install extends Console\Command\Command
 		$createRegisters = (bool) $io->askQuestion($question);
 
 		if ($createRegisters) {
-			$device = $this->devicesRepository->find($device->getId(), Entities\ModbusDevice::class);
-			assert($device instanceof Entities\ModbusDevice);
+			$device = $this->devicesRepository->find($device->getId(), Entities\Devices\Device::class);
+			assert($device instanceof Entities\Devices\Device);
 
 			$this->createRegister($io, $device);
 		}
@@ -953,8 +946,10 @@ class Install extends Console\Command\Command
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
 	 * @throws RuntimeException
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
-	private function editDevice(Style\SymfonyStyle $io, Entities\ModbusConnector $connector): void
+	private function editDevice(Style\SymfonyStyle $io, Entities\Connectors\Connector $connector): void
 	{
 		$device = $this->askWhichDevice($io, $connector);
 
@@ -979,41 +974,41 @@ class Install extends Console\Command\Command
 
 		$address = $ipAddress = $port = $unitId = null;
 
-		$findDevicePropertyQuery = new DevicesQueries\Entities\FindDeviceProperties();
+		$findDevicePropertyQuery = new Queries\Entities\FindDeviceProperties();
 		$findDevicePropertyQuery->forDevice($device);
 		$findDevicePropertyQuery->byIdentifier(Types\DevicePropertyIdentifier::ADDRESS);
 
 		$addressProperty = $this->devicesPropertiesRepository->findOneBy($findDevicePropertyQuery);
 
-		$findDevicePropertyQuery = new DevicesQueries\Entities\FindDeviceProperties();
+		$findDevicePropertyQuery = new Queries\Entities\FindDeviceProperties();
 		$findDevicePropertyQuery->forDevice($device);
 		$findDevicePropertyQuery->byIdentifier(Types\DevicePropertyIdentifier::IP_ADDRESS);
 
 		$ipAddressProperty = $this->devicesPropertiesRepository->findOneBy($findDevicePropertyQuery);
 
-		$findDevicePropertyQuery = new DevicesQueries\Entities\FindDeviceProperties();
+		$findDevicePropertyQuery = new Queries\Entities\FindDeviceProperties();
 		$findDevicePropertyQuery->forDevice($device);
 		$findDevicePropertyQuery->byIdentifier(Types\DevicePropertyIdentifier::PORT);
 
 		$portProperty = $this->devicesPropertiesRepository->findOneBy($findDevicePropertyQuery);
 
-		$findDevicePropertyQuery = new DevicesQueries\Entities\FindDeviceProperties();
+		$findDevicePropertyQuery = new Queries\Entities\FindDeviceProperties();
 		$findDevicePropertyQuery->forDevice($device);
 		$findDevicePropertyQuery->byIdentifier(Types\DevicePropertyIdentifier::UNIT_ID);
 
 		$unitIdProperty = $this->devicesPropertiesRepository->findOneBy($findDevicePropertyQuery);
 
-		$findDevicePropertyQuery = new DevicesQueries\Entities\FindDeviceProperties();
+		$findDevicePropertyQuery = new Queries\Entities\FindDeviceProperties();
 		$findDevicePropertyQuery->forDevice($device);
 		$findDevicePropertyQuery->byIdentifier(Types\DevicePropertyIdentifier::BYTE_ORDER);
 
 		$byteOrderProperty = $this->devicesPropertiesRepository->findOneBy($findDevicePropertyQuery);
 
-		if ($connector->getClientMode()->equalsValue(Types\ClientMode::RTU)) {
+		if ($connector->getClientMode() === Types\ClientMode::RTU) {
 			$address = $this->askDeviceAddress($io, $connector, $device);
 		}
 
-		if ($connector->getClientMode()->equalsValue(Types\ClientMode::TCP)) {
+		if ($connector->getClientMode() === Types\ClientMode::TCP) {
 			$ipAddress = $this->askDeviceIpAddress($io, $device);
 
 			if (
@@ -1034,19 +1029,19 @@ class Install extends Console\Command\Command
 
 		try {
 			// Start transaction connection to the database
-			$this->getOrmConnection()->beginTransaction();
+			$this->databaseHelper->beginTransaction();
 
 			$device = $this->devicesManager->update($device, Utils\ArrayHash::from([
 				'name' => $name,
 			]));
-			assert($device instanceof Entities\ModbusDevice);
+			assert($device instanceof Entities\Devices\Device);
 
-			if ($connector->getClientMode()->equalsValue(Types\ClientMode::RTU)) {
+			if ($connector->getClientMode() === Types\ClientMode::RTU) {
 				if ($addressProperty === null) {
 					$this->devicesPropertiesManager->create(Utils\ArrayHash::from([
 						'entity' => DevicesEntities\Devices\Properties\Variable::class,
-						'identifier' => Types\DevicePropertyIdentifier::ADDRESS,
-						'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UCHAR),
+						'identifier' => Types\DevicePropertyIdentifier::ADDRESS->value,
+						'dataType' => MetadataTypes\DataType::UCHAR,
 						'value' => $address,
 						'device' => $device,
 					]));
@@ -1059,12 +1054,12 @@ class Install extends Console\Command\Command
 				$this->devicesPropertiesManager->delete($addressProperty);
 			}
 
-			if ($connector->getClientMode()->equalsValue(Types\ClientMode::TCP)) {
+			if ($connector->getClientMode() === Types\ClientMode::TCP) {
 				if ($ipAddressProperty === null) {
 					$this->devicesPropertiesManager->create(Utils\ArrayHash::from([
 						'entity' => DevicesEntities\Devices\Properties\Variable::class,
-						'identifier' => Types\DevicePropertyIdentifier::IP_ADDRESS,
-						'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING),
+						'identifier' => Types\DevicePropertyIdentifier::IP_ADDRESS->value,
+						'dataType' => MetadataTypes\DataType::STRING,
 						'value' => $ipAddress,
 						'device' => $device,
 					]));
@@ -1077,8 +1072,8 @@ class Install extends Console\Command\Command
 				if ($portProperty === null) {
 					$this->devicesPropertiesManager->create(Utils\ArrayHash::from([
 						'entity' => DevicesEntities\Devices\Properties\Variable::class,
-						'identifier' => Types\DevicePropertyIdentifier::PORT,
-						'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING),
+						'identifier' => Types\DevicePropertyIdentifier::PORT->value,
+						'dataType' => MetadataTypes\DataType::STRING,
 						'value' => $port,
 						'device' => $device,
 					]));
@@ -1091,8 +1086,8 @@ class Install extends Console\Command\Command
 				if ($unitIdProperty === null) {
 					$this->devicesPropertiesManager->create(Utils\ArrayHash::from([
 						'entity' => DevicesEntities\Devices\Properties\Variable::class,
-						'identifier' => Types\DevicePropertyIdentifier::UNIT_ID,
-						'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UCHAR),
+						'identifier' => Types\DevicePropertyIdentifier::UNIT_ID->value,
+						'dataType' => MetadataTypes\DataType::UCHAR,
 						'value' => $unitId,
 						'device' => $device,
 					]));
@@ -1118,19 +1113,19 @@ class Install extends Console\Command\Command
 			if ($byteOrderProperty === null) {
 				$this->devicesPropertiesManager->create(Utils\ArrayHash::from([
 					'entity' => DevicesEntities\Devices\Properties\Variable::class,
-					'identifier' => Types\DevicePropertyIdentifier::BYTE_ORDER,
-					'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING),
-					'value' => $byteOrder->getValue(),
+					'identifier' => Types\DevicePropertyIdentifier::BYTE_ORDER->value,
+					'dataType' => MetadataTypes\DataType::STRING,
+					'value' => $byteOrder->value,
 					'device' => $device,
 				]));
 			} elseif ($byteOrderProperty instanceof DevicesEntities\Devices\Properties\Variable) {
 				$this->devicesPropertiesManager->update($byteOrderProperty, Utils\ArrayHash::from([
-					'value' => $byteOrder->getValue(),
+					'value' => $byteOrder->value,
 				]));
 			}
 
 			// Commit all changes into database
-			$this->getOrmConnection()->commit();
+			$this->databaseHelper->commitTransaction();
 
 			$io->success(
 				$this->translator->translate(
@@ -1143,9 +1138,9 @@ class Install extends Console\Command\Command
 			$this->logger->error(
 				'An unhandled error occurred',
 				[
-					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+					'source' => MetadataTypes\Sources\Connector::MODBUS->value,
 					'type' => 'install-cmd',
-					'exception' => BootstrapHelpers\Logger::buildException($ex),
+					'exception' => ApplicationHelpers\Logger::buildException($ex),
 				],
 			);
 
@@ -1153,11 +1148,6 @@ class Install extends Console\Command\Command
 
 			return;
 		} finally {
-			// Revert all changes when error occur
-			if ($this->getOrmConnection()->isTransactionActive()) {
-				$this->getOrmConnection()->rollBack();
-			}
-
 			$this->databaseHelper->clear();
 		}
 
@@ -1172,19 +1162,17 @@ class Install extends Console\Command\Command
 			return;
 		}
 
-		$device = $this->devicesRepository->find($device->getId(), Entities\ModbusDevice::class);
-		assert($device instanceof Entities\ModbusDevice);
+		$device = $this->devicesRepository->find($device->getId(), Entities\Devices\Device::class);
+		assert($device instanceof Entities\Devices\Device);
 
 		$this->askManageDeviceAction($io, $device);
 	}
 
 	/**
-	 * @throws BootstrapExceptions\InvalidState
-	 * @throws DBAL\Exception
+	 * @throws ApplicationExceptions\InvalidState
 	 * @throws DevicesExceptions\InvalidState
-	 * @throws Exceptions\Runtime
 	 */
-	private function deleteDevice(Style\SymfonyStyle $io, Entities\ModbusConnector $connector): void
+	private function deleteDevice(Style\SymfonyStyle $io, Entities\Connectors\Connector $connector): void
 	{
 		$device = $this->askWhichDevice($io, $connector);
 
@@ -1214,12 +1202,12 @@ class Install extends Console\Command\Command
 
 		try {
 			// Start transaction connection to the database
-			$this->getOrmConnection()->beginTransaction();
+			$this->databaseHelper->beginTransaction();
 
 			$this->devicesManager->delete($device);
 
 			// Commit all changes into database
-			$this->getOrmConnection()->commit();
+			$this->databaseHelper->commitTransaction();
 
 			$io->success(
 				$this->translator->translate(
@@ -1232,25 +1220,20 @@ class Install extends Console\Command\Command
 			$this->logger->error(
 				'An unhandled error occurred',
 				[
-					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+					'source' => MetadataTypes\Sources\Connector::MODBUS->value,
 					'type' => 'install-cmd',
-					'exception' => BootstrapHelpers\Logger::buildException($ex),
+					'exception' => ApplicationHelpers\Logger::buildException($ex),
 				],
 			);
 
 			$io->error($this->translator->translate('//modbus-connector.cmd.install.messages.remove.device.error'));
 		} finally {
-			// Revert all changes when error occur
-			if ($this->getOrmConnection()->isTransactionActive()) {
-				$this->getOrmConnection()->rollBack();
-			}
-
 			$this->databaseHelper->clear();
 		}
 	}
 
 	/**
-	 * @throws BootstrapExceptions\InvalidState
+	 * @throws ApplicationExceptions\InvalidState
 	 * @throws DBAL\Exception
 	 * @throws DevicesExceptions\InvalidState
 	 * @throws Exceptions\InvalidArgument
@@ -1258,8 +1241,10 @@ class Install extends Console\Command\Command
 	 * @throws Exceptions\Runtime
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
-	private function manageDevice(Style\SymfonyStyle $io, Entities\ModbusConnector $connector): void
+	private function manageDevice(Style\SymfonyStyle $io, Entities\Connectors\Connector $connector): void
 	{
 		$device = $this->askWhichDevice($io, $connector);
 
@@ -1277,16 +1262,18 @@ class Install extends Console\Command\Command
 	 * @throws Exceptions\InvalidState
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
-	private function listDevices(Style\SymfonyStyle $io, Entities\ModbusConnector $connector): void
+	private function listDevices(Style\SymfonyStyle $io, Entities\Connectors\Connector $connector): void
 	{
 		$findDevicesQuery = new Queries\Entities\FindDevices();
 		$findDevicesQuery->forConnector($connector);
 
-		$devices = $this->devicesRepository->findAllBy($findDevicesQuery, Entities\ModbusDevice::class);
+		$devices = $this->devicesRepository->findAllBy($findDevicesQuery, Entities\Devices\Device::class);
 		usort(
 			$devices,
-			static fn (Entities\ModbusDevice $a, Entities\ModbusDevice $b): int => (
+			static fn (Entities\Devices\Device $a, Entities\Devices\Device $b): int => (
 				($a->getName() ?? $a->getIdentifier()) <=> ($b->getName() ?? $b->getIdentifier())
 			),
 		);
@@ -1308,17 +1295,17 @@ class Install extends Console\Command\Command
 			$findChannelsQuery = new Queries\Entities\FindChannels();
 			$findChannelsQuery->forDevice($device);
 
-			$channels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\ModbusChannel::class);
+			$channels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\Channels\Channel::class);
 
 			foreach ($channels as $channel) {
 				if ($channel->getRegisterType() !== null) {
-					if ($channel->getRegisterType()->equalsValue(Types\ChannelType::DISCRETE_INPUT)) {
+					if ($channel->getRegisterType() === Types\ChannelType::DISCRETE_INPUT) {
 						++$discreteInputRegisters;
-					} elseif ($channel->getRegisterType()->equalsValue(Types\ChannelType::COIL)) {
+					} elseif ($channel->getRegisterType() === Types\ChannelType::COIL) {
 						++$coilRegisters;
-					} elseif ($channel->getRegisterType()->equalsValue(Types\ChannelType::INPUT_REGISTER)) {
+					} elseif ($channel->getRegisterType() === Types\ChannelType::INPUT_REGISTER) {
 						++$inputRegisters;
-					} elseif ($channel->getRegisterType()->equalsValue(Types\ChannelType::HOLDING_REGISTER)) {
+					} elseif ($channel->getRegisterType() === Types\ChannelType::HOLDING_REGISTER) {
 						++$holdingRegisters;
 					}
 				}
@@ -1327,7 +1314,7 @@ class Install extends Console\Command\Command
 			$table->addRow([
 				$index + 1,
 				$device->getName() ?? $device->getIdentifier(),
-				$connector->getClientMode()->equalsValue(Types\ClientMode::RTU)
+				$connector->getClientMode() === Types\ClientMode::RTU
 					? $device->getAddress()
 					: $device->getIpAddress() . ':' . $device->getPort(),
 				$discreteInputRegisters,
@@ -1343,7 +1330,7 @@ class Install extends Console\Command\Command
 	}
 
 	/**
-	 * @throws BootstrapExceptions\InvalidState
+	 * @throws ApplicationExceptions\InvalidState
 	 * @throws DBAL\Exception
 	 * @throws DevicesExceptions\InvalidState
 	 * @throws Exceptions\InvalidArgument
@@ -1351,8 +1338,14 @@ class Install extends Console\Command\Command
 	 * @throws Exceptions\Runtime
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
-	private function createRegister(Style\SymfonyStyle $io, Entities\ModbusDevice $device, bool $editMode = false): void
+	private function createRegister(
+		Style\SymfonyStyle $io,
+		Entities\Devices\Device $device,
+		bool $editMode = false,
+	): void
 	{
 		$type = $this->askRegisterType($io);
 
@@ -1371,20 +1364,20 @@ class Install extends Console\Command\Command
 		$format = null;
 
 		if (
-			$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SWITCH)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_BUTTON)
+			$dataType === MetadataTypes\DataType::SWITCH
+			|| $dataType === MetadataTypes\DataType::BUTTON
 		) {
 			$format = $this->askRegisterFormat($io, $dataType);
 		}
 
 		try {
 			// Start transaction connection to the database
-			$this->getOrmConnection()->beginTransaction();
+			$this->databaseHelper->beginTransaction();
 
 			foreach (range($addresses[0], $addresses[1]) as $address) {
 				$channel = $this->channelsManager->create(Utils\ArrayHash::from([
-					'entity' => Entities\ModbusChannel::class,
-					'identifier' => $type . '_' . $address,
+					'entity' => Entities\Channels\Channel::class,
+					'identifier' => $type->value . '_' . $address,
 					'name' => $name,
 					'device' => $device,
 				]));
@@ -1392,7 +1385,7 @@ class Install extends Console\Command\Command
 				$this->channelsPropertiesManager->create(Utils\ArrayHash::from([
 					'entity' => DevicesEntities\Channels\Properties\Variable::class,
 					'identifier' => Types\ChannelPropertyIdentifier::ADDRESS,
-					'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UCHAR),
+					'dataType' => MetadataTypes\DataType::UCHAR,
 					'value' => $address,
 					'channel' => $channel,
 				]));
@@ -1400,15 +1393,15 @@ class Install extends Console\Command\Command
 				$this->channelsPropertiesManager->create(Utils\ArrayHash::from([
 					'entity' => DevicesEntities\Channels\Properties\Variable::class,
 					'identifier' => Types\ChannelPropertyIdentifier::TYPE,
-					'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING),
-					'value' => $type->getValue(),
+					'dataType' => MetadataTypes\DataType::STRING,
+					'value' => $type->value,
 					'channel' => $channel,
 				]));
 
 				$this->channelsPropertiesManager->create(Utils\ArrayHash::from([
 					'entity' => DevicesEntities\Channels\Properties\Variable::class,
 					'identifier' => Types\ChannelPropertyIdentifier::READING_DELAY,
-					'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UINT),
+					'dataType' => MetadataTypes\DataType::UINT,
 					'value' => $readingDelay,
 					'channel' => $channel,
 				]));
@@ -1419,8 +1412,8 @@ class Install extends Console\Command\Command
 					'dataType' => $dataType,
 					'format' => $format,
 					'settable' => (
-						$type->equalsValue(Types\ChannelType::COIL)
-						|| $type->equalsValue(Types\ChannelType::HOLDING_REGISTER)
+						$type === Types\ChannelType::COIL
+						|| $type === Types\ChannelType::HOLDING_REGISTER
 					),
 					'queryable' => true,
 					'channel' => $channel,
@@ -1428,7 +1421,7 @@ class Install extends Console\Command\Command
 			}
 
 			// Commit all changes into database
-			$this->getOrmConnection()->commit();
+			$this->databaseHelper->commitTransaction();
 
 			if ($addresses[0] === $addresses[1]) {
 				$io->success(
@@ -1450,9 +1443,9 @@ class Install extends Console\Command\Command
 			$this->logger->error(
 				'An unhandled error occurred',
 				[
-					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+					'source' => MetadataTypes\Sources\Connector::MODBUS->value,
 					'type' => 'install-cmd',
-					'exception' => BootstrapHelpers\Logger::buildException($ex),
+					'exception' => ApplicationHelpers\Logger::buildException($ex),
 				],
 			);
 
@@ -1462,11 +1455,6 @@ class Install extends Console\Command\Command
 
 			return;
 		} finally {
-			// Revert all changes when error occur
-			if ($this->getOrmConnection()->isTransactionActive()) {
-				$this->getOrmConnection()->rollBack();
-			}
-
 			$this->databaseHelper->clear();
 		}
 
@@ -1487,7 +1475,7 @@ class Install extends Console\Command\Command
 	}
 
 	/**
-	 * @throws BootstrapExceptions\InvalidState
+	 * @throws ApplicationExceptions\InvalidState
 	 * @throws DBAL\Exception
 	 * @throws DevicesExceptions\InvalidState
 	 * @throws Exceptions\InvalidArgument
@@ -1495,8 +1483,10 @@ class Install extends Console\Command\Command
 	 * @throws Exceptions\Runtime
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
-	private function editRegister(Style\SymfonyStyle $io, Entities\ModbusDevice $device): void
+	private function editRegister(Style\SymfonyStyle $io, Entities\Devices\Device $device): void
 	{
 		$channel = $this->askWhichRegister($io, $device);
 
@@ -1538,31 +1528,31 @@ class Install extends Console\Command\Command
 		$format = null;
 
 		if (
-			$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SWITCH)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_BUTTON)
+			$dataType === MetadataTypes\DataType::SWITCH
+			|| $dataType === MetadataTypes\DataType::BUTTON
 		) {
 			$format = $this->askRegisterFormat($io, $dataType, $channel);
 		}
 
-		$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelProperties();
+		$findChannelPropertyQuery = new Queries\Entities\FindChannelProperties();
 		$findChannelPropertyQuery->forChannel($channel);
 		$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::ADDRESS);
 
 		$addressProperty = $this->channelsPropertiesRepository->findOneBy($findChannelPropertyQuery);
 
-		$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelProperties();
+		$findChannelPropertyQuery = new Queries\Entities\FindChannelProperties();
 		$findChannelPropertyQuery->forChannel($channel);
 		$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::TYPE);
 
 		$typeProperty = $this->channelsPropertiesRepository->findOneBy($findChannelPropertyQuery);
 
-		$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelProperties();
+		$findChannelPropertyQuery = new Queries\Entities\FindChannelProperties();
 		$findChannelPropertyQuery->forChannel($channel);
 		$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::READING_DELAY);
 
 		$readingDelayProperty = $this->channelsPropertiesRepository->findOneBy($findChannelPropertyQuery);
 
-		$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelProperties();
+		$findChannelPropertyQuery = new Queries\Entities\FindChannelProperties();
 		$findChannelPropertyQuery->forChannel($channel);
 		$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::VALUE);
 
@@ -1570,7 +1560,7 @@ class Install extends Console\Command\Command
 
 		try {
 			// Start transaction connection to the database
-			$this->getOrmConnection()->beginTransaction();
+			$this->databaseHelper->beginTransaction();
 
 			$channel = $this->channelsManager->update($channel, Utils\ArrayHash::from([
 				'name' => $name,
@@ -1580,7 +1570,7 @@ class Install extends Console\Command\Command
 				$this->channelsPropertiesManager->create(Utils\ArrayHash::from([
 					'entity' => DevicesEntities\Channels\Properties\Variable::class,
 					'identifier' => Types\ChannelPropertyIdentifier::ADDRESS,
-					'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UCHAR),
+					'dataType' => MetadataTypes\DataType::UCHAR,
 					'value' => $address,
 					'channel' => $channel,
 				]));
@@ -1594,8 +1584,8 @@ class Install extends Console\Command\Command
 				$this->channelsPropertiesManager->create(Utils\ArrayHash::from([
 					'entity' => DevicesEntities\Channels\Properties\Variable::class,
 					'identifier' => Types\ChannelPropertyIdentifier::TYPE,
-					'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING),
-					'value' => $type->getValue(),
+					'dataType' => MetadataTypes\DataType::STRING,
+					'value' => $type->value,
 					'channel' => $channel,
 				]));
 			}
@@ -1604,7 +1594,7 @@ class Install extends Console\Command\Command
 				$this->channelsPropertiesManager->create(Utils\ArrayHash::from([
 					'entity' => DevicesEntities\Channels\Properties\Variable::class,
 					'identifier' => Types\ChannelPropertyIdentifier::READING_DELAY,
-					'dataType' => MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UCHAR),
+					'dataType' => MetadataTypes\DataType::UCHAR,
 					'value' => $readingDelay,
 					'channel' => $channel,
 				]));
@@ -1621,8 +1611,8 @@ class Install extends Console\Command\Command
 					'dataType' => $dataType,
 					'format' => $format,
 					'settable' => (
-						$type->equalsValue(Types\ChannelType::COIL)
-						|| $type->equalsValue(Types\ChannelType::HOLDING_REGISTER)
+						$type === Types\ChannelType::COIL
+						|| $type === Types\ChannelType::HOLDING_REGISTER
 					),
 					'queryable' => true,
 					'channel' => $channel,
@@ -1632,14 +1622,14 @@ class Install extends Console\Command\Command
 					'dataType' => $dataType,
 					'format' => $format,
 					'settable' => (
-						$type->equalsValue(Types\ChannelType::COIL)
-						|| $type->equalsValue(Types\ChannelType::HOLDING_REGISTER)
+						$type === Types\ChannelType::COIL
+						|| $type === Types\ChannelType::HOLDING_REGISTER
 					),
 				]));
 			}
 
 			// Commit all changes into database
-			$this->getOrmConnection()->commit();
+			$this->databaseHelper->commitTransaction();
 
 			$io->success(
 				$this->translator->translate(
@@ -1652,9 +1642,9 @@ class Install extends Console\Command\Command
 			$this->logger->error(
 				'An unhandled error occurred',
 				[
-					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+					'source' => MetadataTypes\Sources\Connector::MODBUS->value,
 					'type' => 'install-cmd',
-					'exception' => BootstrapHelpers\Logger::buildException($ex),
+					'exception' => ApplicationHelpers\Logger::buildException($ex),
 				],
 			);
 
@@ -1662,24 +1652,19 @@ class Install extends Console\Command\Command
 				$this->translator->translate('//modbus-connector.cmd.install.messages.update.register.error'),
 			);
 		} finally {
-			// Revert all changes when error occur
-			if ($this->getOrmConnection()->isTransactionActive()) {
-				$this->getOrmConnection()->rollBack();
-			}
-
 			$this->databaseHelper->clear();
 		}
 	}
 
 	/**
-	 * @throws BootstrapExceptions\InvalidState
-	 * @throws DBAL\Exception
+	 * @throws ApplicationExceptions\InvalidState
 	 * @throws DevicesExceptions\InvalidState
-	 * @throws Exceptions\Runtime
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
-	private function deleteRegister(Style\SymfonyStyle $io, Entities\ModbusDevice $device): void
+	private function deleteRegister(Style\SymfonyStyle $io, Entities\Devices\Device $device): void
 	{
 		$channel = $this->askWhichRegister($io, $device);
 
@@ -1709,12 +1694,12 @@ class Install extends Console\Command\Command
 
 		try {
 			// Start transaction connection to the database
-			$this->getOrmConnection()->beginTransaction();
+			$this->databaseHelper->beginTransaction();
 
 			$this->channelsManager->delete($channel);
 
 			// Commit all changes into database
-			$this->getOrmConnection()->commit();
+			$this->databaseHelper->commitTransaction();
 
 			$io->success(
 				$this->translator->translate(
@@ -1727,9 +1712,9 @@ class Install extends Console\Command\Command
 			$this->logger->error(
 				'An unhandled error occurred',
 				[
-					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+					'source' => MetadataTypes\Sources\Connector::MODBUS->value,
 					'type' => 'install-cmd',
-					'exception' => BootstrapHelpers\Logger::buildException($ex),
+					'exception' => ApplicationHelpers\Logger::buildException($ex),
 				],
 			);
 
@@ -1737,29 +1722,28 @@ class Install extends Console\Command\Command
 				$this->translator->translate('//modbus-connector.cmd.install.messages.remove.register.error'),
 			);
 		} finally {
-			// Revert all changes when error occur
-			if ($this->getOrmConnection()->isTransactionActive()) {
-				$this->getOrmConnection()->rollBack();
-			}
-
 			$this->databaseHelper->clear();
 		}
 	}
 
 	/**
+	 * @throws ApplicationExceptions\InvalidState
+	 * @throws Exceptions\InvalidArgument
 	 * @throws DevicesExceptions\InvalidState
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
-	private function listRegisters(Style\SymfonyStyle $io, Entities\ModbusDevice $device): void
+	private function listRegisters(Style\SymfonyStyle $io, Entities\Devices\Device $device): void
 	{
 		$findChannelsQuery = new Queries\Entities\FindChannels();
 		$findChannelsQuery->forDevice($device);
 
-		$deviceChannels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\ModbusChannel::class);
+		$deviceChannels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\Channels\Channel::class);
 		usort(
 			$deviceChannels,
-			static fn (Entities\ModbusChannel $a, Entities\ModbusChannel $b): int => (
+			static fn (Entities\Channels\Channel $a, Entities\Channels\Channel $b): int => (
 				($a->getName() ?? $a->getIdentifier()) <=> ($b->getName() ?? $b->getIdentifier())
 			),
 		);
@@ -1775,7 +1759,7 @@ class Install extends Console\Command\Command
 		]);
 
 		foreach ($deviceChannels as $index => $channel) {
-			$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelDynamicProperties();
+			$findChannelPropertyQuery = new Queries\Entities\FindChannelDynamicProperties();
 			$findChannelPropertyQuery->forChannel($channel);
 			$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::VALUE);
 
@@ -1789,11 +1773,11 @@ class Install extends Console\Command\Command
 				$channel->getName() ?? $channel->getIdentifier(),
 				$channel->getRegisterType() !== null
 					? $this->translator->translate(
-						'//modbus-connector.cmd.base.registerType.' . $channel->getRegisterType()->getValue(),
+						'//modbus-connector.cmd.base.registerType.' . $channel->getRegisterType()->value,
 					)
 					: 'N/A',
 				$channel->getAddress(),
-				$valueProperty?->getDataType()->getValue(),
+				$valueProperty?->getDataType()->value,
 				$channel->getReadingDelay(),
 			]);
 		}
@@ -1812,6 +1796,8 @@ class Install extends Console\Command\Command
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
 	 * @throws RuntimeException
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function askInstallAction(Style\SymfonyStyle $io): void
 	{
@@ -1893,10 +1879,12 @@ class Install extends Console\Command\Command
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
 	 * @throws RuntimeException
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function askManageConnectorAction(
 		Style\SymfonyStyle $io,
-		Entities\ModbusConnector $connector,
+		Entities\Connectors\Connector $connector,
 	): void
 	{
 		$question = new Console\Question\ChoiceQuestion(
@@ -1971,7 +1959,7 @@ class Install extends Console\Command\Command
 	}
 
 	/**
-	 * @throws BootstrapExceptions\InvalidState
+	 * @throws ApplicationExceptions\InvalidState
 	 * @throws DBAL\Exception
 	 * @throws DevicesExceptions\InvalidState
 	 * @throws Exceptions\InvalidArgument
@@ -1979,10 +1967,12 @@ class Install extends Console\Command\Command
 	 * @throws Exceptions\Runtime
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function askManageDeviceAction(
 		Style\SymfonyStyle $io,
-		Entities\ModbusDevice $device,
+		Entities\Devices\Device $device,
 	): void
 	{
 		$question = new Console\Question\ChoiceQuestion(
@@ -2049,18 +2039,20 @@ class Install extends Console\Command\Command
 	 * @throws Exceptions\InvalidState
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function askConnectorMode(
 		Style\SymfonyStyle $io,
-		Entities\ModbusConnector|null $connector = null,
+		Entities\Connectors\Connector|null $connector = null,
 	): Types\ClientMode
 	{
 		$default = null;
 
 		if ($connector !== null) {
-			if ($connector->getClientMode()->equalsValue(Types\ClientMode::RTU)) {
+			if ($connector->getClientMode() === Types\ClientMode::RTU) {
 				$default = 0;
-			} elseif ($connector->getClientMode()->equalsValue(Types\ClientMode::TCP)) {
+			} elseif ($connector->getClientMode() === Types\ClientMode::TCP) {
 				$default = 1;
 			}
 		}
@@ -2093,7 +2085,7 @@ class Install extends Console\Command\Command
 				)
 				|| $answer === '0'
 			) {
-				return Types\ClientMode::get(Types\ClientMode::RTU);
+				return Types\ClientMode::RTU;
 			}
 
 			if (
@@ -2102,7 +2094,7 @@ class Install extends Console\Command\Command
 				)
 				|| $answer === '1'
 			) {
-				return Types\ClientMode::get(Types\ClientMode::TCP);
+				return Types\ClientMode::TCP;
 			}
 
 			throw new Exceptions\Runtime(
@@ -2118,7 +2110,7 @@ class Install extends Console\Command\Command
 
 	private function askConnectorName(
 		Style\SymfonyStyle $io,
-		Entities\ModbusConnector|null $connector = null,
+		Entities\Connectors\Connector|null $connector = null,
 	): string|null
 	{
 		$question = new Console\Question\Question(
@@ -2134,10 +2126,12 @@ class Install extends Console\Command\Command
 	/**
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function askConnectorInterface(
 		Style\SymfonyStyle $io,
-		Entities\ModbusConnector|null $connector = null,
+		Entities\Connectors\Connector|null $connector = null,
 	): string
 	{
 		$question = new Console\Question\Question(
@@ -2163,17 +2157,22 @@ class Install extends Console\Command\Command
 	/**
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function askConnectorBaudRate(
 		Style\SymfonyStyle $io,
-		Entities\ModbusConnector|null $connector = null,
+		Entities\Connectors\Connector|null $connector = null,
 	): Types\BaudRate
 	{
-		$default = $connector?->getBaudRate()->getValue() ?? Types\BaudRate::RATE_9600;
+		$default = $connector?->getBaudRate()->value ?? Types\BaudRate::RATE_9600->value;
 
 		$baudRates = array_combine(
-			array_values(Types\BaudRate::getValues()),
-			array_map(static fn (int $item): string => strval($item), array_values(Types\BaudRate::getValues())),
+			array_map(static fn (Types\BaudRate $item): int => $item->value, array_values(Types\BaudRate::cases())),
+			array_map(
+				static fn (Types\BaudRate $item): string => strval($item->value),
+				array_values(Types\BaudRate::cases()),
+			),
 		);
 
 		$question = new Console\Question\ChoiceQuestion(
@@ -2201,8 +2200,8 @@ class Install extends Console\Command\Command
 
 			$baudRate = array_search($answer, $baudRates, true);
 
-			if ($baudRate !== false && Types\BaudRate::isValidValue($baudRate)) {
-				return Types\BaudRate::get(intval($baudRate));
+			if ($baudRate !== false) {
+				return Types\BaudRate::from(intval($baudRate));
 			}
 
 			throw new Exceptions\Runtime(
@@ -2219,17 +2218,22 @@ class Install extends Console\Command\Command
 	/**
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function askConnectorByteSize(
 		Style\SymfonyStyle $io,
-		Entities\ModbusConnector|null $connector = null,
+		Entities\Connectors\Connector|null $connector = null,
 	): Types\ByteSize
 	{
-		$default = $connector?->getByteSize()->getValue() ?? Types\ByteSize::SIZE_8;
+		$default = $connector?->getByteSize()->value ?? Types\ByteSize::SIZE_8->value;
 
 		$byteSizes = array_combine(
-			array_values(Types\ByteSize::getValues()),
-			array_map(static fn (int $item): string => strval($item), array_values(Types\ByteSize::getValues())),
+			array_map(static fn (Types\ByteSize $item): int => $item->value, array_values(Types\ByteSize::cases())),
+			array_map(
+				static fn (Types\ByteSize $item): string => strval($item->value),
+				array_values(Types\ByteSize::cases()),
+			),
 		);
 
 		$question = new Console\Question\ChoiceQuestion(
@@ -2257,8 +2261,8 @@ class Install extends Console\Command\Command
 
 			$byteSize = array_search($answer, $byteSizes, true);
 
-			if ($byteSize !== false && Types\ByteSize::isValidValue($byteSize)) {
-				return Types\ByteSize::get(intval($byteSize));
+			if ($byteSize !== false) {
+				return Types\ByteSize::from(intval($byteSize));
 			}
 
 			throw new Exceptions\Runtime(
@@ -2275,15 +2279,17 @@ class Install extends Console\Command\Command
 	/**
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function askConnectorDataParity(
 		Style\SymfonyStyle $io,
-		Entities\ModbusConnector|null $connector = null,
+		Entities\Connectors\Connector|null $connector = null,
 	): Types\Parity
 	{
 		$default = 0;
 
-		switch ($connector?->getParity()->getValue()) {
+		switch ($connector?->getParity()) {
 			case Types\Parity::ODD:
 				$default = 1;
 
@@ -2323,7 +2329,7 @@ class Install extends Console\Command\Command
 				)
 				|| $answer === '0'
 			) {
-				return Types\Parity::get(Types\Parity::NONE);
+				return Types\Parity::NONE;
 			}
 
 			if (
@@ -2332,7 +2338,7 @@ class Install extends Console\Command\Command
 				)
 				|| $answer === '1'
 			) {
-				return Types\Parity::get(Types\Parity::ODD);
+				return Types\Parity::ODD;
 			}
 
 			if (
@@ -2341,7 +2347,7 @@ class Install extends Console\Command\Command
 				)
 				|| $answer === '2'
 			) {
-				return Types\Parity::get(Types\Parity::EVEN);
+				return Types\Parity::EVEN;
 			}
 
 			throw new Exceptions\Runtime(
@@ -2358,17 +2364,22 @@ class Install extends Console\Command\Command
 	/**
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function askConnectorStopBits(
 		Style\SymfonyStyle $io,
-		Entities\ModbusConnector|null $connector = null,
+		Entities\Connectors\Connector|null $connector = null,
 	): Types\StopBits
 	{
-		$default = $connector?->getStopBits()->getValue() ?? Types\StopBits::ONE;
+		$default = $connector?->getStopBits()->value ?? Types\StopBits::ONE->value;
 
 		$stopBits = array_combine(
-			array_values(Types\StopBits::getValues()),
-			array_map(static fn (int $item): string => strval($item), array_values(Types\StopBits::getValues())),
+			array_map(static fn (Types\StopBits $item): int => $item->value, array_values(Types\StopBits::cases())),
+			array_map(
+				static fn (Types\StopBits $item): string => strval($item->value),
+				array_values(Types\StopBits::cases()),
+			),
 		);
 
 		$question = new Console\Question\ChoiceQuestion(
@@ -2396,8 +2407,8 @@ class Install extends Console\Command\Command
 
 			$stopBit = array_search($answer, $stopBits, true);
 
-			if ($stopBit !== false && Types\StopBits::isValidValue($stopBit)) {
-				return Types\StopBits::get(intval($stopBit));
+			if ($stopBit !== false) {
+				return Types\StopBits::from(intval($stopBit));
 			}
 
 			throw new Exceptions\Runtime(
@@ -2411,7 +2422,7 @@ class Install extends Console\Command\Command
 		return $answer;
 	}
 
-	private function askDeviceName(Style\SymfonyStyle $io, Entities\ModbusDevice|null $device = null): string|null
+	private function askDeviceName(Style\SymfonyStyle $io, Entities\Devices\Device|null $device = null): string|null
 	{
 		$question = new Console\Question\Question(
 			$this->translator->translate('//modbus-connector.cmd.install.questions.provide.device.name'),
@@ -2426,11 +2437,13 @@ class Install extends Console\Command\Command
 	/**
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function askDeviceAddress(
 		Style\SymfonyStyle $io,
-		Entities\ModbusConnector $connector,
-		Entities\ModbusDevice|null $device = null,
+		Entities\Connectors\Connector $connector,
+		Entities\Devices\Device|null $device = null,
 	): int
 	{
 		$question = new Console\Question\Question(
@@ -2452,7 +2465,7 @@ class Install extends Console\Command\Command
 
 			$devices = $this->devicesRepository->findAllBy(
 				$findDevicesQuery,
-				Entities\ModbusDevice::class,
+				Entities\Devices\Device::class,
 			);
 
 			foreach ($devices as $connectorDevice) {
@@ -2477,10 +2490,12 @@ class Install extends Console\Command\Command
 	/**
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function askDeviceIpAddress(
 		Style\SymfonyStyle $io,
-		Entities\ModbusDevice|null $device = null,
+		Entities\Devices\Device|null $device = null,
 	): string
 	{
 		$question = new Console\Question\Question(
@@ -2513,10 +2528,12 @@ class Install extends Console\Command\Command
 	/**
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function askDeviceIpAddressPort(
 		Style\SymfonyStyle $io,
-		Entities\ModbusDevice|null $device = null,
+		Entities\Devices\Device|null $device = null,
 	): int
 	{
 		$question = new Console\Question\Question(
@@ -2542,11 +2559,13 @@ class Install extends Console\Command\Command
 	/**
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function askDeviceUnitId(
 		Style\SymfonyStyle $io,
-		Entities\ModbusConnector $connector,
-		Entities\ModbusDevice|null $device = null,
+		Entities\Connectors\Connector $connector,
+		Entities\Devices\Device|null $device = null,
 	): int
 	{
 		$question = new Console\Question\Question(
@@ -2568,7 +2587,7 @@ class Install extends Console\Command\Command
 
 			$devices = $this->devicesRepository->findAllBy(
 				$findDevicesQuery,
-				Entities\ModbusDevice::class,
+				Entities\Devices\Device::class,
 			);
 
 			foreach ($devices as $connectorDevice) {
@@ -2591,20 +2610,22 @@ class Install extends Console\Command\Command
 	/**
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function askDeviceByteOrder(
 		Style\SymfonyStyle $io,
-		Entities\ModbusDevice|null $device = null,
+		Entities\Devices\Device|null $device = null,
 	): Types\ByteOrder
 	{
 		$default = 0;
 
 		if ($device !== null) {
-			if ($device->getByteOrder()->equalsValue(Types\ByteOrder::BIG_SWAP)) {
+			if ($device->getByteOrder() === Types\ByteOrder::BIG_SWAP) {
 				$default = 1;
-			} elseif ($device->getByteOrder()->equalsValue(Types\ByteOrder::LITTLE)) {
+			} elseif ($device->getByteOrder() === Types\ByteOrder::LITTLE) {
 				$default = 2;
-			} elseif ($device->getByteOrder()->equalsValue(Types\ByteOrder::LITTLE_SWAP)) {
+			} elseif ($device->getByteOrder() === Types\ByteOrder::LITTLE_SWAP) {
 				$default = 3;
 			}
 		}
@@ -2637,28 +2658,28 @@ class Install extends Console\Command\Command
 				$answer === $this->translator->translate('//modbus-connector.cmd.install.answers.endian.big')
 				|| $answer === '0'
 			) {
-				return Types\ByteOrder::get(Types\ByteOrder::BIG);
+				return Types\ByteOrder::BIG;
 			}
 
 			if (
 				$answer === $this->translator->translate('//modbus-connector.cmd.install.answers.endian.bigSwap')
 				|| $answer === '1'
 			) {
-				return Types\ByteOrder::get(Types\ByteOrder::BIG_SWAP);
+				return Types\ByteOrder::BIG_SWAP;
 			}
 
 			if (
 				$answer === $this->translator->translate('//modbus-connector.cmd.install.answers.endian.little')
 				|| $answer === '2'
 			) {
-				return Types\ByteOrder::get(Types\ByteOrder::LITTLE);
+				return Types\ByteOrder::LITTLE;
 			}
 
 			if (
 				$answer === $this->translator->translate('//modbus-connector.cmd.install.answers.endian.littleSwap')
 				|| $answer === '3'
 			) {
-				return Types\ByteOrder::get(Types\ByteOrder::LITTLE_SWAP);
+				return Types\ByteOrder::LITTLE_SWAP;
 			}
 
 			throw new Exceptions\Runtime(
@@ -2678,10 +2699,12 @@ class Install extends Console\Command\Command
 	/**
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function askRegisterType(
 		Style\SymfonyStyle $io,
-		Entities\ModbusChannel|null $channel = null,
+		Entities\Channels\Channel|null $channel = null,
 	): Types\ChannelType
 	{
 		if ($channel !== null) {
@@ -2689,11 +2712,11 @@ class Install extends Console\Command\Command
 
 			$default = 0;
 
-			if ($type !== null && $type->equalsValue(Types\ChannelType::COIL)) {
+			if ($type !== null && $type === Types\ChannelType::COIL) {
 				$default = 1;
-			} elseif ($type !== null && $type->equalsValue(Types\ChannelType::INPUT_REGISTER)) {
+			} elseif ($type !== null && $type === Types\ChannelType::INPUT_REGISTER) {
 				$default = 2;
-			} elseif ($type !== null && $type->equalsValue(Types\ChannelType::HOLDING_REGISTER)) {
+			} elseif ($type !== null && $type === Types\ChannelType::HOLDING_REGISTER) {
 				$default = 3;
 			}
 
@@ -2739,14 +2762,14 @@ class Install extends Console\Command\Command
 				)
 				|| $answer === '0'
 			) {
-				return Types\ChannelType::get(Types\ChannelType::DISCRETE_INPUT);
+				return Types\ChannelType::DISCRETE_INPUT;
 			}
 
 			if (
 				$answer === $this->translator->translate('//modbus-connector.cmd.install.answers.registerType.coil')
 				|| $answer === '1'
 			) {
-				return Types\ChannelType::get(Types\ChannelType::COIL);
+				return Types\ChannelType::COIL;
 			}
 
 			if (
@@ -2755,7 +2778,7 @@ class Install extends Console\Command\Command
 				)
 				|| $answer === '2'
 			) {
-				return Types\ChannelType::get(Types\ChannelType::INPUT_REGISTER);
+				return Types\ChannelType::INPUT_REGISTER;
 			}
 
 			if (
@@ -2764,7 +2787,7 @@ class Install extends Console\Command\Command
 				)
 				|| $answer === '3'
 			) {
-				return Types\ChannelType::get(Types\ChannelType::HOLDING_REGISTER);
+				return Types\ChannelType::HOLDING_REGISTER;
 			}
 
 			throw new Exceptions\Runtime(
@@ -2786,11 +2809,13 @@ class Install extends Console\Command\Command
 	 *
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function askRegisterAddress(
 		Style\SymfonyStyle $io,
-		Entities\ModbusDevice $device,
-		Entities\ModbusChannel|null $channel = null,
+		Entities\Devices\Device $device,
+		Entities\Channels\Channel|null $channel = null,
 	): int|array
 	{
 		$address = $channel?->getAddress();
@@ -2810,7 +2835,7 @@ class Install extends Console\Command\Command
 				$findChannelsQuery = new Queries\Entities\FindChannels();
 				$findChannelsQuery->forDevice($device);
 
-				$channels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\ModbusChannel::class);
+				$channels = $this->channelsRepository->findAllBy($findChannelsQuery, Entities\Channels\Channel::class);
 
 				foreach ($channels as $deviceChannel) {
 					$address = $deviceChannel->getAddress();
@@ -2848,7 +2873,7 @@ class Install extends Console\Command\Command
 
 						$channels = $this->channelsRepository->findAllBy(
 							$findChannelsQuery,
-							Entities\ModbusChannel::class,
+							Entities\Channels\Channel::class,
 						);
 
 						foreach ($channels as $deviceChannel) {
@@ -2885,7 +2910,7 @@ class Install extends Console\Command\Command
 
 	private function askRegisterName(
 		Style\SymfonyStyle $io,
-		Entities\ModbusChannel|null $channel = null,
+		Entities\Channels\Channel|null $channel = null,
 	): string|null
 	{
 		$question = new Console\Question\Question(
@@ -2901,15 +2926,17 @@ class Install extends Console\Command\Command
 	/**
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function askRegisterReadingDelay(
 		Style\SymfonyStyle $io,
-		Entities\ModbusChannel|null $channel = null,
+		Entities\Channels\Channel|null $channel = null,
 	): string|null
 	{
 		$question = new Console\Question\Question(
 			$this->translator->translate('//modbus-connector.cmd.install.questions.provide.register.readingDelay'),
-			$channel?->getReadingDelay() ?? Entities\ModbusChannel::READING_DELAY,
+			$channel?->getReadingDelay() ?? Modbus\Constants::READING_DELAY,
 		);
 
 		$name = strval($io->askQuestion($question));
@@ -2918,88 +2945,102 @@ class Install extends Console\Command\Command
 	}
 
 	/**
-	 * @throws DevicesExceptions\InvalidState
+	 * @throws ApplicationExceptions\InvalidState
 	 * @throws Exceptions\InvalidArgument
 	 */
 	private function askRegisterDataType(
 		Style\SymfonyStyle $io,
 		Types\ChannelType $type,
-		Entities\ModbusChannel|null $channel = null,
+		Entities\Channels\Channel|null $channel = null,
 	): MetadataTypes\DataType
 	{
 		$default = null;
 
 		if (
-			$type->equalsValue(Types\ChannelType::DISCRETE_INPUT)
-			|| $type->equalsValue(Types\ChannelType::COIL)
+			in_array(
+				$type,
+				[
+					Types\ChannelType::DISCRETE_INPUT,
+					Types\ChannelType::COIL,
+				],
+				true,
+			)
 		) {
-			return MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_BOOLEAN);
+			return MetadataTypes\DataType::BOOLEAN;
 		} elseif (
-			$type->equalsValue(Types\ChannelType::HOLDING_REGISTER)
-			|| $type->equalsValue(Types\ChannelType::INPUT_REGISTER)
+			in_array(
+				$type,
+				[
+					Types\ChannelType::HOLDING_REGISTER,
+					Types\ChannelType::INPUT_REGISTER,
+				],
+				true,
+			)
 		) {
 			$dataTypes = [
-				MetadataTypes\DataType::DATA_TYPE_CHAR,
-				MetadataTypes\DataType::DATA_TYPE_UCHAR,
-				MetadataTypes\DataType::DATA_TYPE_SHORT,
-				MetadataTypes\DataType::DATA_TYPE_USHORT,
-				MetadataTypes\DataType::DATA_TYPE_INT,
-				MetadataTypes\DataType::DATA_TYPE_UINT,
-				MetadataTypes\DataType::DATA_TYPE_FLOAT,
-				MetadataTypes\DataType::DATA_TYPE_STRING,
+				MetadataTypes\DataType::CHAR->value,
+				MetadataTypes\DataType::UCHAR->value,
+				MetadataTypes\DataType::SHORT->value,
+				MetadataTypes\DataType::USHORT->value,
+				MetadataTypes\DataType::INT->value,
+				MetadataTypes\DataType::UINT->value,
+				MetadataTypes\DataType::FLOAT->value,
+				MetadataTypes\DataType::STRING->value,
 			];
 
-			$dataTypes[] = $type->equalsValue(Types\ChannelType::HOLDING_REGISTER)
-				? MetadataTypes\DataType::DATA_TYPE_SWITCH
-				: MetadataTypes\DataType::DATA_TYPE_BUTTON;
+			$dataTypes[] = $type === Types\ChannelType::HOLDING_REGISTER
+				? MetadataTypes\DataType::SWITCH->value
+				: MetadataTypes\DataType::BUTTON->value;
 
 			if ($channel !== null) {
-				$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelProperties();
+				$findChannelPropertyQuery = new Queries\Entities\FindChannelProperties();
 				$findChannelPropertyQuery->forChannel($channel);
 				$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::VALUE);
 
 				$valueProperty = $this->channelsPropertiesRepository->findOneBy($findChannelPropertyQuery);
 
-				switch ($valueProperty?->getDataType()->getValue()) {
-					case MetadataTypes\DataType::DATA_TYPE_CHAR:
+				switch ($valueProperty?->getDataType()) {
+					case MetadataTypes\DataType::CHAR:
 						$default = 0;
 
 						break;
-					case MetadataTypes\DataType::DATA_TYPE_UCHAR:
+					case MetadataTypes\DataType::UCHAR:
 						$default = 1;
 
 						break;
-					case MetadataTypes\DataType::DATA_TYPE_SHORT:
+					case MetadataTypes\DataType::SHORT:
 						$default = 2;
 
 						break;
-					case MetadataTypes\DataType::DATA_TYPE_USHORT:
+					case MetadataTypes\DataType::USHORT:
 						$default = 3;
 
 						break;
-					case MetadataTypes\DataType::DATA_TYPE_INT:
+					case MetadataTypes\DataType::INT:
 						$default = 4;
 
 						break;
-					case MetadataTypes\DataType::DATA_TYPE_UINT:
+					case MetadataTypes\DataType::UINT:
 						$default = 5;
 
 						break;
-					case MetadataTypes\DataType::DATA_TYPE_FLOAT:
+					case MetadataTypes\DataType::FLOAT:
 						$default = 6;
 
 						break;
-					case MetadataTypes\DataType::DATA_TYPE_STRING:
+					case MetadataTypes\DataType::STRING:
 						$default = 7;
 
 						break;
-					case MetadataTypes\DataType::DATA_TYPE_SWITCH:
+					case MetadataTypes\DataType::SWITCH:
 						$default = 8;
 
 						break;
-					case MetadataTypes\DataType::DATA_TYPE_BUTTON:
+					case MetadataTypes\DataType::BUTTON:
 						$default = 9;
 
+						break;
+					default:
 						break;
 				}
 			}
@@ -3026,15 +3067,12 @@ class Install extends Console\Command\Command
 				);
 			}
 
-			if (MetadataTypes\DataType::isValidValue($answer)) {
-				return MetadataTypes\DataType::get($answer);
+			if (MetadataTypes\DataType::tryFrom($answer) !== null) {
+				return MetadataTypes\DataType::from($answer);
 			}
 
-			if (
-				array_key_exists($answer, $dataTypes)
-				&& MetadataTypes\DataType::isValidValue($dataTypes[$answer])
-			) {
-				return MetadataTypes\DataType::get($dataTypes[$answer]);
+			if (array_key_exists($answer, $dataTypes)) {
+				return MetadataTypes\DataType::from($dataTypes[$answer]);
 			}
 
 			throw new Exceptions\Runtime(
@@ -3054,24 +3092,26 @@ class Install extends Console\Command\Command
 	/**
 	 * @return array<int, array<int, array<int, string>>>|null
 	 *
-	 * @throws DevicesExceptions\InvalidState
+	 * @throws ApplicationExceptions\InvalidState
 	 * @throws Exceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function askRegisterFormat(
 		Style\SymfonyStyle $io,
 		MetadataTypes\DataType $dataType,
-		Entities\ModbusChannel|null $channel = null,
+		Entities\Channels\Channel|null $channel = null,
 	): array|null
 	{
 		$format = [];
 
-		if ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SWITCH)) {
+		if ($dataType === MetadataTypes\DataType::SWITCH) {
 			foreach ([
-				MetadataTypes\SwitchPayload::get(MetadataTypes\SwitchPayload::PAYLOAD_ON),
-				MetadataTypes\SwitchPayload::get(MetadataTypes\SwitchPayload::PAYLOAD_OFF),
-				MetadataTypes\SwitchPayload::get(MetadataTypes\SwitchPayload::PAYLOAD_TOGGLE),
+				MetadataTypes\Payloads\Switcher::ON,
+				MetadataTypes\Payloads\Switcher::OFF,
+				MetadataTypes\Payloads\Switcher::TOGGLE,
 			] as $payloadType) {
 				$result = $this->askFormatSwitchAction($io, $payloadType, $channel);
 
@@ -3081,15 +3121,15 @@ class Install extends Console\Command\Command
 			}
 
 			return $format;
-		} elseif ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_BUTTON)) {
+		} elseif ($dataType === MetadataTypes\DataType::BUTTON) {
 			foreach ([
-				MetadataTypes\ButtonPayload::get(MetadataTypes\ButtonPayload::PAYLOAD_PRESSED),
-				MetadataTypes\ButtonPayload::get(MetadataTypes\ButtonPayload::PAYLOAD_RELEASED),
-				MetadataTypes\ButtonPayload::get(MetadataTypes\ButtonPayload::PAYLOAD_CLICKED),
-				MetadataTypes\ButtonPayload::get(MetadataTypes\ButtonPayload::PAYLOAD_DOUBLE_CLICKED),
-				MetadataTypes\ButtonPayload::get(MetadataTypes\ButtonPayload::PAYLOAD_TRIPLE_CLICKED),
-				MetadataTypes\ButtonPayload::get(MetadataTypes\ButtonPayload::PAYLOAD_LONG_CLICKED),
-				MetadataTypes\ButtonPayload::get(MetadataTypes\ButtonPayload::PAYLOAD_EXTRA_LONG_CLICKED),
+				MetadataTypes\Payloads\Button::PRESSED,
+				MetadataTypes\Payloads\Button::RELEASED,
+				MetadataTypes\Payloads\Button::CLICKED,
+				MetadataTypes\Payloads\Button::DOUBLE_CLICKED,
+				MetadataTypes\Payloads\Button::TRIPLE_CLICKED,
+				MetadataTypes\Payloads\Button::LONG_CLICKED,
+				MetadataTypes\Payloads\Button::EXTRA_LONG_CLICKED,
 			] as $payloadType) {
 				$result = $this->askFormatButtonAction($io, $payloadType, $channel);
 
@@ -3107,15 +3147,17 @@ class Install extends Console\Command\Command
 	/**
 	 * @return array<int, array<int, string>>|null
 	 *
-	 * @throws DevicesExceptions\InvalidState
+	 * @throws ApplicationExceptions\InvalidState
 	 * @throws Exceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function askFormatSwitchAction(
 		Style\SymfonyStyle $io,
-		MetadataTypes\SwitchPayload $payload,
-		Entities\ModbusChannel|null $channel = null,
+		MetadataTypes\Payloads\Switcher $payload,
+		Entities\Channels\Channel|null $channel = null,
 	): array|null
 	{
 		$defaultReading = $defaultWriting = null;
@@ -3123,7 +3165,7 @@ class Install extends Console\Command\Command
 		$existingProperty = null;
 
 		if ($channel !== null) {
-			$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelProperties();
+			$findChannelPropertyQuery = new Queries\Entities\FindChannelProperties();
 			$findChannelPropertyQuery->forChannel($channel);
 			$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::VALUE);
 
@@ -3135,13 +3177,13 @@ class Install extends Console\Command\Command
 		if ($existingProperty !== null) {
 			$format = $existingProperty->getFormat();
 
-			if ($format instanceof MetadataValueObjects\CombinedEnumFormat) {
+			if ($format instanceof MetadataFormats\CombinedEnum) {
 				foreach ($format->getItems() as $item) {
 					if (count($item) === 3) {
 						if (
 							$item[0] !== null
-							&& $item[0]->getValue() instanceof MetadataTypes\SwitchPayload
-							&& $item[0]->getValue()->equals($payload)
+							&& $item[0]->getValue() instanceof MetadataTypes\Payloads\Switcher
+							&& $item[0]->getValue() === $payload
 						) {
 							$defaultReading = $item[1]?->toArray();
 							$defaultWriting = $item[2]?->toArray();
@@ -3153,11 +3195,11 @@ class Install extends Console\Command\Command
 			}
 		}
 
-		if ($payload->equalsValue(MetadataTypes\SwitchPayload::PAYLOAD_ON)) {
+		if ($payload === MetadataTypes\Payloads\Switcher::ON) {
 			$questionText = $this->translator->translate('//modbus-connector.cmd.install.questions.switch.hasOn');
-		} elseif ($payload->equalsValue(MetadataTypes\SwitchPayload::PAYLOAD_OFF)) {
+		} elseif ($payload === MetadataTypes\Payloads\Switcher::OFF) {
 			$questionText = $this->translator->translate('//modbus-connector.cmd.install.questions.switch.hasOff');
-		} elseif ($payload->equalsValue(MetadataTypes\SwitchPayload::PAYLOAD_TOGGLE)) {
+		} elseif ($payload === MetadataTypes\Payloads\Switcher::TOGGLE) {
 			$questionText = $this->translator->translate('//modbus-connector.cmd.install.questions.switch.hasToggle');
 		} else {
 			throw new Exceptions\InvalidArgument('Provided payload type is not valid');
@@ -3173,8 +3215,8 @@ class Install extends Console\Command\Command
 
 		return [
 			[
-				MetadataTypes\DataTypeShort::DATA_TYPE_SWITCH,
-				strval($payload->getValue()),
+				MetadataTypes\DataTypeShort::SWITCH->value,
+				$payload->value,
 			],
 			$this->askFormatSwitchActionValues($io, $payload, true, $defaultReading),
 			$this->askFormatSwitchActionValues($io, $payload, false, $defaultWriting),
@@ -3185,12 +3227,10 @@ class Install extends Console\Command\Command
 	 * @param array<int, bool|float|int|string>|null $default
 	 *
 	 * @return array<int, string>
-	 *
-	 * @throws Exceptions\InvalidArgument
 	 */
 	private function askFormatSwitchActionValues(
 		Style\SymfonyStyle $io,
-		MetadataTypes\SwitchPayload $payload,
+		MetadataTypes\Payloads\Switcher $payload,
 		bool $reading,
 		array|null $default,
 	): array
@@ -3198,21 +3238,21 @@ class Install extends Console\Command\Command
 		assert((is_array($default) && count($default) === 2) || $default === null);
 
 		if ($reading) {
-			if ($payload->equalsValue(MetadataTypes\SwitchPayload::PAYLOAD_ON)) {
+			if ($payload === MetadataTypes\Payloads\Switcher::ON) {
 				$questionText = $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.switch.readOnValue',
 				);
 				$questionError = $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.switch.readOnValueError',
 				);
-			} elseif ($payload->equalsValue(MetadataTypes\SwitchPayload::PAYLOAD_OFF)) {
+			} elseif ($payload === MetadataTypes\Payloads\Switcher::OFF) {
 				$questionText = $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.switch.readOffValue',
 				);
 				$questionError = $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.switch.readOffValueError',
 				);
-			} elseif ($payload->equalsValue(MetadataTypes\SwitchPayload::PAYLOAD_TOGGLE)) {
+			} elseif ($payload === MetadataTypes\Payloads\Switcher::TOGGLE) {
 				$questionText = $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.switch.readToggleValue',
 				);
@@ -3223,21 +3263,21 @@ class Install extends Console\Command\Command
 				throw new Exceptions\InvalidArgument('Provided payload type is not valid');
 			}
 		} else {
-			if ($payload->equalsValue(MetadataTypes\SwitchPayload::PAYLOAD_ON)) {
+			if ($payload === MetadataTypes\Payloads\Switcher::ON) {
 				$questionText = $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.switch.writeOnValue',
 				);
 				$questionError = $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.switch.writeOnValueError',
 				);
-			} elseif ($payload->equalsValue(MetadataTypes\SwitchPayload::PAYLOAD_OFF)) {
+			} elseif ($payload === MetadataTypes\Payloads\Switcher::OFF) {
 				$questionText = $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.switch.writeOffValue',
 				);
 				$questionError = $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.switch.writeOffValueError',
 				);
-			} elseif ($payload->equalsValue(MetadataTypes\SwitchPayload::PAYLOAD_TOGGLE)) {
+			} elseif ($payload === MetadataTypes\Payloads\Switcher::TOGGLE) {
 				$questionText = $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.switch.writeToggleValue',
 				);
@@ -3278,34 +3318,34 @@ class Install extends Console\Command\Command
 
 		if (strval(intval($switchReading)) === $switchReading) {
 			$dataTypes = [
-				MetadataTypes\DataTypeShort::DATA_TYPE_BOOLEAN,
-				MetadataTypes\DataTypeShort::DATA_TYPE_CHAR,
-				MetadataTypes\DataTypeShort::DATA_TYPE_UCHAR,
-				MetadataTypes\DataTypeShort::DATA_TYPE_SHORT,
-				MetadataTypes\DataTypeShort::DATA_TYPE_USHORT,
-				MetadataTypes\DataTypeShort::DATA_TYPE_INT,
-				MetadataTypes\DataTypeShort::DATA_TYPE_UINT,
-				MetadataTypes\DataTypeShort::DATA_TYPE_FLOAT,
+				MetadataTypes\DataTypeShort::BOOLEAN->value,
+				MetadataTypes\DataTypeShort::CHAR->value,
+				MetadataTypes\DataTypeShort::UCHAR->value,
+				MetadataTypes\DataTypeShort::SHORT->value,
+				MetadataTypes\DataTypeShort::USHORT->value,
+				MetadataTypes\DataTypeShort::INT->value,
+				MetadataTypes\DataTypeShort::UINT->value,
+				MetadataTypes\DataTypeShort::FLOAT->value,
 			];
 
 			$selected = null;
 
 			if ($default !== null) {
-				if ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_BOOLEAN) {
+				if ($default[0] === MetadataTypes\DataTypeShort::BOOLEAN->value) {
 					$selected = 0;
-				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_CHAR) {
+				} elseif ($default[0] === MetadataTypes\DataTypeShort::CHAR->value) {
 					$selected = 1;
-				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_UCHAR) {
+				} elseif ($default[0] === MetadataTypes\DataTypeShort::UCHAR->value) {
 					$selected = 2;
-				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_SHORT) {
+				} elseif ($default[0] === MetadataTypes\DataTypeShort::SHORT->value) {
 					$selected = 3;
-				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_USHORT) {
+				} elseif ($default[0] === MetadataTypes\DataTypeShort::USHORT->value) {
 					$selected = 4;
-				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_INT) {
+				} elseif ($default[0] === MetadataTypes\DataTypeShort::INT->value) {
 					$selected = 5;
-				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_UINT) {
+				} elseif ($default[0] === MetadataTypes\DataTypeShort::UINT->value) {
 					$selected = 6;
-				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_FLOAT) {
+				} elseif ($default[0] === MetadataTypes\DataTypeShort::FLOAT->value) {
 					$selected = 7;
 				}
 			}
@@ -3329,14 +3369,11 @@ class Install extends Console\Command\Command
 					);
 				}
 
-				if (MetadataTypes\DataTypeShort::isValidValue($answer)) {
+				if (MetadataTypes\DataTypeShort::tryFrom($answer) !== null) {
 					return $answer;
 				}
 
-				if (
-					array_key_exists($answer, $dataTypes)
-					&& MetadataTypes\DataTypeShort::isValidValue($dataTypes[$answer])
-				) {
+				if (array_key_exists($answer, $dataTypes)) {
 					return $dataTypes[$answer];
 				}
 
@@ -3357,7 +3394,7 @@ class Install extends Console\Command\Command
 		}
 
 		return [
-			MetadataTypes\DataTypeShort::DATA_TYPE_STRING,
+			MetadataTypes\DataTypeShort::STRING->value,
 			$switchReading,
 		];
 	}
@@ -3365,15 +3402,17 @@ class Install extends Console\Command\Command
 	/**
 	 * @return array<int, array<int, string>>|null
 	 *
-	 * @throws DevicesExceptions\InvalidState
+	 * @throws ApplicationExceptions\InvalidState
 	 * @throws Exceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function askFormatButtonAction(
 		Style\SymfonyStyle $io,
-		MetadataTypes\ButtonPayload $payload,
-		Entities\ModbusChannel|null $channel = null,
+		MetadataTypes\Payloads\Button $payload,
+		Entities\Channels\Channel|null $channel = null,
 	): array|null
 	{
 		$defaultReading = $defaultWriting = null;
@@ -3381,7 +3420,7 @@ class Install extends Console\Command\Command
 		$existingProperty = null;
 
 		if ($channel !== null) {
-			$findChannelPropertyQuery = new DevicesQueries\Entities\FindChannelProperties();
+			$findChannelPropertyQuery = new Queries\Entities\FindChannelProperties();
 			$findChannelPropertyQuery->forChannel($channel);
 			$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::VALUE);
 
@@ -3393,13 +3432,13 @@ class Install extends Console\Command\Command
 		if ($existingProperty !== null) {
 			$format = $existingProperty->getFormat();
 
-			if ($format instanceof MetadataValueObjects\CombinedEnumFormat) {
+			if ($format instanceof MetadataFormats\CombinedEnum) {
 				foreach ($format->getItems() as $item) {
 					if (count($item) === 3) {
 						if (
 							$item[0] !== null
-							&& $item[0]->getValue() instanceof MetadataTypes\SwitchPayload
-							&& $item[0]->getValue()->equals($payload)
+							&& $item[0]->getValue() instanceof MetadataTypes\Payloads\Button
+							&& $item[0]->getValue() === $payload
 						) {
 							$defaultReading = $item[1]?->toArray();
 							$defaultWriting = $item[2]?->toArray();
@@ -3411,25 +3450,25 @@ class Install extends Console\Command\Command
 			}
 		}
 
-		if ($payload->equalsValue(MetadataTypes\ButtonPayload::PAYLOAD_PRESSED)) {
+		if ($payload === MetadataTypes\Payloads\Button::PRESSED) {
 			$questionText = $this->translator->translate('//modbus-connector.cmd.install.questions.button.hasPress');
-		} elseif ($payload->equalsValue(MetadataTypes\ButtonPayload::PAYLOAD_RELEASED)) {
+		} elseif ($payload === MetadataTypes\Payloads\Button::RELEASED) {
 			$questionText = $this->translator->translate('//modbus-connector.cmd.install.questions.button.hasRelease');
-		} elseif ($payload->equalsValue(MetadataTypes\ButtonPayload::PAYLOAD_CLICKED)) {
+		} elseif ($payload === MetadataTypes\Payloads\Button::CLICKED) {
 			$questionText = $this->translator->translate('//modbus-connector.cmd.install.questions.button.hasClick');
-		} elseif ($payload->equalsValue(MetadataTypes\ButtonPayload::PAYLOAD_DOUBLE_CLICKED)) {
+		} elseif ($payload === MetadataTypes\Payloads\Button::DOUBLE_CLICKED) {
 			$questionText = $this->translator->translate(
 				'//modbus-connector.cmd.install.questions.button.hasDoubleClick',
 			);
-		} elseif ($payload->equalsValue(MetadataTypes\ButtonPayload::PAYLOAD_TRIPLE_CLICKED)) {
+		} elseif ($payload === MetadataTypes\Payloads\Button::TRIPLE_CLICKED) {
 			$questionText = $this->translator->translate(
 				'//modbus-connector.cmd.install.questions.button.hasTripleClick',
 			);
-		} elseif ($payload->equalsValue(MetadataTypes\ButtonPayload::PAYLOAD_LONG_CLICKED)) {
+		} elseif ($payload === MetadataTypes\Payloads\Button::LONG_CLICKED) {
 			$questionText = $this->translator->translate(
 				'//modbus-connector.cmd.install.questions.button.hasLongClick',
 			);
-		} elseif ($payload->equalsValue(MetadataTypes\ButtonPayload::PAYLOAD_EXTRA_LONG_CLICKED)) {
+		} elseif ($payload === MetadataTypes\Payloads\Button::EXTRA_LONG_CLICKED) {
 			$questionText = $this->translator->translate(
 				'//modbus-connector.cmd.install.questions.button.hasExtraLongClick',
 			);
@@ -3447,8 +3486,8 @@ class Install extends Console\Command\Command
 
 		return [
 			[
-				MetadataTypes\DataTypeShort::DATA_TYPE_BUTTON,
-				strval($payload->getValue()),
+				MetadataTypes\DataTypeShort::BUTTON->value,
+				strval($payload->value),
 			],
 			$this->askFormatButtonActionValues($io, $payload, true, $defaultReading),
 			$this->askFormatButtonActionValues($io, $payload, false, $defaultWriting),
@@ -3459,12 +3498,10 @@ class Install extends Console\Command\Command
 	 * @param array<int, bool|float|int|string>|null $default
 	 *
 	 * @return array<int, string>
-	 *
-	 * @throws Exceptions\InvalidArgument
 	 */
 	private function askFormatButtonActionValues(
 		Style\SymfonyStyle $io,
-		MetadataTypes\ButtonPayload $payload,
+		MetadataTypes\Payloads\Button $payload,
 		bool $reading,
 		array|null $default,
 	): array
@@ -3472,49 +3509,49 @@ class Install extends Console\Command\Command
 		assert((is_array($default) && count($default) === 2) || $default === null);
 
 		if ($reading) {
-			if ($payload->equalsValue(MetadataTypes\ButtonPayload::PAYLOAD_PRESSED)) {
+			if ($payload === MetadataTypes\Payloads\Button::PRESSED) {
 				$questionText = $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.readPressValue',
 				);
 				$questionError = $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.readPressValueError',
 				);
-			} elseif ($payload->equalsValue(MetadataTypes\ButtonPayload::PAYLOAD_RELEASED)) {
+			} elseif ($payload === MetadataTypes\Payloads\Button::RELEASED) {
 				$questionText = $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.readReleaseValue',
 				);
 				$questionError = $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.readReleaseValueError',
 				);
-			} elseif ($payload->equalsValue(MetadataTypes\ButtonPayload::PAYLOAD_CLICKED)) {
+			} elseif ($payload === MetadataTypes\Payloads\Button::CLICKED) {
 				$questionText = $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.readClickValue',
 				);
 				$questionError = $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.readClickValueError',
 				);
-			} elseif ($payload->equalsValue(MetadataTypes\ButtonPayload::PAYLOAD_DOUBLE_CLICKED)) {
+			} elseif ($payload === MetadataTypes\Payloads\Button::DOUBLE_CLICKED) {
 				$questionText = $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.readDoubleClickValue',
 				);
 				$questionError = $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.readDoubleClickValueError',
 				);
-			} elseif ($payload->equalsValue(MetadataTypes\ButtonPayload::PAYLOAD_TRIPLE_CLICKED)) {
+			} elseif ($payload === MetadataTypes\Payloads\Button::TRIPLE_CLICKED) {
 				$questionText = $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.readTripleClickValue',
 				);
 				$questionError = $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.readTripleClickValueError',
 				);
-			} elseif ($payload->equalsValue(MetadataTypes\ButtonPayload::PAYLOAD_LONG_CLICKED)) {
+			} elseif ($payload === MetadataTypes\Payloads\Button::LONG_CLICKED) {
 				$questionText = $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.readLongClickValue',
 				);
 				$questionError = $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.readLongClickValueError',
 				);
-			} elseif ($payload->equalsValue(MetadataTypes\ButtonPayload::PAYLOAD_EXTRA_LONG_CLICKED)) {
+			} elseif ($payload === MetadataTypes\Payloads\Button::EXTRA_LONG_CLICKED) {
 				$questionText = $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.readExtraLongClickValue',
 				);
@@ -3525,49 +3562,49 @@ class Install extends Console\Command\Command
 				throw new Exceptions\InvalidArgument('Provided payload type is not valid');
 			}
 		} else {
-			if ($payload->equalsValue(MetadataTypes\ButtonPayload::PAYLOAD_PRESSED)) {
+			if ($payload === MetadataTypes\Payloads\Button::PRESSED) {
 				$questionText = $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.writePressValue',
 				);
 				$questionError = $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.writePressValueError',
 				);
-			} elseif ($payload->equalsValue(MetadataTypes\ButtonPayload::PAYLOAD_RELEASED)) {
+			} elseif ($payload === MetadataTypes\Payloads\Button::RELEASED) {
 				$questionText = $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.writeReleaseValue',
 				);
 				$questionError = $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.writeReleaseValueError',
 				);
-			} elseif ($payload->equalsValue(MetadataTypes\ButtonPayload::PAYLOAD_CLICKED)) {
+			} elseif ($payload === MetadataTypes\Payloads\Button::CLICKED) {
 				$questionText = $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.writeClickValue',
 				);
 				$questionError = $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.writeClickValueError',
 				);
-			} elseif ($payload->equalsValue(MetadataTypes\ButtonPayload::PAYLOAD_DOUBLE_CLICKED)) {
+			} elseif ($payload === MetadataTypes\Payloads\Button::DOUBLE_CLICKED) {
 				$questionText = $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.writeDoubleClickValue',
 				);
 				$questionError = $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.writeDoubleClickValueError',
 				);
-			} elseif ($payload->equalsValue(MetadataTypes\ButtonPayload::PAYLOAD_TRIPLE_CLICKED)) {
+			} elseif ($payload === MetadataTypes\Payloads\Button::TRIPLE_CLICKED) {
 				$questionText = $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.writeTripleClickValue',
 				);
 				$questionError = $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.writeTripleClickValueError',
 				);
-			} elseif ($payload->equalsValue(MetadataTypes\ButtonPayload::PAYLOAD_LONG_CLICKED)) {
+			} elseif ($payload === MetadataTypes\Payloads\Button::LONG_CLICKED) {
 				$questionText = $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.writeLongClickValue',
 				);
 				$questionError = $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.writeLongClickValueError',
 				);
-			} elseif ($payload->equalsValue(MetadataTypes\ButtonPayload::PAYLOAD_EXTRA_LONG_CLICKED)) {
+			} elseif ($payload === MetadataTypes\Payloads\Button::EXTRA_LONG_CLICKED) {
 				$questionText = $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.writeExtraLongClickValue',
 				);
@@ -3608,31 +3645,31 @@ class Install extends Console\Command\Command
 
 		if (strval(intval($switchReading)) === $switchReading) {
 			$dataTypes = [
-				MetadataTypes\DataTypeShort::DATA_TYPE_CHAR,
-				MetadataTypes\DataTypeShort::DATA_TYPE_UCHAR,
-				MetadataTypes\DataTypeShort::DATA_TYPE_SHORT,
-				MetadataTypes\DataTypeShort::DATA_TYPE_USHORT,
-				MetadataTypes\DataTypeShort::DATA_TYPE_INT,
-				MetadataTypes\DataTypeShort::DATA_TYPE_UINT,
-				MetadataTypes\DataTypeShort::DATA_TYPE_FLOAT,
+				MetadataTypes\DataTypeShort::CHAR->value,
+				MetadataTypes\DataTypeShort::UCHAR->value,
+				MetadataTypes\DataTypeShort::SHORT->value,
+				MetadataTypes\DataTypeShort::USHORT->value,
+				MetadataTypes\DataTypeShort::INT->value,
+				MetadataTypes\DataTypeShort::UINT->value,
+				MetadataTypes\DataTypeShort::FLOAT->value,
 			];
 
 			$selected = null;
 
 			if ($default !== null) {
-				if ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_CHAR) {
+				if ($default[0] === MetadataTypes\DataTypeShort::CHAR->value) {
 					$selected = 0;
-				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_UCHAR) {
+				} elseif ($default[0] === MetadataTypes\DataTypeShort::UCHAR->value) {
 					$selected = 1;
-				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_SHORT) {
+				} elseif ($default[0] === MetadataTypes\DataTypeShort::SHORT->value) {
 					$selected = 2;
-				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_USHORT) {
+				} elseif ($default[0] === MetadataTypes\DataTypeShort::USHORT->value) {
 					$selected = 3;
-				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_INT) {
+				} elseif ($default[0] === MetadataTypes\DataTypeShort::INT->value) {
 					$selected = 4;
-				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_UINT) {
+				} elseif ($default[0] === MetadataTypes\DataTypeShort::UINT->value) {
 					$selected = 5;
-				} elseif ($default[0] === MetadataTypes\DataTypeShort::DATA_TYPE_FLOAT) {
+				} elseif ($default[0] === MetadataTypes\DataTypeShort::FLOAT->value) {
 					$selected = 6;
 				}
 			}
@@ -3656,14 +3693,11 @@ class Install extends Console\Command\Command
 					);
 				}
 
-				if (MetadataTypes\DataTypeShort::isValidValue($answer)) {
+				if (MetadataTypes\DataTypeShort::tryFrom($answer) !== null) {
 					return $answer;
 				}
 
-				if (
-					array_key_exists($answer, $dataTypes)
-					&& MetadataTypes\DataTypeShort::isValidValue($dataTypes[$answer])
-				) {
+				if (array_key_exists($answer, $dataTypes)) {
 					return $dataTypes[$answer];
 				}
 
@@ -3684,7 +3718,7 @@ class Install extends Console\Command\Command
 		}
 
 		return [
-			MetadataTypes\DataTypeShort::DATA_TYPE_STRING,
+			MetadataTypes\DataTypeShort::STRING->value,
 			$switchReading,
 		];
 	}
@@ -3692,7 +3726,7 @@ class Install extends Console\Command\Command
 	/**
 	 * @throws DevicesExceptions\InvalidState
 	 */
-	private function askWhichConnector(Style\SymfonyStyle $io): Entities\ModbusConnector|null
+	private function askWhichConnector(Style\SymfonyStyle $io): Entities\Connectors\Connector|null
 	{
 		$connectors = [];
 
@@ -3700,11 +3734,11 @@ class Install extends Console\Command\Command
 
 		$systemConnectors = $this->connectorsRepository->findAllBy(
 			$findConnectorsQuery,
-			Entities\ModbusConnector::class,
+			Entities\Connectors\Connector::class,
 		);
 		usort(
 			$systemConnectors,
-			static fn (Entities\ModbusConnector $a, Entities\ModbusConnector $b): int => (
+			static fn (Entities\Connectors\Connector $a, Entities\Connectors\Connector $b): int => (
 				($a->getName() ?? $a->getIdentifier()) <=> ($b->getName() ?? $b->getIdentifier())
 			),
 		);
@@ -3726,7 +3760,7 @@ class Install extends Console\Command\Command
 		$question->setErrorMessage(
 			$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 		);
-		$question->setValidator(function (string|int|null $answer) use ($connectors): Entities\ModbusConnector {
+		$question->setValidator(function (string|int|null $answer) use ($connectors): Entities\Connectors\Connector {
 			if ($answer === null) {
 				throw new Exceptions\Runtime(
 					sprintf(
@@ -3748,7 +3782,7 @@ class Install extends Console\Command\Command
 
 				$connector = $this->connectorsRepository->findOneBy(
 					$findConnectorQuery,
-					Entities\ModbusConnector::class,
+					Entities\Connectors\Connector::class,
 				);
 
 				if ($connector !== null) {
@@ -3765,7 +3799,7 @@ class Install extends Console\Command\Command
 		});
 
 		$connector = $io->askQuestion($question);
-		assert($connector instanceof Entities\ModbusConnector);
+		assert($connector instanceof Entities\Connectors\Connector);
 
 		return $connector;
 	}
@@ -3775,8 +3809,8 @@ class Install extends Console\Command\Command
 	 */
 	private function askWhichDevice(
 		Style\SymfonyStyle $io,
-		Entities\ModbusConnector $connector,
-	): Entities\ModbusDevice|null
+		Entities\Connectors\Connector $connector,
+	): Entities\Devices\Device|null
 	{
 		$devices = [];
 
@@ -3785,11 +3819,11 @@ class Install extends Console\Command\Command
 
 		$connectorDevices = $this->devicesRepository->findAllBy(
 			$findDevicesQuery,
-			Entities\ModbusDevice::class,
+			Entities\Devices\Device::class,
 		);
 		usort(
 			$connectorDevices,
-			static fn (Entities\ModbusDevice $a, Entities\ModbusDevice $b): int => (
+			static fn (Entities\Devices\Device $a, Entities\Devices\Device $b): int => (
 				($a->getName() ?? $a->getIdentifier()) <=> ($b->getName() ?? $b->getIdentifier())
 			),
 		);
@@ -3812,7 +3846,7 @@ class Install extends Console\Command\Command
 			$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 		);
 		$question->setValidator(
-			function (string|int|null $answer) use ($connector, $devices): Entities\ModbusDevice {
+			function (string|int|null $answer) use ($connector, $devices): Entities\Devices\Device {
 				if ($answer === null) {
 					throw new Exceptions\Runtime(
 						sprintf(
@@ -3835,7 +3869,7 @@ class Install extends Console\Command\Command
 
 					$device = $this->devicesRepository->findOneBy(
 						$findDeviceQuery,
-						Entities\ModbusDevice::class,
+						Entities\Devices\Device::class,
 					);
 
 					if ($device !== null) {
@@ -3853,7 +3887,7 @@ class Install extends Console\Command\Command
 		);
 
 		$device = $io->askQuestion($question);
-		assert($device instanceof Entities\ModbusDevice);
+		assert($device instanceof Entities\Devices\Device);
 
 		return $device;
 	}
@@ -3862,11 +3896,13 @@ class Install extends Console\Command\Command
 	 * @throws DevicesExceptions\InvalidState
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function askWhichRegister(
 		Style\SymfonyStyle $io,
-		Entities\ModbusDevice $device,
-	): Entities\ModbusChannel|null
+		Entities\Devices\Device $device,
+	): Entities\Channels\Channel|null
 	{
 		$channels = [];
 
@@ -3875,11 +3911,11 @@ class Install extends Console\Command\Command
 
 		$deviceChannels = $this->channelsRepository->findAllBy(
 			$findChannelsQuery,
-			Entities\ModbusChannel::class,
+			Entities\Channels\Channel::class,
 		);
 		usort(
 			$deviceChannels,
-			static fn (Entities\ModbusChannel $a, Entities\ModbusChannel $b): int => (
+			static fn (Entities\Channels\Channel $a, Entities\Channels\Channel $b): int => (
 				($a->getName() ?? $a->getIdentifier()) <=> ($b->getName() ?? $b->getIdentifier())
 			),
 		);
@@ -3888,7 +3924,7 @@ class Install extends Console\Command\Command
 			$channels[$channel->getIdentifier()] = sprintf(
 				'%s, Type: %s, Address: %d',
 				($channel->getName() ?? $channel->getIdentifier()),
-				strval($channel->getRegisterType()?->getValue()),
+				$channel->getRegisterType()?->value,
 				$channel->getAddress(),
 			);
 		}
@@ -3907,7 +3943,7 @@ class Install extends Console\Command\Command
 			$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 		);
 		$question->setValidator(
-			function (string|int|null $answer) use ($device, $channels): Entities\ModbusChannel {
+			function (string|int|null $answer) use ($device, $channels): Entities\Channels\Channel {
 				if ($answer === null) {
 					throw new Exceptions\Runtime(
 						sprintf(
@@ -3930,7 +3966,7 @@ class Install extends Console\Command\Command
 
 					$channel = $this->channelsRepository->findOneBy(
 						$findChannelQuery,
-						Entities\ModbusChannel::class,
+						Entities\Channels\Channel::class,
 					);
 
 					if ($channel !== null) {
@@ -3948,23 +3984,9 @@ class Install extends Console\Command\Command
 		);
 
 		$channel = $io->askQuestion($question);
-		assert($channel instanceof Entities\ModbusChannel);
+		assert($channel instanceof Entities\Channels\Channel);
 
 		return $channel;
-	}
-
-	/**
-	 * @throws Exceptions\Runtime
-	 */
-	private function getOrmConnection(): DBAL\Connection
-	{
-		$connection = $this->managerRegistry->getConnection();
-
-		if ($connection instanceof DBAL\Connection) {
-			return $connection;
-		}
-
-		throw new Exceptions\Runtime('Database connection could not be established');
 	}
 
 }

@@ -24,6 +24,8 @@ use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
+use TypeError;
+use ValueError;
 use function strval;
 
 /**
@@ -41,28 +43,31 @@ final class ChannelsProperties extends DataFixtures\AbstractFixture implements D
 	 * @throws Exceptions\InvalidState
 	 * @throws DevicesExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	public function load(Persistence\ObjectManager $manager): void
 	{
 		for ($i = 1; $i <= 4; $i++) {
 			$channel = $this->getReference('modbus-rtu-channel-' . $i);
 
-			if (!$channel instanceof Entities\ModbusChannel) {
+			if (!$channel instanceof Entities\Channels\Channel) {
 				throw new Exceptions\InvalidState('Channel reference could not be loaded');
 			}
 
 			$addressProperty = new DevicesEntities\Channels\Properties\Variable(
 				$channel,
-				ChannelPropertyIdentifier::ADDRESS,
+				ChannelPropertyIdentifier::ADDRESS->value,
 			);
-			$addressProperty->setDataType(MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UINT));
+			$addressProperty->setDataType(MetadataTypes\DataType::UINT);
 			$addressProperty->setValue(strval($i));
 
 			$switchProperty = new DevicesEntities\Channels\Properties\Dynamic(
 				$channel,
 				'switch',
 			);
-			$switchProperty->setDataType(MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_SWITCH));
+			$switchProperty->setDataType(MetadataTypes\DataType::SWITCH);
 			$switchProperty->setSettable(true);
 			$switchProperty->setQueryable(true);
 			$switchProperty->setFormat(

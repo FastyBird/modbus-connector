@@ -20,9 +20,12 @@ use Doctrine\Persistence;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Types;
+use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
+use TypeError;
+use ValueError;
 
 /**
  * Connector properties database fixture
@@ -38,27 +41,31 @@ final class ConnectorProperties extends DataFixtures\AbstractFixture implements 
 	/**
 	 * @throws Exceptions\InvalidState
 	 * @throws DevicesExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	public function load(Persistence\ObjectManager $manager): void
 	{
 		$connector = $this->getReference('modbus-rtu-connector');
 
-		if (!$connector instanceof Entities\ModbusConnector) {
+		if (!$connector instanceof Entities\Connectors\Connector) {
 			throw new Exceptions\InvalidState('Connector reference could not be loaded');
 		}
 
 		$clientModeProperty = new DevicesEntities\Connectors\Properties\Variable(
 			$connector,
-			Types\ConnectorPropertyIdentifier::CLIENT_MODE,
+			Types\ConnectorPropertyIdentifier::CLIENT_MODE->value,
 		);
-		$clientModeProperty->setDataType(MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING));
-		$clientModeProperty->setValue(Types\ClientMode::RTU);
+		$clientModeProperty->setDataType(MetadataTypes\DataType::STRING);
+		$clientModeProperty->setValue(Types\ClientMode::RTU->value);
 
 		$interfaceProperty = new DevicesEntities\Connectors\Properties\Variable(
 			$connector,
-			Types\ConnectorPropertyIdentifier::RTU_INTERFACE,
+			Types\ConnectorPropertyIdentifier::RTU_INTERFACE->value,
 		);
-		$interfaceProperty->setDataType(MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING));
+		$interfaceProperty->setDataType(MetadataTypes\DataType::STRING);
 		$interfaceProperty->setValue('/dev/ttyUSB0');
 
 		$manager->persist($clientModeProperty);

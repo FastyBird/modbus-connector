@@ -15,9 +15,6 @@
 
 namespace FastyBird\Connector\Modbus\Types;
 
-use Consistence;
-use function strval;
-
 /**
  * Device channel type types
  *
@@ -26,28 +23,15 @@ use function strval;
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-class ChannelType extends Consistence\Enum\Enum
+enum ChannelType: string
 {
 
-	/**
-	 * Define device states
-	 */
-	public const DISCRETE_INPUT = 'discrete_input';
+	case DISCRETE_INPUT = 'discrete_input';
 
-	public const COIL = 'coil';
+	case COIL = 'coil';
 
-	public const INPUT_REGISTER = 'input_register';
+	case INPUT_REGISTER = 'input_register';
 
-	public const HOLDING_REGISTER = 'holding_register';
-
-	public function getValue(): string
-	{
-		return strval(parent::getValue());
-	}
-
-	public function __toString(): string
-	{
-		return strval(self::getValue());
-	}
+	case HOLDING_REGISTER = 'holding_register';
 
 }

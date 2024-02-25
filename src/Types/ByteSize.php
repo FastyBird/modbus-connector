@@ -15,10 +15,6 @@
 
 namespace FastyBird\Connector\Modbus\Types;
 
-use Consistence;
-use function intval;
-use function strval;
-
 /**
  * Communication data bits types
  *
@@ -27,41 +23,17 @@ use function strval;
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-class ByteSize extends Consistence\Enum\Enum
+enum ByteSize: int
 {
 
-	/**
-	 * Define versions
-	 */
-	public const SIZE_4 = 4; // win
+	case SIZE_4 = 4; // win
 
-	public const SIZE_5 = 5;
+	case SIZE_5 = 5;
 
-	public const SIZE_6 = 6;
+	case SIZE_6 = 6;
 
-	public const SIZE_7 = 7;
+	case SIZE_7 = 7;
 
-	public const SIZE_8 = 8;
-
-	public function getValue(): int
-	{
-		return intval(parent::getValue());
-	}
-
-	/**
-	 * @return array<int>
-	 */
-	public static function getValues(): array
-	{
-		/** @var iterable<int> $availableValues */
-		$availableValues = parent::getAvailableValues();
-
-		return (array) $availableValues;
-	}
-
-	public function __toString(): string
-	{
-		return strval(self::getValue());
-	}
+	case SIZE_8 = 8;
 
 }

@@ -15,9 +15,6 @@
 
 namespace FastyBird\Connector\Modbus\Types;
 
-use Consistence;
-use function strval;
-
 /**
  * Communication byte order types
  *
@@ -26,32 +23,19 @@ use function strval;
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-class ByteOrder extends Consistence\Enum\Enum
+enum ByteOrder: string
 {
 
-	/**
-	 * Define versions
-	 */
-	public const BIG = 'big';
+	case BIG = 'big';
 
-	public const BIG_SWAP = 'big_swap';
+	case BIG_SWAP = 'big_swap';
 
-	public const BIG_LOW_WORD_FIRST = 'big_lwf';
+	case BIG_LOW_WORD_FIRST = 'big_lwf';
 
-	public const LITTLE = 'little';
+	case LITTLE = 'little';
 
-	public const LITTLE_SWAP = 'little_swap';
+	case LITTLE_SWAP = 'little_swap';
 
-	public const LITTLE_LOW_WORD_FIRST = 'little_lwf';
-
-	public function getValue(): string
-	{
-		return strval(parent::getValue());
-	}
-
-	public function __toString(): string
-	{
-		return strval(self::getValue());
-	}
+	case LITTLE_LOW_WORD_FIRST = 'little_lwf';
 
 }

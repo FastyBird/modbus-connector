@@ -15,10 +15,6 @@
 
 namespace FastyBird\Connector\Modbus\Types;
 
-use Consistence;
-use function intval;
-use function strval;
-
 /**
  * RTU function types
  *
@@ -27,36 +23,23 @@ use function strval;
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-class ModbusFunction extends Consistence\Enum\Enum
+enum ModbusFunction: int
 {
 
-	/**
-	 * Define versions
-	 */
-	public const READ_COIL = 0x01;
+	case READ_COIL = 0x01;
 
-	public const READ_DISCRETE = 0x02;
+	case READ_DISCRETE = 0x02;
 
-	public const READ_HOLDINGS_REGISTERS = 0x03;
+	case READ_HOLDINGS_REGISTERS = 0x03;
 
-	public const READ_INPUTS_REGISTERS = 0x04;
+	case READ_INPUTS_REGISTERS = 0x04;
 
-	public const WRITE_SINGLE_COIL = 0x05;
+	case WRITE_SINGLE_COIL = 0x05;
 
-	public const WRITE_SINGLE_HOLDING_REGISTER = 0x06;
+	case WRITE_SINGLE_HOLDING_REGISTER = 0x06;
 
-	public const WRITE_MULTIPLE_COILS = 0x1F;
+	case WRITE_MULTIPLE_COILS = 0x1F;
 
-	public const WRITE_MULTIPLE_HOLDINGS_REGISTERS = 0x10;
-
-	public function getValue(): int
-	{
-		return intval(parent::getValue());
-	}
-
-	public function __toString(): string
-	{
-		return strval(self::getValue());
-	}
+	case WRITE_MULTIPLE_HOLDINGS_REGISTERS = 0x10;
 
 }

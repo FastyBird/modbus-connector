@@ -20,9 +20,12 @@ use Doctrine\Persistence;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Types;
+use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
+use TypeError;
+use ValueError;
 
 /**
  * Devices properties database fixture
@@ -38,20 +41,24 @@ final class DevicesProperties extends DataFixtures\AbstractFixture implements Da
 	/**
 	 * @throws Exceptions\InvalidState
 	 * @throws DevicesExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	public function load(Persistence\ObjectManager $manager): void
 	{
 		$device = $this->getReference('modbus-rtu-device');
 
-		if (!$device instanceof Entities\ModbusDevice) {
+		if (!$device instanceof Entities\Devices\Device) {
 			throw new Exceptions\InvalidState('Device reference could not be loaded');
 		}
 
 		$addressProperty = new DevicesEntities\Devices\Properties\Variable(
 			$device,
-			Types\DevicePropertyIdentifier::ADDRESS,
+			Types\DevicePropertyIdentifier::ADDRESS->value,
 		);
-		$addressProperty->setDataType(MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_UINT));
+		$addressProperty->setDataType(MetadataTypes\DataType::UINT);
 		$addressProperty->setValue('1');
 
 		$manager->persist($addressProperty);

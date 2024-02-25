@@ -15,9 +15,6 @@
 
 namespace FastyBird\Connector\Modbus\Types;
 
-use Consistence;
-use function strval;
-
 /**
  * Connector client mode types
  *
@@ -26,24 +23,11 @@ use function strval;
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-class ClientMode extends Consistence\Enum\Enum
+enum ClientMode: string
 {
 
-	/**
-	 * Define versions
-	 */
-	public const RTU = 'rtu';
+	case RTU = 'rtu';
 
-	public const TCP = 'tcp';
-
-	public function getValue(): string
-	{
-		return strval(parent::getValue());
-	}
-
-	public function __toString(): string
-	{
-		return strval(self::getValue());
-	}
+	case TCP = 'tcp';
 
 }

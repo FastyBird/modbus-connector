@@ -15,9 +15,6 @@
 
 namespace FastyBird\Connector\Modbus\Types;
 
-use Consistence;
-use function strval;
-
 /**
  * Connector property identifier types
  *
@@ -26,32 +23,19 @@ use function strval;
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-class ConnectorPropertyIdentifier extends Consistence\Enum\Enum
+enum ConnectorPropertyIdentifier: string
 {
 
-	/**
-	 * Define device states
-	 */
-	public const CLIENT_MODE = 'mode';
+	case CLIENT_MODE = 'mode';
 
-	public const RTU_INTERFACE = 'rtu_interface';
+	case RTU_INTERFACE = 'rtu_interface';
 
-	public const RTU_BYTE_SIZE = 'rtu_byte_size';
+	case RTU_BYTE_SIZE = 'rtu_byte_size';
 
-	public const RTU_BAUD_RATE = 'rtu_baud_rate';
+	case RTU_BAUD_RATE = 'rtu_baud_rate';
 
-	public const RTU_PARITY = 'rtu_parity';
+	case RTU_PARITY = 'rtu_parity';
 
-	public const RTU_STOP_BITS = 'rtu_stop_bits';
-
-	public function getValue(): string
-	{
-		return strval(parent::getValue());
-	}
-
-	public function __toString(): string
-	{
-		return strval(self::getValue());
-	}
+	case RTU_STOP_BITS = 'rtu_stop_bits';
 
 }

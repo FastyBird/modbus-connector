@@ -15,10 +15,6 @@
 
 namespace FastyBird\Connector\Modbus\Types;
 
-use Consistence;
-use function intval;
-use function strval;
-
 /**
  * Communication stop bits types
  *
@@ -27,37 +23,13 @@ use function strval;
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-class StopBits extends Consistence\Enum\Enum
+enum StopBits: int
 {
 
-	/**
-	 * Define versions
-	 */
-	public const NONE = 0;
+	case NONE = 0;
 
-	public const ONE = 1;
+	case ONE = 1;
 
-	public const TWO = 2;
-
-	public function getValue(): int
-	{
-		return intval(parent::getValue());
-	}
-
-	/**
-	 * @return array<int>
-	 */
-	public static function getValues(): array
-	{
-		/** @var iterable<int> $availableValues */
-		$availableValues = parent::getAvailableValues();
-
-		return (array) $availableValues;
-	}
-
-	public function __toString(): string
-	{
-		return strval(self::getValue());
-	}
+	case TWO = 2;
 
 }

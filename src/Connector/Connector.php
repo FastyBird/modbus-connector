@@ -17,21 +17,23 @@ namespace FastyBird\Connector\Modbus\Connector;
 
 use FastyBird\Connector\Modbus;
 use FastyBird\Connector\Modbus\Clients;
-use FastyBird\Connector\Modbus\Entities;
+use FastyBird\Connector\Modbus\Documents;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Helpers;
 use FastyBird\Connector\Modbus\Queue;
 use FastyBird\Connector\Modbus\Writers;
-use FastyBird\Library\Metadata\Documents as MetadataDocuments;
+use FastyBird\Library\Exchange\Exceptions as ExchangeExceptions;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Module\Devices\Connectors as DevicesConnectors;
-use FastyBird\Module\Devices\Events as DevicesEvents;
+use FastyBird\Module\Devices\Documents as DevicesDocuments;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
 use Nette;
-use Psr\EventDispatcher as PsrEventDispatcher;
 use React\EventLoop;
+use React\Promise;
 use ReflectionClass;
+use TypeError;
+use ValueError;
 use function array_key_exists;
 use function assert;
 use function React\Async\async;
@@ -59,35 +61,42 @@ final class Connector implements DevicesConnectors\Connector
 
 	/**
 	 * @param array<Clients\ClientFactory> $clientsFactories
+	 * @param array<Writers\WriterFactory> $writersFactories
 	 */
 	public function __construct(
-		private readonly MetadataDocuments\DevicesModule\Connector $connector,
+		private readonly DevicesDocuments\Connectors\Connector $connector,
 		private readonly array $clientsFactories,
 		private readonly Helpers\Connector $connectorHelper,
-		private readonly Writers\WriterFactory $writerFactory,
+		private readonly array $writersFactories,
 		private readonly Queue\Queue $queue,
 		private readonly Queue\Consumers $consumers,
 		private readonly Modbus\Logger $logger,
 		private readonly EventLoop\LoopInterface $eventLoop,
-		private readonly PsrEventDispatcher\EventDispatcherInterface|null $dispatcher = null,
 	)
 	{
+		assert($this->connector instanceof Documents\Connectors\Connector);
 	}
 
 	/**
+	 * @return Promise\PromiseInterface<bool>
+	 *
 	 * @throws DevicesExceptions\InvalidState
+	 * @throws Exceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
+	 * @throws ExchangeExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
-	public function execute(): void
+	public function execute(bool $standalone = true): Promise\PromiseInterface
 	{
-		assert($this->connector->getType() === Entities\ModbusConnector::TYPE);
+		assert($this->connector instanceof Documents\Connectors\Connector);
 
 		$this->logger->info(
 			'Starting Modbus connector service',
 			[
-				'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+				'source' => MetadataTypes\Sources\Connector::MODBUS->value,
 				'type' => 'connector',
 				'connector' => [
 					'id' => $this->connector->getId()->toString(),
@@ -104,27 +113,32 @@ final class Connector implements DevicesConnectors\Connector
 
 			if (
 				array_key_exists(Clients\ClientFactory::MODE_CONSTANT_NAME, $constants)
-				&& $mode->equalsValue($constants[Clients\ClientFactory::MODE_CONSTANT_NAME])
+				&& $mode === $constants[Clients\ClientFactory::MODE_CONSTANT_NAME]
 			) {
 				$this->client = $clientFactory->create($this->connector);
 			}
 		}
 
 		if ($this->client === null) {
-			$this->dispatcher?->dispatch(
-				new DevicesEvents\TerminateConnector(
-					MetadataTypes\ConnectorSource::get(MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS),
-					'Connector client is not configured',
-				),
-			);
-
-			return;
+			return Promise\reject(new Exceptions\InvalidState('Connector client is not configured'));
 		}
 
 		$this->client->connect();
 
-		$this->writer = $this->writerFactory->create($this->connector);
-		$this->writer->connect();
+		foreach ($this->writersFactories as $writerFactory) {
+			if (
+				(
+					$standalone
+					&& $writerFactory instanceof Writers\ExchangeFactory
+				) || (
+					!$standalone
+					&& $writerFactory instanceof Writers\EventFactory
+				)
+			) {
+				$this->writer = $writerFactory->create($this->connector);
+				$this->writer->connect();
+			}
+		}
 
 		$this->consumersTimer = $this->eventLoop->addPeriodicTimer(
 			self::QUEUE_PROCESSING_INTERVAL,
@@ -136,34 +150,32 @@ final class Connector implements DevicesConnectors\Connector
 		$this->logger->info(
 			'Modbus connector service has been started',
 			[
-				'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+				'source' => MetadataTypes\Sources\Connector::MODBUS->value,
 				'type' => 'connector',
 				'connector' => [
 					'id' => $this->connector->getId()->toString(),
 				],
 			],
 		);
+
+		return Promise\resolve(true);
 	}
 
-	public function discover(): void
+	/**
+	 * @return Promise\PromiseInterface<bool>
+	 */
+	public function discover(): Promise\PromiseInterface
 	{
-		assert($this->connector->getType() === Entities\ModbusConnector::TYPE);
+		assert($this->connector instanceof Documents\Connectors\Connector);
 
-		$this->logger->error(
-			'Devices discovery is not allowed for Modbus connector type',
-			[
-				'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
-				'type' => 'connector',
-				'connector' => [
-					'id' => $this->connector->getId()->toString(),
-				],
-			],
+		return Promise\reject(
+			new Exceptions\InvalidState('Devices discovery is not allowed for Modbus connector type'),
 		);
 	}
 
 	public function terminate(): void
 	{
-		assert($this->connector->getType() === Entities\ModbusConnector::TYPE);
+		assert($this->connector instanceof Documents\Connectors\Connector);
 
 		$this->client?->disconnect();
 
@@ -176,7 +188,7 @@ final class Connector implements DevicesConnectors\Connector
 		$this->logger->info(
 			'Modbus connector has been terminated',
 			[
-				'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+				'source' => MetadataTypes\Sources\Connector::MODBUS->value,
 				'type' => 'connector',
 				'connector' => [
 					'id' => $this->connector->getId()->toString(),

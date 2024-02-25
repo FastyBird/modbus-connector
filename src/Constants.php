@@ -32,4 +32,14 @@ final class Constants
 
 	public const MAX_DISCRETE_REGISTERS_PER_MODBUS_REQUEST = 2_048;
 
+	/**
+	 * Misc
+	 */
+
+	public const WRITE_DEBOUNCE_DELAY = 2_000.0;
+
+	public const READING_DELAY = 120.0;
+
+	public const DEFAULT_TCP_PORT = 502;
+
 }

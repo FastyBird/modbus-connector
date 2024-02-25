@@ -20,11 +20,13 @@ use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Types;
 use FastyBird\Connector\Modbus\ValueObjects;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
+use FastyBird\Library\Metadata\Formats as MetadataFormats;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Library\Metadata\Utilities as MetadataUtilities;
-use FastyBird\Library\Metadata\ValueObjects as MetadataValueObjects;
 use Nette;
 use Nette\Utils;
+use TypeError;
+use ValueError;
 use function array_filter;
 use function array_reverse;
 use function array_unique;
@@ -57,20 +59,22 @@ final class Transformer
 	private bool|null $machineUsingLittleEndian = null;
 
 	/**
+	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	public function transformValueToDevice(
 		MetadataTypes\DataType $dataType,
-		// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|MetadataValueObjects\EquationFormat|null $format,
-		bool|float|int|string|DateTimeInterface|MetadataTypes\ButtonPayload|MetadataTypes\SwitchPayload|MetadataTypes\CoverPayload|null $value,
+		MetadataFormats\StringEnum|MetadataFormats\NumberRange|MetadataFormats\CombinedEnum|null $format,
+		bool|float|int|string|DateTimeInterface|MetadataTypes\Payloads\Payload|null $value,
 	): ValueObjects\DeviceData|null
 	{
 		if ($value === null) {
 			return null;
 		}
 
-		if ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_BOOLEAN)) {
+		if ($dataType === MetadataTypes\DataType::BOOLEAN) {
 			if (is_bool($value)) {
 				return new ValueObjects\DeviceData($value, $dataType);
 			}
@@ -85,7 +89,7 @@ final class Transformer
 			return null;
 		}
 
-		if ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_FLOAT)) {
+		if ($dataType === MetadataTypes\DataType::FLOAT) {
 			if (is_numeric($value)) {
 				return new ValueObjects\DeviceData((float) $value, $dataType);
 			}
@@ -94,12 +98,12 @@ final class Transformer
 		}
 
 		if (
-			$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_CHAR)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UCHAR)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SHORT)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_USHORT)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_INT)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UINT)
+			$dataType === MetadataTypes\DataType::CHAR
+			|| $dataType === MetadataTypes\DataType::UCHAR
+			|| $dataType === MetadataTypes\DataType::SHORT
+			|| $dataType === MetadataTypes\DataType::USHORT
+			|| $dataType === MetadataTypes\DataType::INT
+			|| $dataType === MetadataTypes\DataType::UINT
 		) {
 			if (is_numeric($value)) {
 				return new ValueObjects\DeviceData((int) $value, $dataType);
@@ -108,50 +112,54 @@ final class Transformer
 			return null;
 		}
 
-		if ($dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_STRING)) {
+		if ($dataType === MetadataTypes\DataType::STRING) {
 			return new ValueObjects\DeviceData(
-				$value instanceof DateTimeInterface ? $value->format(DateTimeInterface::ATOM) : (string) $value,
+				$value instanceof DateTimeInterface
+					? $value->format(DateTimeInterface::ATOM)
+					: MetadataUtilities\Value::toString($value),
 				$dataType,
 			);
 		}
 
 		if (
-			$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_ENUM)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SWITCH)
-			|| $dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_BUTTON)
+			$dataType === MetadataTypes\DataType::ENUM
+			|| $dataType === MetadataTypes\DataType::SWITCH
+			|| $dataType === MetadataTypes\DataType::BUTTON
 		) {
-			if ($format instanceof MetadataValueObjects\StringEnumFormat) {
+			if ($format instanceof MetadataFormats\StringEnum) {
 				$filtered = array_values(array_filter(
 					$format->getItems(),
 					static fn (string $item): bool => Utils\Strings::lower(
-						strval(MetadataUtilities\ValueHelper::flattenValue($value)),
+						MetadataUtilities\Value::toString($value, true),
 					) === $item,
 				));
 
 				if (count($filtered) === 1) {
 					return new ValueObjects\DeviceData(
-						MetadataUtilities\ValueHelper::flattenValue($value),
-						MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING),
+						MetadataUtilities\Value::flattenValue($value),
+						MetadataTypes\DataType::STRING,
 					);
 				}
 
 				return null;
-			} elseif ($format instanceof MetadataValueObjects\CombinedEnumFormat) {
+			} elseif ($format instanceof MetadataFormats\CombinedEnum) {
 				$filtered = array_values(array_filter(
 					$format->getItems(),
 					static fn (array $item): bool => $item[0] !== null
-							&& Utils\Strings::lower(strval($item[0]->getValue())) === Utils\Strings::lower(
-								strval(MetadataUtilities\ValueHelper::flattenValue($value)),
+							&& Utils\Strings::lower(
+								MetadataUtilities\Value::toString($item[0]->getValue(), true),
+							) === Utils\Strings::lower(
+								MetadataUtilities\Value::toString($value, true),
 							),
 				));
 
 				if (
 					count($filtered) === 1
-					&& $filtered[0][2] instanceof MetadataValueObjects\CombinedEnumFormatItem
+					&& $filtered[0][2] instanceof MetadataFormats\CombinedEnumItem
 				) {
 					return new ValueObjects\DeviceData(
 						is_scalar($filtered[0][2]->getValue()) ? $filtered[0][2]->getValue() : strval(
-							$filtered[0][2]->getValue(),
+							MetadataUtilities\Value::flattenValue($filtered[0][2]->getValue()),
 						),
 						$this->shortDataTypeToLong($filtered[0][2]->getDataType()),
 					);
@@ -162,19 +170,18 @@ final class Transformer
 
 			if (
 				(
-					$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SWITCH)
-					&& $value instanceof MetadataTypes\SwitchPayload
+					$dataType === MetadataTypes\DataType::SWITCH
+					&& $value instanceof MetadataTypes\Payloads\Switcher
 				) || (
-					$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_BUTTON)
-					&& $value instanceof MetadataTypes\ButtonPayload
+					$dataType === MetadataTypes\DataType::BUTTON
+					&& $value instanceof MetadataTypes\Payloads\Button
 				) || (
-					$dataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_COVER)
-					&& $value instanceof MetadataTypes\CoverPayload
+					$value instanceof MetadataTypes\Payloads\Cover
 				)
 			) {
 				return new ValueObjects\DeviceData(
-					strval($value->getValue()),
-					MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING),
+					$value->value,
+					MetadataTypes\DataType::STRING,
 				);
 			}
 		}
@@ -184,19 +191,18 @@ final class Transformer
 
 	public function determineDeviceReadDataType(
 		MetadataTypes\DataType $dataType,
-		// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|MetadataValueObjects\EquationFormat|null $format,
+		MetadataFormats\StringEnum|MetadataFormats\NumberRange|MetadataFormats\CombinedEnum|null $format,
 	): MetadataTypes\DataType
 	{
 		$deviceExpectedDataType = $dataType;
 
-		if ($format instanceof MetadataValueObjects\CombinedEnumFormat) {
+		if ($format instanceof MetadataFormats\CombinedEnum) {
 			$enumDataTypes = [];
 
 			foreach ($format->getItems() as $enumItem) {
 				if (
 					count($enumItem) === 3
-					&& $enumItem[1] instanceof MetadataValueObjects\CombinedEnumFormatItem
+					&& $enumItem[1] instanceof MetadataFormats\CombinedEnumItem
 					&& $enumItem[1]->getDataType() !== null
 				) {
 					$enumDataTypes[] = $enumItem[1]->getDataType();
@@ -219,19 +225,18 @@ final class Transformer
 
 	public function determineDeviceWriteDataType(
 		MetadataTypes\DataType $dataType,
-		// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-		MetadataValueObjects\StringEnumFormat|MetadataValueObjects\NumberRangeFormat|MetadataValueObjects\CombinedEnumFormat|MetadataValueObjects\EquationFormat|null $format,
+		MetadataFormats\StringEnum|MetadataFormats\NumberRange|MetadataFormats\CombinedEnum|null $format,
 	): MetadataTypes\DataType
 	{
 		$deviceExpectedDataType = $dataType;
 
-		if ($format instanceof MetadataValueObjects\CombinedEnumFormat) {
+		if ($format instanceof MetadataFormats\CombinedEnum) {
 			$enumDataTypes = [];
 
 			foreach ($format->getItems() as $enumItem) {
 				if (
 					count($enumItem) === 3
-					&& $enumItem[2] instanceof MetadataValueObjects\CombinedEnumFormatItem
+					&& $enumItem[2] instanceof MetadataFormats\CombinedEnumItem
 					&& $enumItem[2]->getDataType() !== null
 				) {
 					$enumDataTypes[] = $enumItem[2]->getDataType();
@@ -375,40 +380,18 @@ final class Transformer
 			return null;
 		}
 
-		return match ($dataType->getValue()) {
-			MetadataTypes\DataTypeShort::DATA_TYPE_CHAR => MetadataTypes\DataType::get(
-				MetadataTypes\DataType::DATA_TYPE_CHAR,
-			),
-			MetadataTypes\DataTypeShort::DATA_TYPE_UCHAR => MetadataTypes\DataType::get(
-				MetadataTypes\DataType::DATA_TYPE_UCHAR,
-			),
-			MetadataTypes\DataTypeShort::DATA_TYPE_SHORT => MetadataTypes\DataType::get(
-				MetadataTypes\DataType::DATA_TYPE_SHORT,
-			),
-			MetadataTypes\DataTypeShort::DATA_TYPE_USHORT => MetadataTypes\DataType::get(
-				MetadataTypes\DataType::DATA_TYPE_USHORT,
-			),
-			MetadataTypes\DataTypeShort::DATA_TYPE_INT => MetadataTypes\DataType::get(
-				MetadataTypes\DataType::DATA_TYPE_INT,
-			),
-			MetadataTypes\DataTypeShort::DATA_TYPE_UINT => MetadataTypes\DataType::get(
-				MetadataTypes\DataType::DATA_TYPE_UINT,
-			),
-			MetadataTypes\DataTypeShort::DATA_TYPE_FLOAT => MetadataTypes\DataType::get(
-				MetadataTypes\DataType::DATA_TYPE_FLOAT,
-			),
-			MetadataTypes\DataTypeShort::DATA_TYPE_BOOLEAN => MetadataTypes\DataType::get(
-				MetadataTypes\DataType::DATA_TYPE_BOOLEAN,
-			),
-			MetadataTypes\DataTypeShort::DATA_TYPE_STRING => MetadataTypes\DataType::get(
-				MetadataTypes\DataType::DATA_TYPE_STRING,
-			),
-			MetadataTypes\DataTypeShort::DATA_TYPE_SWITCH => MetadataTypes\DataType::get(
-				MetadataTypes\DataType::DATA_TYPE_SWITCH,
-			),
-			MetadataTypes\DataTypeShort::DATA_TYPE_BUTTON => MetadataTypes\DataType::get(
-				MetadataTypes\DataType::DATA_TYPE_BUTTON,
-			),
+		return match ($dataType) {
+			MetadataTypes\DataTypeShort::CHAR => MetadataTypes\DataType::CHAR,
+			MetadataTypes\DataTypeShort::UCHAR => MetadataTypes\DataType::UCHAR,
+			MetadataTypes\DataTypeShort::SHORT => MetadataTypes\DataType::SHORT,
+			MetadataTypes\DataTypeShort::USHORT => MetadataTypes\DataType::USHORT,
+			MetadataTypes\DataTypeShort::INT => MetadataTypes\DataType::INT,
+			MetadataTypes\DataTypeShort::UINT => MetadataTypes\DataType::UINT,
+			MetadataTypes\DataTypeShort::FLOAT => MetadataTypes\DataType::FLOAT,
+			MetadataTypes\DataTypeShort::BOOLEAN => MetadataTypes\DataType::BOOLEAN,
+			MetadataTypes\DataTypeShort::STRING => MetadataTypes\DataType::STRING,
+			MetadataTypes\DataTypeShort::SWITCH => MetadataTypes\DataType::SWITCH,
+			MetadataTypes\DataTypeShort::BUTTON => MetadataTypes\DataType::BUTTON,
 			default => null,
 		};
 	}
@@ -422,50 +405,50 @@ final class Transformer
 	{
 		if (count($bytes) === 2) {
 			if (
-				$byteOrder->equalsValue(Types\ByteOrder::BIG_SWAP)
-				|| $byteOrder->equalsValue(Types\ByteOrder::BIG_LOW_WORD_FIRST)
+				$byteOrder === Types\ByteOrder::BIG_SWAP
+				|| $byteOrder === Types\ByteOrder::BIG_LOW_WORD_FIRST
 			) {
-				$byteOrder = Types\ByteOrder::get(Types\ByteOrder::BIG);
+				$byteOrder = Types\ByteOrder::BIG;
 			} elseif (
-				$byteOrder->equalsValue(Types\ByteOrder::LITTLE_SWAP)
-				|| $byteOrder->equalsValue(Types\ByteOrder::LITTLE_LOW_WORD_FIRST)
+				$byteOrder === Types\ByteOrder::LITTLE_SWAP
+				|| $byteOrder === Types\ByteOrder::LITTLE_LOW_WORD_FIRST
 			) {
-				$byteOrder = Types\ByteOrder::get(Types\ByteOrder::LITTLE);
+				$byteOrder = Types\ByteOrder::LITTLE;
 			}
 		} elseif (count($bytes) === 4) {
 			if (
-				$byteOrder->equalsValue(Types\ByteOrder::BIG_SWAP)
-				|| $byteOrder->equalsValue(Types\ByteOrder::LITTLE_SWAP)
+				$byteOrder === Types\ByteOrder::BIG_SWAP
+				|| $byteOrder === Types\ByteOrder::LITTLE_SWAP
 			) {
 				$bytes = [$bytes[1], $bytes[0], $bytes[3], $bytes[2]];
 
 			} elseif (
-				$byteOrder->equalsValue(Types\ByteOrder::BIG_LOW_WORD_FIRST)
-				|| $byteOrder->equalsValue(Types\ByteOrder::LITTLE_LOW_WORD_FIRST)
+				$byteOrder === Types\ByteOrder::BIG_LOW_WORD_FIRST
+				|| $byteOrder === Types\ByteOrder::LITTLE_LOW_WORD_FIRST
 			) {
 				$bytes = [$bytes[2], $bytes[3], $bytes[0], $bytes[1]];
 			}
 
 			if (
-				$byteOrder->equalsValue(Types\ByteOrder::BIG_SWAP)
-				|| $byteOrder->equalsValue(Types\ByteOrder::BIG_LOW_WORD_FIRST)
+				$byteOrder === Types\ByteOrder::BIG_SWAP
+				|| $byteOrder === Types\ByteOrder::BIG_LOW_WORD_FIRST
 			) {
-				$byteOrder = Types\ByteOrder::get(Types\ByteOrder::BIG);
+				$byteOrder = Types\ByteOrder::BIG;
 			} elseif (
-				$byteOrder->equalsValue(Types\ByteOrder::LITTLE_SWAP)
-				|| $byteOrder->equalsValue(Types\ByteOrder::LITTLE_LOW_WORD_FIRST)
+				$byteOrder === Types\ByteOrder::LITTLE_SWAP
+				|| $byteOrder === Types\ByteOrder::LITTLE_LOW_WORD_FIRST
 			) {
-				$byteOrder = Types\ByteOrder::get(Types\ByteOrder::LITTLE);
+				$byteOrder = Types\ByteOrder::LITTLE;
 			}
 		}
 
 		if (
 			(
 				$this->isLittleEndian()
-				&& $byteOrder->equalsValue(Types\ByteOrder::LITTLE)
+				&& $byteOrder === Types\ByteOrder::LITTLE
 			) || (
 				!$this->isLittleEndian()
-				&& $byteOrder->equalsValue(Types\ByteOrder::BIG)
+				&& $byteOrder === Types\ByteOrder::BIG
 			)
 		) {
 			// If machine is using same byte order as device
@@ -474,10 +457,10 @@ final class Transformer
 		} elseif (
 			(
 				!$this->isLittleEndian()
-				&& $byteOrder->equalsValue(Types\ByteOrder::LITTLE)
+				&& $byteOrder === Types\ByteOrder::LITTLE
 			) || (
 				$this->isLittleEndian()
-				&& $byteOrder->equalsValue(Types\ByteOrder::BIG)
+				&& $byteOrder === Types\ByteOrder::BIG
 			)
 		) {
 			// If machine is using different byte order than device, do byte order swap
@@ -501,7 +484,7 @@ final class Transformer
 	 */
 	private function packNumber(string $format, int|float $value, int $bytes, Types\ByteOrder $byteOrder): array|null
 	{
-		$bytearray = unpack("C{$bytes}", pack($format, $value));
+		$bytearray = unpack("C$bytes", pack($format, $value));
 
 		if ($bytearray === false) {
 			return null;
@@ -517,9 +500,9 @@ final class Transformer
 
 		// For all little byte orders, perform bytes order swap
 		if (
-			$byteOrder->equalsValue(Types\ByteOrder::LITTLE)
-			|| $byteOrder->equalsValue(Types\ByteOrder::LITTLE_SWAP)
-			|| $byteOrder->equalsValue(Types\ByteOrder::LITTLE_LOW_WORD_FIRST)
+			$byteOrder === Types\ByteOrder::LITTLE
+			|| $byteOrder === Types\ByteOrder::LITTLE_SWAP
+			|| $byteOrder === Types\ByteOrder::LITTLE_LOW_WORD_FIRST
 		) {
 			$bytearray = array_reverse($bytearray);
 		}
@@ -527,8 +510,8 @@ final class Transformer
 		if (
 			$bytes === 4
 			&& (
-				$byteOrder->equalsValue(Types\ByteOrder::BIG_SWAP)
-				|| $byteOrder->equalsValue(Types\ByteOrder::LITTLE_SWAP)
+				$byteOrder === Types\ByteOrder::BIG_SWAP
+				|| $byteOrder === Types\ByteOrder::LITTLE_SWAP
 			)
 		) {
 			$bytearray = [$bytearray[1], $bytearray[0], $bytearray[3], $bytearray[2]];
@@ -536,8 +519,8 @@ final class Transformer
 		} elseif (
 			$bytes === 4
 			&& (
-				$byteOrder->equalsValue(Types\ByteOrder::BIG_LOW_WORD_FIRST)
-				|| $byteOrder->equalsValue(Types\ByteOrder::LITTLE_LOW_WORD_FIRST)
+				$byteOrder === Types\ByteOrder::BIG_LOW_WORD_FIRST
+				|| $byteOrder === Types\ByteOrder::LITTLE_LOW_WORD_FIRST
 			)
 		) {
 			$bytearray = [$bytearray[2], $bytearray[3], $bytearray[0], $bytearray[1]];

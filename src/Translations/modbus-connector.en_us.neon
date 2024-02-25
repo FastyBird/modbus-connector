@@ -13,6 +13,12 @@
 # @date           29.08.23
 #
 
+base:
+    messages:
+        invalidRelation:
+            heading: "Invalid relation"
+            message: "Provided relation is not valid"
+
 cmd:
     base:
         questions:

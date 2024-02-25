@@ -38,7 +38,7 @@ class DeviceData
 		MetadataTypes\DataType|null $dataType,
 	)
 	{
-		$this->dataType = $dataType ?? MetadataTypes\DataType::get(MetadataTypes\DataType::DATA_TYPE_STRING);
+		$this->dataType = $dataType ?? MetadataTypes\DataType::STRING;
 	}
 
 	public function getValue(): float|bool|int|string|null

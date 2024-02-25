@@ -17,7 +17,6 @@ namespace FastyBird\Connector\Modbus\API\Interfaces;
 
 use FastyBird\Connector\Modbus\Types;
 use Nette;
-use function intval;
 
 /**
  * Base serial interface configuration
@@ -53,10 +52,10 @@ final class Configuration
 		bool $isCanonical = true,
 	)
 	{
-		$this->baudRate = $baudRate ?? Types\BaudRate::get(Types\BaudRate::RATE_9600);
-		$this->dataBits = $dataBits ?? Types\ByteSize::get(Types\ByteSize::SIZE_8);
-		$this->stopBits = $stopBits ?? Types\StopBits::get(Types\StopBits::ONE);
-		$this->parity = $parity ?? Types\Parity::get(Types\Parity::NONE);
+		$this->baudRate = $baudRate ?? Types\BaudRate::RATE_9600;
+		$this->dataBits = $dataBits ?? Types\ByteSize::SIZE_8;
+		$this->stopBits = $stopBits ?? Types\StopBits::ONE;
+		$this->parity = $parity ?? Types\Parity::NONE;
 
 		$this->flowControl = $flowControl ? 1 : 0;
 		$this->isCanonical = $isCanonical ? 1 : 0;
@@ -68,10 +67,10 @@ final class Configuration
 	public function toArray(): array
 	{
 		return [
-			'data_rate' => intval($this->baudRate->getValue()),
-			'data_bits' => intval($this->dataBits->getValue()),
-			'stop_bits' => intval($this->stopBits->getValue()),
-			'parity' => intval($this->parity->getValue()),
+			'data_rate' => $this->baudRate->value,
+			'data_bits' => $this->dataBits->value,
+			'stop_bits' => $this->stopBits->value,
+			'parity' => $this->parity->value,
 			'flow_control' => $this->flowControl,
 			'is_canonical' => $this->isCanonical,
 		];

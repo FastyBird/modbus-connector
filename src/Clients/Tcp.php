@@ -19,32 +19,36 @@ use DateTimeInterface;
 use Exception;
 use FastyBird\Connector\Modbus;
 use FastyBird\Connector\Modbus\API;
-use FastyBird\Connector\Modbus\Entities;
+use FastyBird\Connector\Modbus\Documents;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Helpers;
+use FastyBird\Connector\Modbus\Queries;
 use FastyBird\Connector\Modbus\Queue;
 use FastyBird\Connector\Modbus\Types;
 use FastyBird\DateTimeFactory;
-use FastyBird\Library\Bootstrap\Helpers as BootstrapHelpers;
-use FastyBird\Library\Metadata\Documents as MetadataDocuments;
+use FastyBird\Library\Application\Helpers as ApplicationHelpers;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
+use FastyBird\Module\Devices\Documents as DevicesDocuments;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
 use FastyBird\Module\Devices\Models as DevicesModels;
 use FastyBird\Module\Devices\Queries as DevicesQueries;
-use FastyBird\Module\Devices\States as DevicesStates;
+use FastyBird\Module\Devices\Types as DevicesTypes;
 use FastyBird\Module\Devices\Utilities as DevicesUtilities;
 use Nette;
-use Nette\Utils;
 use React\EventLoop;
 use React\Promise;
 use Throwable;
+use TypeError;
+use ValueError;
 use function array_key_exists;
 use function array_merge;
 use function assert;
 use function in_array;
 use function is_int;
 use function is_string;
+use function React\Async\async;
+use function React\Async\await;
 
 /**
  * Modbus TCP devices client interface
@@ -81,17 +85,17 @@ class Tcp implements Client
 
 	public function __construct(
 		protected readonly API\Transformer $transformer,
-		protected readonly Helpers\Entity $entityHelper,
-		protected readonly Helpers\Device $deviceHelper,
+		protected readonly Helpers\MessageBuilder $messageBuilder,
 		protected readonly Queue\Queue $queue,
+		protected readonly Helpers\Device $deviceHelper,
 		protected readonly DevicesModels\Configuration\Channels\Properties\Repository $channelsPropertiesConfigurationRepository,
-		private readonly MetadataDocuments\DevicesModule\Connector $connector,
+		private readonly Documents\Connectors\Connector $connector,
 		private readonly API\ConnectionManager $connectionManager,
 		private readonly Helpers\Channel $channelHelper,
 		private readonly Modbus\Logger $logger,
 		private readonly DevicesModels\Configuration\Devices\Repository $devicesConfigurationRepository,
 		private readonly DevicesModels\Configuration\Channels\Repository $channelsConfigurationRepository,
-		private readonly DevicesUtilities\ChannelPropertiesStates $channelPropertiesStatesManager,
+		private readonly DevicesModels\States\Async\ChannelPropertiesManager $channelPropertiesStatesManager,
 		private readonly DevicesUtilities\DeviceConnection $deviceConnectionManager,
 		private readonly DateTimeFactory\Factory $dateTimeFactory,
 		private readonly EventLoop\LoopInterface $eventLoop,
@@ -101,29 +105,34 @@ class Tcp implements Client
 
 	/**
 	 * @throws DevicesExceptions\InvalidState
+	 * @throws Exceptions\InvalidArgument
 	 * @throws Exceptions\Runtime
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	public function connect(): void
 	{
-		$findDevicesQuery = new DevicesQueries\Configuration\FindDevices();
+		$findDevicesQuery = new Queries\Configuration\FindDevices();
 		$findDevicesQuery->forConnector($this->connector);
-		$findDevicesQuery->byType(Entities\ModbusDevice::TYPE);
 
-		$devices = $this->devicesConfigurationRepository->findAllBy($findDevicesQuery);
+		$devices = $this->devicesConfigurationRepository->findAllBy(
+			$findDevicesQuery,
+			Documents\Devices\Device::class,
+		);
 
 		foreach ($devices as $device) {
 			$ipAddress = $this->deviceHelper->getIpAddress($device);
 
 			if (!is_string($ipAddress)) {
 				$this->queue->append(
-					$this->entityHelper->create(
-						Entities\Messages\StoreDeviceConnectionState::class,
+					$this->messageBuilder->create(
+						Queue\Messages\StoreDeviceConnectionState::class,
 						[
 							'connector' => $this->connector->getId(),
 							'device' => $device->getId(),
-							'state' => MetadataTypes\ConnectionState::STATE_ALERT,
+							'state' => DevicesTypes\ConnectionState::ALERT,
 						],
 					),
 				);
@@ -134,9 +143,9 @@ class Tcp implements Client
 
 		$this->eventLoop->addTimer(
 			self::HANDLER_START_DELAY,
-			function (): void {
+			async(function (): void {
 				$this->registerLoopHandler();
-			},
+			}),
 		);
 	}
 
@@ -154,14 +163,18 @@ class Tcp implements Client
 	 * @throws Exception
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function handleCommunication(): void
 	{
-		$findDevicesQuery = new DevicesQueries\Configuration\FindDevices();
+		$findDevicesQuery = new Queries\Configuration\FindDevices();
 		$findDevicesQuery->forConnector($this->connector);
-		$findDevicesQuery->byType(Entities\ModbusDevice::TYPE);
 
-		$devices = $this->devicesConfigurationRepository->findAllBy($findDevicesQuery);
+		$devices = $this->devicesConfigurationRepository->findAllBy(
+			$findDevicesQuery,
+			Documents\Devices\Device::class,
+		);
 
 		foreach ($devices as $device) {
 			if (!in_array($device->getId()->toString(), $this->processedDevices, true)) {
@@ -171,12 +184,12 @@ class Tcp implements Client
 				if (array_key_exists($device->getId()->toString(), $this->lostDevices)) {
 					if ($this->deviceConnectionManager->getLostAt($device) === null) {
 						$this->queue->append(
-							$this->entityHelper->create(
-								Entities\Messages\StoreDeviceConnectionState::class,
+							$this->messageBuilder->create(
+								Queue\Messages\StoreDeviceConnectionState::class,
 								[
 									'connector' => $this->connector->getId(),
 									'device' => $device->getId(),
-									'state' => MetadataTypes\ConnectionState::STATE_LOST,
+									'state' => DevicesTypes\ConnectionState::LOST,
 								],
 							),
 						);
@@ -214,8 +227,10 @@ class Tcp implements Client
 	 * @throws Exceptions\Runtime
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
-	private function processDevice(MetadataDocuments\DevicesModule\Device $device): bool
+	private function processDevice(Documents\Devices\Device $device): bool
 	{
 		$ipAddress = $this->deviceHelper->getIpAddress($device);
 		assert(is_string($ipAddress));
@@ -228,11 +243,13 @@ class Tcp implements Client
 
 		$coilsAddresses = $discreteInputsAddresses = $holdingAddresses = $inputsAddresses = [];
 
-		$findChannelsQuery = new DevicesQueries\Configuration\FindChannels();
+		$findChannelsQuery = new Queries\Configuration\FindChannels();
 		$findChannelsQuery->forDevice($device);
-		$findChannelsQuery->byType(Entities\ModbusChannel::TYPE);
 
-		$channels = $this->channelsConfigurationRepository->findAllBy($findChannelsQuery);
+		$channels = $this->channelsConfigurationRepository->findAllBy(
+			$findChannelsQuery,
+			Documents\Channels\Channel::class,
+		);
 
 		foreach ($channels as $channel) {
 			$address = $this->channelHelper->getAddress($channel);
@@ -243,24 +260,26 @@ class Tcp implements Client
 
 				$properties = $this->channelsPropertiesConfigurationRepository->findAllBy(
 					$findChannelPropertiesQuery,
-					MetadataDocuments\DevicesModule\ChannelDynamicProperty::class,
+					DevicesDocuments\Channels\Properties\Dynamic::class,
 				);
 
 				foreach ($properties as $property) {
-					$this->channelPropertiesStatesManager->setValue(
+					await($this->channelPropertiesStatesManager->setValidState(
 						$property,
-						Utils\ArrayHash::from([
-							DevicesStates\Property::VALID_FIELD => false,
-							DevicesStates\Property::EXPECTED_VALUE_FIELD => null,
-							DevicesStates\Property::PENDING_FIELD => false,
-						]),
-					);
+						false,
+						MetadataTypes\Sources\Connector::MODBUS,
+					));
+					await($this->channelPropertiesStatesManager->setPendingState(
+						$property,
+						false,
+						MetadataTypes\Sources\Connector::MODBUS,
+					));
 				}
 
 				$this->logger->warning(
 					'Channel address is missing',
 					[
-						'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+						'source' => MetadataTypes\Sources\Connector::MODBUS->value,
 						'type' => 'tcp-client',
 						'connector' => [
 							'id' => $this->connector->getId()->toString(),
@@ -279,13 +298,13 @@ class Tcp implements Client
 
 			$registerReadAddress = $this->createReadAddress($device, $channel);
 
-			if ($registerReadAddress instanceof Entities\Clients\ReadCoilAddress) {
+			if ($registerReadAddress instanceof Messages\Pointer\ReadCoilAddress) {
 				$coilsAddresses[] = $registerReadAddress;
-			} elseif ($registerReadAddress instanceof Entities\Clients\ReadDiscreteInputAddress) {
+			} elseif ($registerReadAddress instanceof Messages\Pointer\ReadDiscreteInputAddress) {
 				$discreteInputsAddresses[] = $registerReadAddress;
-			} elseif ($registerReadAddress instanceof Entities\Clients\ReadHoldingRegisterAddress) {
+			} elseif ($registerReadAddress instanceof Messages\Pointer\ReadHoldingRegisterAddress) {
 				$holdingAddresses[] = $registerReadAddress;
-			} elseif ($registerReadAddress instanceof Entities\Clients\ReadInputRegisterAddress) {
+			} elseif ($registerReadAddress instanceof Messages\Pointer\ReadInputRegisterAddress) {
 				$inputsAddresses[] = $registerReadAddress;
 			}
 		}
@@ -334,9 +353,7 @@ class Tcp implements Client
 		}
 
 		if (
-			$this->deviceConnectionManager->getState($device)->equalsValue(
-				MetadataTypes\ConnectionState::STATE_ALERT,
-			)
+			$this->deviceConnectionManager->getState($device) === DevicesTypes\ConnectionState::ALERT
 		) {
 			return false;
 		}
@@ -347,29 +364,29 @@ class Tcp implements Client
 
 		foreach ($requests as $request) {
 			foreach ($request->getAddresses() as $requestAddress) {
-				if ($request instanceof Entities\Clients\ReadCoilsRequest) {
+				if ($request instanceof Messages\Request\ReadCoils) {
 					$channel = $this->deviceHelper->findChannelByType(
 						$device,
 						$requestAddress->getAddress(),
-						Types\ChannelType::get(Types\ChannelType::COIL),
+						Types\ChannelType::COIL,
 					);
-				} elseif ($request instanceof Entities\Clients\ReadDiscreteInputsRequest) {
+				} elseif ($request instanceof Messages\Request\ReadDiscreteInputs) {
 					$channel = $this->deviceHelper->findChannelByType(
 						$device,
 						$requestAddress->getAddress(),
-						Types\ChannelType::get(Types\ChannelType::DISCRETE_INPUT),
+						Types\ChannelType::DISCRETE_INPUT,
 					);
-				} elseif ($request instanceof Entities\Clients\ReadHoldingsRegistersRequest) {
+				} elseif ($request instanceof Messages\Request\ReadHoldingsRegisters) {
 					$channel = $this->deviceHelper->findChannelByType(
 						$device,
 						$requestAddress->getAddress(),
-						Types\ChannelType::get(Types\ChannelType::HOLDING_REGISTER),
+						Types\ChannelType::HOLDING_REGISTER,
 					);
-				} elseif ($request instanceof Entities\Clients\ReadInputsRegistersRequest) {
+				} elseif ($request instanceof Messages\Request\ReadInputsRegisters) {
 					$channel = $this->deviceHelper->findChannelByType(
 						$device,
 						$requestAddress->getAddress(),
-						Types\ChannelType::get(Types\ChannelType::INPUT_REGISTER),
+						Types\ChannelType::INPUT_REGISTER,
 					);
 				} else {
 					continue;
@@ -380,7 +397,7 @@ class Tcp implements Client
 				}
 			}
 
-			if ($request instanceof Entities\Clients\ReadCoilsRequest) {
+			if ($request instanceof Messages\Request\ReadCoils) {
 				$promises[] = $promise = $this->connectionManager
 					->getTcpClient()
 					->readCoils(
@@ -389,7 +406,7 @@ class Tcp implements Client
 						$request->getStartAddress(),
 						$request->getQuantity(),
 					);
-			} elseif ($request instanceof Entities\Clients\ReadDiscreteInputsRequest) {
+			} elseif ($request instanceof Messages\Request\ReadDiscreteInputs) {
 				$promises[] = $promise = $this->connectionManager
 					->getTcpClient()
 					->readDiscreteInputs(
@@ -398,7 +415,7 @@ class Tcp implements Client
 						$request->getStartAddress(),
 						$request->getQuantity(),
 					);
-			} elseif ($request instanceof Entities\Clients\ReadHoldingsRegistersRequest) {
+			} elseif ($request instanceof Messages\Request\ReadHoldingsRegisters) {
 				$promises[] = $promise = $this->connectionManager
 					->getTcpClient()
 					->readHoldingRegisters(
@@ -407,7 +424,7 @@ class Tcp implements Client
 						$request->getStartAddress(),
 						$request->getQuantity(),
 					);
-			} elseif ($request instanceof Entities\Clients\ReadInputsRegistersRequest) {
+			} elseif ($request instanceof Messages\Request\ReadInputsRegisters) {
 				$promises[] = $promise = $this->connectionManager
 					->getTcpClient()
 					->readInputRegisters(
@@ -421,28 +438,28 @@ class Tcp implements Client
 			}
 
 			$promise->then(
-				function (Entities\API\ReadAnalogInputs|Entities\API\ReadDigitalInputs $response) use ($request, $device): void {
+				function (API\Messages\Response\ReadAnalogInputs|API\Messages\Response\ReadDigitalInputs $response) use ($request, $device): void {
 					$now = $this->dateTimeFactory->getNow();
 
-					if ($response instanceof Entities\API\ReadDigitalInputs) {
+					if ($response instanceof API\Messages\Response\ReadDigitalInputs) {
 						$this->processDigitalRegistersResponse($request, $response, $device);
 					} else {
 						$this->processAnalogRegistersResponse($request, $response, $device);
 					}
 
 					foreach ($response->getRegisters() as $address => $value) {
-						if ($request instanceof Entities\Clients\ReadHoldingsRegistersRequest) {
+						if ($request instanceof Messages\Request\ReadHoldingsRegisters) {
 							$channel = $this->deviceHelper->findChannelByType(
 								$device,
 								$address,
-								Types\ChannelType::get(Types\ChannelType::HOLDING_REGISTER),
+								Types\ChannelType::HOLDING_REGISTER,
 							);
 
-						} elseif ($request instanceof Entities\Clients\ReadInputsRegistersRequest) {
+						} elseif ($request instanceof Messages\Request\ReadInputsRegisters) {
 							$channel = $this->deviceHelper->findChannelByType(
 								$device,
 								$address,
-								Types\ChannelType::get(Types\ChannelType::INPUT_REGISTER),
+								Types\ChannelType::INPUT_REGISTER,
 							);
 
 						} else {
@@ -459,46 +476,50 @@ class Tcp implements Client
 
 					if ($ex instanceof Exceptions\ModbusTcp) {
 						foreach ($request->getAddresses() as $requestAddress) {
-							if ($request instanceof Entities\Clients\ReadCoilsRequest) {
+							if ($request instanceof Messages\Request\ReadCoils) {
 								$channel = $this->deviceHelper->findChannelByType(
 									$device,
 									$requestAddress->getAddress(),
-									Types\ChannelType::get(Types\ChannelType::COIL),
+									Types\ChannelType::COIL,
 								);
-							} elseif ($request instanceof Entities\Clients\ReadDiscreteInputsRequest) {
+							} elseif ($request instanceof Messages\Request\ReadDiscreteInputs) {
 								$channel = $this->deviceHelper->findChannelByType(
 									$device,
 									$requestAddress->getAddress(),
-									Types\ChannelType::get(Types\ChannelType::DISCRETE_INPUT),
+									Types\ChannelType::DISCRETE_INPUT,
 								);
-							} elseif ($request instanceof Entities\Clients\ReadHoldingsRegistersRequest) {
+							} elseif ($request instanceof Messages\Request\ReadHoldingsRegisters) {
 								$channel = $this->deviceHelper->findChannelByType(
 									$device,
 									$requestAddress->getAddress(),
-									Types\ChannelType::get(Types\ChannelType::HOLDING_REGISTER),
+									Types\ChannelType::HOLDING_REGISTER,
 								);
 							} else {
 								$channel = $this->deviceHelper->findChannelByType(
 									$device,
 									$requestAddress->getAddress(),
-									Types\ChannelType::get(Types\ChannelType::INPUT_REGISTER),
+									Types\ChannelType::INPUT_REGISTER,
 								);
 							}
 
 							if ($channel !== null) {
 								$this->processedReadRegister[$channel->getIdentifier()] = $now;
 
-								$findChannelPropertyQuery = new DevicesQueries\Configuration\FindChannelDynamicProperties();
+								$findChannelPropertyQuery = new Queries\Configuration\FindChannelDynamicProperties();
 								$findChannelPropertyQuery->forChannel($channel);
 								$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::VALUE);
 
 								$property = $this->channelsPropertiesConfigurationRepository->findOneBy(
 									$findChannelPropertyQuery,
-									MetadataDocuments\DevicesModule\ChannelDynamicProperty::class,
+									DevicesDocuments\Channels\Properties\Dynamic::class,
 								);
 
-								if ($property instanceof MetadataDocuments\DevicesModule\ChannelDynamicProperty) {
-									$this->channelPropertiesStatesManager->setValidState($property, false);
+								if ($property instanceof DevicesDocuments\Channels\Properties\Dynamic) {
+									await($this->channelPropertiesStatesManager->setValidState(
+										$property,
+										false,
+										MetadataTypes\Sources\Connector::MODBUS,
+									));
 								}
 							}
 						}
@@ -506,9 +527,9 @@ class Tcp implements Client
 						$this->logger->error(
 							'Could not handle register reading',
 							[
-								'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+								'source' => MetadataTypes\Sources\Connector::MODBUS->value,
 								'type' => 'tcp-client',
-								'exception' => BootstrapHelpers\Logger::buildException($ex),
+								'exception' => ApplicationHelpers\Logger::buildException($ex),
 								'connector' => [
 									'id' => $this->connector->getId()->toString(),
 								],
@@ -526,18 +547,16 @@ class Tcp implements Client
 			->then(function () use ($device): void {
 				// Check device state...
 				if (
-					!$this->deviceConnectionManager->getState($device)->equalsValue(
-						MetadataTypes\ConnectionState::STATE_CONNECTED,
-					)
+					$this->deviceConnectionManager->getState($device) !== DevicesTypes\ConnectionState::CONNECTED
 				) {
 					// ... and if it is not ready, set it to ready
 					$this->queue->append(
-						$this->entityHelper->create(
-							Entities\Messages\StoreDeviceConnectionState::class,
+						$this->messageBuilder->create(
+							Queue\Messages\StoreDeviceConnectionState::class,
 							[
 								'connector' => $this->connector->getId(),
 								'device' => $device->getId(),
-								'state' => MetadataTypes\ConnectionState::STATE_CONNECTED,
+								'state' => DevicesTypes\ConnectionState::CONNECTED,
 							],
 						),
 					);
@@ -551,9 +570,9 @@ class Tcp implements Client
 						$this->logger->warning(
 							'Device is lost',
 							[
-								'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+								'source' => MetadataTypes\Sources\Connector::MODBUS->value,
 								'type' => 'tcp-client',
-								'exception' => BootstrapHelpers\Logger::buildException($ex),
+								'exception' => ApplicationHelpers\Logger::buildException($ex),
 								'connector' => [
 									'id' => $this->connector->getId()->toString(),
 								],
@@ -564,12 +583,12 @@ class Tcp implements Client
 						);
 
 						$this->queue->append(
-							$this->entityHelper->create(
-								Entities\Messages\StoreDeviceConnectionState::class,
+							$this->messageBuilder->create(
+								Queue\Messages\StoreDeviceConnectionState::class,
 								[
 									'connector' => $this->connector->getId(),
 									'device' => $device->getId(),
-									'state' => MetadataTypes\ConnectionState::STATE_LOST,
+									'state' => DevicesTypes\ConnectionState::LOST,
 								],
 							),
 						);
@@ -582,23 +601,26 @@ class Tcp implements Client
 
 	/**
 	 * @throws DevicesExceptions\InvalidState
+	 * @throws Exceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function createReadAddress(
-		MetadataDocuments\DevicesModule\Device $device,
-		MetadataDocuments\DevicesModule\Channel $channel,
-	): Entities\Clients\ReadAddress|null
+		Documents\Devices\Device $device,
+		Documents\Channels\Channel $channel,
+	): Messages\Pointer\ReadAddress|null
 	{
 		$now = $this->dateTimeFactory->getNow();
 
-		$findChannelPropertyQuery = new DevicesQueries\Configuration\FindChannelDynamicProperties();
+		$findChannelPropertyQuery = new Queries\Configuration\FindChannelDynamicProperties();
 		$findChannelPropertyQuery->forChannel($channel);
 		$findChannelPropertyQuery->byIdentifier(Types\ChannelPropertyIdentifier::VALUE);
 
 		$property = $this->channelsPropertiesConfigurationRepository->findOneBy(
 			$findChannelPropertyQuery,
-			MetadataDocuments\DevicesModule\ChannelDynamicProperty::class,
+			DevicesDocuments\Channels\Properties\Dynamic::class,
 		);
 
 		if ($property === null || !$property->isQueryable()) {
@@ -625,28 +647,28 @@ class Tcp implements Client
 			$property->getFormat(),
 		);
 
-		if ($deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_BOOLEAN)) {
+		if ($deviceExpectedDataType === MetadataTypes\DataType::BOOLEAN) {
 			return $property->isSettable()
-				? new Entities\Clients\ReadCoilAddress($address, $channel, $deviceExpectedDataType)
-				: new Entities\Clients\ReadDiscreteInputAddress($address, $channel, $deviceExpectedDataType);
+				? new Messages\Pointer\ReadCoilAddress($address, $channel, $deviceExpectedDataType)
+				: new Messages\Pointer\ReadDiscreteInputAddress($address, $channel, $deviceExpectedDataType);
 		} elseif (
-			$deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_CHAR)
-			|| $deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UCHAR)
-			|| $deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_SHORT)
-			|| $deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_USHORT)
-			|| $deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_INT)
-			|| $deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_UINT)
-			|| $deviceExpectedDataType->equalsValue(MetadataTypes\DataType::DATA_TYPE_FLOAT)
+			$deviceExpectedDataType === MetadataTypes\DataType::CHAR
+			|| $deviceExpectedDataType === MetadataTypes\DataType::UCHAR
+			|| $deviceExpectedDataType === MetadataTypes\DataType::SHORT
+			|| $deviceExpectedDataType === MetadataTypes\DataType::USHORT
+			|| $deviceExpectedDataType === MetadataTypes\DataType::INT
+			|| $deviceExpectedDataType === MetadataTypes\DataType::UINT
+			|| $deviceExpectedDataType === MetadataTypes\DataType::FLOAT
 		) {
 			return $property->isSettable()
-				? new Entities\Clients\ReadHoldingRegisterAddress($address, $channel, $deviceExpectedDataType)
-				: new Entities\Clients\ReadInputRegisterAddress($address, $channel, $deviceExpectedDataType);
+				? new Messages\Pointer\ReadHoldingRegisterAddress($address, $channel, $deviceExpectedDataType)
+				: new Messages\Pointer\ReadInputRegisterAddress($address, $channel, $deviceExpectedDataType);
 		}
 
 		$this->logger->warning(
 			'Channel property data type is not supported for now',
 			[
-				'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+				'source' => MetadataTypes\Sources\Connector::MODBUS->value,
 				'type' => 'tcp-client',
 				'connector' => [
 					'id' => $this->connector->getId()->toString(),
@@ -670,13 +692,13 @@ class Tcp implements Client
 	{
 		$this->handlerTimer = $this->eventLoop->addTimer(
 			self::HANDLER_PROCESSING_INTERVAL,
-			function (): void {
+			async(function (): void {
 				if ($this->closed) {
 					return;
 				}
 
 				$this->handleCommunication();
-			},
+			}),
 		);
 	}
 

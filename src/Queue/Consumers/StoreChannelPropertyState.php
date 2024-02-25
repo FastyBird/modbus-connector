@@ -16,19 +16,20 @@
 namespace FastyBird\Connector\Modbus\Queue\Consumers;
 
 use FastyBird\Connector\Modbus;
-use FastyBird\Connector\Modbus\Entities;
+use FastyBird\Connector\Modbus\Documents;
+use FastyBird\Connector\Modbus\Queries;
 use FastyBird\Connector\Modbus\Queue;
-use FastyBird\Library\Metadata\Documents as MetadataDocuments;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
-use FastyBird\Library\Metadata\Utilities as MetadataUtilities;
+use FastyBird\Library\Tools\Exceptions as ToolsExceptions;
+use FastyBird\Module\Devices\Documents as DevicesDocuments;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
 use FastyBird\Module\Devices\Models as DevicesModels;
 use FastyBird\Module\Devices\Queries as DevicesQueries;
 use FastyBird\Module\Devices\States as DevicesStates;
-use FastyBird\Module\Devices\Utilities as DevicesUtilities;
 use Nette;
 use Nette\Utils;
+use function React\Async\await;
 
 /**
  * Store channel property state message consumer
@@ -48,7 +49,7 @@ final class StoreChannelPropertyState implements Queue\Consumer
 		private readonly DevicesModels\Configuration\Devices\Repository $devicesConfigurationRepository,
 		private readonly DevicesModels\Configuration\Channels\Repository $channelsConfigurationRepository,
 		private readonly DevicesModels\Configuration\Channels\Properties\Repository $channelsPropertiesConfigurationRepository,
-		private readonly DevicesUtilities\ChannelPropertiesStates $channelPropertiesStatesManager,
+		private readonly DevicesModels\States\Async\ChannelPropertiesManager $channelPropertiesStatesManager,
 	)
 	{
 	}
@@ -58,72 +59,76 @@ final class StoreChannelPropertyState implements Queue\Consumer
 	 * @throws DevicesExceptions\InvalidState
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
-	 * @throws MetadataExceptions\MalformedInput
+	 * @throws ToolsExceptions\InvalidArgument
 	 */
-	public function consume(Entities\Messages\Entity $entity): bool
+	public function consume(Queue\Messages\Message $message): bool
 	{
-		if (!$entity instanceof Entities\Messages\StoreChannelPropertyState) {
+		if (!$message instanceof Queue\Messages\StoreChannelPropertyState) {
 			return false;
 		}
 
-		$findDeviceQuery = new DevicesQueries\Configuration\FindDevices();
-		$findDeviceQuery->byConnectorId($entity->getConnector());
-		$findDeviceQuery->byId($entity->getDevice());
-		$findDeviceQuery->byType(Entities\ModbusDevice::TYPE);
+		$findDeviceQuery = new Queries\Configuration\FindDevices();
+		$findDeviceQuery->byConnectorId($message->getConnector());
+		$findDeviceQuery->byId($message->getDevice());
 
-		$device = $this->devicesConfigurationRepository->findOneBy($findDeviceQuery);
+		$device = $this->devicesConfigurationRepository->findOneBy(
+			$findDeviceQuery,
+			Documents\Devices\Device::class,
+		);
 
 		if ($device === null) {
 			$this->logger->error(
 				'Device could not be loaded',
 				[
-					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+					'source' => MetadataTypes\Sources\Connector::MODBUS->value,
 					'type' => 'store-channel-property-state-message-consumer',
 					'connector' => [
-						'id' => $entity->getConnector()->toString(),
+						'id' => $message->getConnector()->toString(),
 					],
 					'device' => [
-						'id' => $entity->getDevice()->toString(),
+						'id' => $message->getDevice()->toString(),
 					],
 					'channel' => [
-						'id' => $entity->getChannel()->toString(),
+						'id' => $message->getChannel()->toString(),
 					],
 					'property' => [
-						'id' => $entity->getProperty()->toString(),
+						'id' => $message->getProperty()->toString(),
 					],
-					'data' => $entity->toArray(),
+					'data' => $message->toArray(),
 				],
 			);
 
 			return true;
 		}
 
-		$findChannelQuery = new DevicesQueries\Configuration\FindChannels();
+		$findChannelQuery = new Queries\Configuration\FindChannels();
 		$findChannelQuery->forDevice($device);
-		$findChannelQuery->byId($entity->getChannel());
-		$findChannelQuery->byType(Entities\ModbusChannel::TYPE);
+		$findChannelQuery->byId($message->getChannel());
 
-		$channel = $this->channelsConfigurationRepository->findOneBy($findChannelQuery);
+		$channel = $this->channelsConfigurationRepository->findOneBy(
+			$findChannelQuery,
+			Documents\Channels\Channel::class,
+		);
 
 		if ($channel === null) {
 			$this->logger->error(
 				'Channel could not be loaded',
 				[
-					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+					'source' => MetadataTypes\Sources\Connector::MODBUS->value,
 					'type' => 'store-channel-property-state-message-consumer',
 					'connector' => [
-						'id' => $entity->getConnector()->toString(),
+						'id' => $message->getConnector()->toString(),
 					],
 					'device' => [
-						'id' => $entity->getDevice()->toString(),
+						'id' => $device->getId()->toString(),
 					],
 					'channel' => [
-						'id' => $entity->getChannel()->toString(),
+						'id' => $message->getChannel()->toString(),
 					],
 					'property' => [
-						'id' => $entity->getProperty()->toString(),
+						'id' => $message->getProperty()->toString(),
 					],
-					'data' => $entity->toArray(),
+					'data' => $message->toArray(),
 				],
 			);
 
@@ -132,65 +137,64 @@ final class StoreChannelPropertyState implements Queue\Consumer
 
 		$findChannelPropertyQuery = new DevicesQueries\Configuration\FindChannelDynamicProperties();
 		$findChannelPropertyQuery->forChannel($channel);
-		$findChannelPropertyQuery->byId($entity->getProperty());
+		$findChannelPropertyQuery->byId($message->getProperty());
 
 		$property = $this->channelsPropertiesConfigurationRepository->findOneBy(
 			$findChannelPropertyQuery,
-			MetadataDocuments\DevicesModule\ChannelDynamicProperty::class,
+			DevicesDocuments\Channels\Properties\Dynamic::class,
 		);
 
 		if ($property === null) {
 			$this->logger->error(
 				'Channel property could not be loaded',
 				[
-					'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+					'source' => MetadataTypes\Sources\Connector::MODBUS->value,
 					'type' => 'store-channel-property-state-message-consumer',
 					'connector' => [
-						'id' => $entity->getConnector()->toString(),
+						'id' => $message->getConnector()->toString(),
 					],
 					'device' => [
-						'id' => $entity->getDevice()->toString(),
+						'id' => $device->getId()->toString(),
 					],
 					'channel' => [
-						'id' => $entity->getChannel()->toString(),
+						'id' => $channel->getId()->toString(),
 					],
 					'property' => [
-						'id' => $entity->getProperty()->toString(),
+						'id' => $message->getProperty()->toString(),
 					],
-					'data' => $entity->toArray(),
+					'data' => $message->toArray(),
 				],
 			);
 
 			return true;
 		}
 
-		$this->channelPropertiesStatesManager->setValue($property, Utils\ArrayHash::from([
-			DevicesStates\Property::ACTUAL_VALUE_FIELD => MetadataUtilities\ValueHelper::transformValueFromDevice(
-				$property->getDataType(),
-				$property->getFormat(),
-				$entity->getValue(),
-			),
-			DevicesStates\Property::VALID_FIELD => true,
-		]));
+		await($this->channelPropertiesStatesManager->set(
+			$property,
+			Utils\ArrayHash::from([
+				DevicesStates\Property::ACTUAL_VALUE_FIELD => $message->getValue(),
+			]),
+			MetadataTypes\Sources\Connector::MODBUS,
+		));
 
 		$this->logger->debug(
 			'Consumed store device state message',
 			[
-				'source' => MetadataTypes\ConnectorSource::SOURCE_CONNECTOR_MODBUS,
+				'source' => MetadataTypes\Sources\Connector::MODBUS->value,
 				'type' => 'store-channel-property-state-message-consumer',
 				'connector' => [
-					'id' => $entity->getConnector()->toString(),
+					'id' => $message->getConnector()->toString(),
 				],
 				'device' => [
-					'id' => $entity->getDevice()->toString(),
+					'id' => $device->getId()->toString(),
 				],
 				'channel' => [
-					'id' => $entity->getChannel()->toString(),
+					'id' => $channel->getId()->toString(),
 				],
 				'property' => [
-					'id' => $entity->getProperty()->toString(),
+					'id' => $property->getId()->toString(),
 				],
-				'data' => $entity->toArray(),
+				'data' => $message->toArray(),
 			],
 		);
 

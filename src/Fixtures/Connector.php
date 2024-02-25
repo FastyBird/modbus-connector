@@ -36,7 +36,7 @@ final class Connector extends DataFixtures\AbstractFixture implements DataFixtur
 	 */
 	public function load(Persistence\ObjectManager $manager): void
 	{
-		$connector = new Entities\ModbusConnector('modbus-rtu');
+		$connector = new Entities\Connectors\Connector('modbus-rtu');
 		$connector->setName('Modbus RTU');
 
 		$manager->persist($connector);

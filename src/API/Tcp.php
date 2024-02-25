@@ -16,7 +16,10 @@
 namespace FastyBird\Connector\Modbus\API;
 
 use Exception;
-use FastyBird\Connector\Modbus\Entities;
+use FastyBird\Connector\Modbus\API\Messages\Response\ReadAnalogInputs;
+use FastyBird\Connector\Modbus\API\Messages\Response\ReadDigitalInputs;
+use FastyBird\Connector\Modbus\API\Messages\Response\WriteCoil;
+use FastyBird\Connector\Modbus\API\Messages\Response\WriteHoldingRegister;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Types;
 use InvalidArgumentException;
@@ -76,7 +79,7 @@ class Tcp
 	/**
 	 * (0x01) Read Coils
 	 *
-	 * @return Promise\PromiseInterface<Entities\API\ReadDigitalInputs>
+	 * @return Promise\PromiseInterface<ReadDigitalInputs>
 	 *
 	 * @throws Exception
 	 * @throws Exceptions\InvalidState
@@ -93,7 +96,7 @@ class Tcp
 	{
 		return $this->readDigitalRegisters(
 			$uri,
-			Types\ModbusFunction::get(Types\ModbusFunction::READ_COIL),
+			Types\ModbusFunction::READ_COIL,
 			$station,
 			$startingAddress,
 			$quantity,
@@ -105,7 +108,7 @@ class Tcp
 	/**
 	 * (0x02) Read Discrete Inputs
 	 *
-	 * @return Promise\PromiseInterface<Entities\API\ReadDigitalInputs>
+	 * @return Promise\PromiseInterface<ReadDigitalInputs>
 	 *
 	 * @throws Exception
 	 * @throws Exceptions\InvalidState
@@ -122,7 +125,7 @@ class Tcp
 	{
 		return $this->readDigitalRegisters(
 			$uri,
-			Types\ModbusFunction::get(Types\ModbusFunction::READ_DISCRETE),
+			Types\ModbusFunction::READ_DISCRETE,
 			$station,
 			$startingAddress,
 			$quantity,
@@ -134,7 +137,7 @@ class Tcp
 	/**
 	 * (0x03) Read Holding Registers
 	 *
-	 * @return Promise\PromiseInterface<Entities\API\ReadAnalogInputs>
+	 * @return Promise\PromiseInterface<ReadAnalogInputs>
 	 *
 	 * @throws Exception
 	 * @throws Exceptions\InvalidState
@@ -151,7 +154,7 @@ class Tcp
 	{
 		return $this->readAnalogRegisters(
 			$uri,
-			Types\ModbusFunction::get(Types\ModbusFunction::READ_HOLDINGS_REGISTERS),
+			Types\ModbusFunction::READ_HOLDINGS_REGISTERS,
 			$station,
 			$startingAddress,
 			$quantity,
@@ -163,7 +166,7 @@ class Tcp
 	/**
 	 * (0x04) Read Input Registers
 	 *
-	 * @return Promise\PromiseInterface<Entities\API\ReadAnalogInputs>
+	 * @return Promise\PromiseInterface<ReadAnalogInputs>
 	 *
 	 * @throws Exception
 	 * @throws Exceptions\InvalidState
@@ -180,7 +183,7 @@ class Tcp
 	{
 		return $this->readAnalogRegisters(
 			$uri,
-			Types\ModbusFunction::get(Types\ModbusFunction::READ_INPUTS_REGISTERS),
+			Types\ModbusFunction::READ_INPUTS_REGISTERS,
 			$station,
 			$startingAddress,
 			$quantity,
@@ -192,7 +195,7 @@ class Tcp
 	/**
 	 * (0x05) Write Single Coil
 	 *
-	 * @return Promise\PromiseInterface<Entities\API\WriteCoil>
+	 * @return Promise\PromiseInterface<WriteCoil>
 	 *
 	 * @throws Exception
 	 * @throws Exceptions\InvalidState
@@ -207,7 +210,7 @@ class Tcp
 		bool $raw = false,
 	): Promise\PromiseInterface
 	{
-		$functionCode = Types\ModbusFunction::get(Types\ModbusFunction::WRITE_SINGLE_COIL);
+		$functionCode = Types\ModbusFunction::WRITE_SINGLE_COIL;
 
 		$deferred = new Promise\Deferred();
 
@@ -226,7 +229,7 @@ class Tcp
 			self::PROTOCOL_ID,
 			6, // By default, for writing coil
 			$station,
-			$functionCode->getValue(),
+			$functionCode->value,
 			$coilAddress,
 		);
 		// Pack value (transform to binary)
@@ -256,7 +259,7 @@ class Tcp
 					return;
 				}
 
-				$deferred->resolve(new Entities\API\WriteCoil(
+				$deferred->resolve(new Messages\Response\WriteCoil(
 					$header['station'],
 					$functionCode,
 					current($valueUnpacked) === 0xFF00,
@@ -274,7 +277,7 @@ class Tcp
 	 *
 	 * @param array<int> $value
 	 *
-	 * @return Promise\PromiseInterface<Entities\API\WriteHoldingRegister>
+	 * @return Promise\PromiseInterface<WriteHoldingRegister>
 	 *
 	 * @throws Exception
 	 * @throws Exceptions\InvalidState
@@ -298,12 +301,8 @@ class Tcp
 		}
 
 		$functionCode = count($value) === 2
-			? Types\ModbusFunction::get(
-				Types\ModbusFunction::WRITE_SINGLE_HOLDING_REGISTER,
-			)
-			: Types\ModbusFunction::get(
-				Types\ModbusFunction::WRITE_MULTIPLE_HOLDINGS_REGISTERS,
-			);
+			? Types\ModbusFunction::WRITE_SINGLE_HOLDING_REGISTER
+			: Types\ModbusFunction::WRITE_MULTIPLE_HOLDINGS_REGISTERS;
 
 		// Pack header (transform to binary)
 		$request = pack(
@@ -312,7 +311,7 @@ class Tcp
 			self::PROTOCOL_ID,
 			6, // By default, for writing coil
 			$station,
-			$functionCode->getValue(),
+			$functionCode->value,
 			$registerAddress,
 		);
 
@@ -346,7 +345,7 @@ class Tcp
 						return;
 					}
 
-					$deferred->resolve(new Entities\API\WriteHoldingRegister(
+					$deferred->resolve(new Messages\Response\WriteHoldingRegister(
 						$header['station'],
 						$functionCode,
 					));
@@ -360,7 +359,7 @@ class Tcp
 	}
 
 	/**
-	 * @return Promise\PromiseInterface<Entities\API\ReadDigitalInputs>
+	 * @return Promise\PromiseInterface<ReadDigitalInputs>
 	 *
 	 * @throws Exception
 	 * @throws Exceptions\InvalidState
@@ -392,7 +391,7 @@ class Tcp
 			self::PROTOCOL_ID,
 			6, // By default, for reading
 			$station,
-			$functionCode->getValue(),
+			$functionCode->value,
 			$startingAddress,
 			$quantity,
 		);
@@ -432,7 +431,7 @@ class Tcp
 
 				$addresses = array_fill($startingAddress, count($bits), 'value');
 
-				$deferred->resolve(new Entities\API\ReadDigitalInputs(
+				$deferred->resolve(new Messages\Response\ReadDigitalInputs(
 					$header['station'],
 					$functionCode,
 					$header['count'],
@@ -447,7 +446,7 @@ class Tcp
 	}
 
 	/**
-	 * @return Promise\PromiseInterface<Entities\API\ReadAnalogInputs>
+	 * @return Promise\PromiseInterface<ReadAnalogInputs>
 	 *
 	 * @throws Exception
 	 * @throws Exceptions\InvalidState
@@ -479,7 +478,7 @@ class Tcp
 			self::PROTOCOL_ID,
 			6, // By default, for reading
 			$station,
-			$functionCode->getValue(),
+			$functionCode->value,
 			$startingAddress,
 			$quantity,
 		);
@@ -509,7 +508,7 @@ class Tcp
 						return;
 					}
 
-					$deferred->resolve(new Entities\API\ReadAnalogInputs(
+					$deferred->resolve(new Messages\Response\ReadAnalogInputs(
 						$header['station'],
 						$functionCode,
 						$header['count'],

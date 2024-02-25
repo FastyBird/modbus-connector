@@ -15,9 +15,7 @@
 
 namespace FastyBird\Connector\Modbus\Types;
 
-use Consistence;
-use FastyBird\Library\Metadata\Types as MetadataTypes;
-use function strval;
+use FastyBird\Module\Devices\Types as DevicesTypes;
 
 /**
  * Device property identifier types
@@ -27,28 +25,15 @@ use function strval;
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-class ChannelPropertyIdentifier extends Consistence\Enum\Enum
+enum ChannelPropertyIdentifier: string
 {
 
-	/**
-	 * Define device states
-	 */
-	public const ADDRESS = MetadataTypes\ChannelPropertyIdentifier::IDENTIFIER_ADDRESS;
+	case ADDRESS = DevicesTypes\ChannelPropertyIdentifier::ADDRESS->value;
 
-	public const TYPE = 'type';
+	case TYPE = 'type';
 
-	public const VALUE = 'value';
+	case VALUE = 'value';
 
-	public const READING_DELAY = 'reading_delay';
-
-	public function getValue(): string
-	{
-		return strval(parent::getValue());
-	}
-
-	public function __toString(): string
-	{
-		return strval(self::getValue());
-	}
+	case READING_DELAY = 'reading_delay';
 
 }

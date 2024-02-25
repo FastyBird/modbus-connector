@@ -38,12 +38,12 @@ final class Channels extends DataFixtures\AbstractFixture implements DataFixture
 	{
 		$device = $this->getReference('modbus-rtu-device');
 
-		if (!$device instanceof Entities\ModbusDevice) {
+		if (!$device instanceof Entities\Devices\Device) {
 			throw new Exceptions\InvalidState('Device reference could not be loaded');
 		}
 
 		for ($i = 1; $i <= 4; $i++) {
-			$channel = new Entities\ModbusChannel($device, 'channel-' . $i);
+			$channel = new Entities\Channels\Channel($device, 'channel-' . $i);
 
 			$manager->persist($channel);
 

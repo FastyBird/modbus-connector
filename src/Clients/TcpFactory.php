@@ -15,8 +15,8 @@
 
 namespace FastyBird\Connector\Modbus\Clients;
 
+use FastyBird\Connector\Modbus\Documents;
 use FastyBird\Connector\Modbus\Types;
-use FastyBird\Library\Metadata\Documents as MetadataDocuments;
 
 /**
  * Modbus TCP devices client factory
@@ -31,6 +31,6 @@ interface TcpFactory extends ClientFactory
 
 	public const MODE = Types\ClientMode::TCP;
 
-	public function create(MetadataDocuments\DevicesModule\Connector $connector): Tcp;
+	public function create(Documents\Connectors\Connector $connector): Tcp;
 
 }

@@ -16,14 +16,18 @@
 namespace FastyBird\Connector\Modbus\Helpers;
 
 use FastyBird\Connector\Modbus;
+use FastyBird\Connector\Modbus\Documents;
 use FastyBird\Connector\Modbus\Exceptions;
+use FastyBird\Connector\Modbus\Queries;
 use FastyBird\Connector\Modbus\Types;
-use FastyBird\Library\Metadata\Documents as MetadataDocuments;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
+use FastyBird\Module\Devices\Documents as DevicesDocuments;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
 use FastyBird\Module\Devices\Models as DevicesModels;
-use FastyBird\Module\Devices\Queries as DevicesQueries;
+use TypeError;
+use ValueError;
 use function assert;
+use function is_int;
 use function is_string;
 
 /**
@@ -34,36 +38,39 @@ use function is_string;
  *
  * @author         Adam Kadlec <adam.kadlec@fastybird.com>
  */
-final class Connector
+final readonly class Connector
 {
 
 	public function __construct(
-		private readonly DevicesModels\Configuration\Connectors\Properties\Repository $connectorsPropertiesConfigurationRepository,
+		private DevicesModels\Configuration\Connectors\Properties\Repository $connectorsPropertiesConfigurationRepository,
 	)
 	{
 	}
 
 	/**
 	 * @throws DevicesExceptions\InvalidState
+	 * @throws Exceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
-	public function getClientMode(MetadataDocuments\DevicesModule\Connector $connector): Types\ClientMode
+	public function getClientMode(Documents\Connectors\Connector $connector): Types\ClientMode
 	{
-		$findPropertyQuery = new DevicesQueries\Configuration\FindConnectorVariableProperties();
+		$findPropertyQuery = new Queries\Configuration\FindConnectorVariableProperties();
 		$findPropertyQuery->forConnector($connector);
 		$findPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::CLIENT_MODE);
 
 		$property = $this->connectorsPropertiesConfigurationRepository->findOneBy(
 			$findPropertyQuery,
-			MetadataDocuments\DevicesModule\ConnectorVariableProperty::class,
+			DevicesDocuments\Connectors\Properties\Variable::class,
 		);
 
 		$value = $property?->getValue();
 
-		if (is_string($value) && Types\ClientMode::isValidValue($value)) {
-			return Types\ClientMode::get($value);
+		if (is_string($value) && Types\ClientMode::tryFrom($value) !== null) {
+			return Types\ClientMode::from($value);
 		}
 
 		throw new Exceptions\InvalidState('Connector mode is not configured');
@@ -71,122 +78,141 @@ final class Connector
 
 	/**
 	 * @throws DevicesExceptions\InvalidState
+	 * @throws Exceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
-	public function getByteSize(MetadataDocuments\DevicesModule\Connector $connector): Types\ByteSize
+	public function getByteSize(Documents\Connectors\Connector $connector): Types\ByteSize
 	{
-		$findPropertyQuery = new DevicesQueries\Configuration\FindConnectorVariableProperties();
+		$findPropertyQuery = new Queries\Configuration\FindConnectorVariableProperties();
 		$findPropertyQuery->forConnector($connector);
 		$findPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::RTU_BYTE_SIZE);
 
 		$property = $this->connectorsPropertiesConfigurationRepository->findOneBy(
 			$findPropertyQuery,
-			MetadataDocuments\DevicesModule\ConnectorVariableProperty::class,
+			DevicesDocuments\Connectors\Properties\Variable::class,
 		);
 
-		if ($property?->getValue() === null || !Types\ByteSize::isValidValue($property->getValue())) {
-			return Types\ByteSize::get(Types\ByteSize::SIZE_8);
+		if (
+			$property?->getValue() === null
+			|| !is_string($property->getValue())
+			|| Types\ByteSize::tryFrom($property->getValue()) === null
+		) {
+			return Types\ByteSize::SIZE_8;
 		}
 
-		$value = $property->getValue();
-		assert(is_string($value));
-
-		return Types\ByteSize::get($value);
+		return Types\ByteSize::from($property->getValue());
 	}
 
 	/**
 	 * @throws DevicesExceptions\InvalidState
+	 * @throws Exceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
-	public function getBaudRate(MetadataDocuments\DevicesModule\Connector $connector): Types\BaudRate
+	public function getBaudRate(Documents\Connectors\Connector $connector): Types\BaudRate
 	{
-		$findPropertyQuery = new DevicesQueries\Configuration\FindConnectorVariableProperties();
+		$findPropertyQuery = new Queries\Configuration\FindConnectorVariableProperties();
 		$findPropertyQuery->forConnector($connector);
 		$findPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::RTU_BAUD_RATE);
 
 		$property = $this->connectorsPropertiesConfigurationRepository->findOneBy(
 			$findPropertyQuery,
-			MetadataDocuments\DevicesModule\ConnectorVariableProperty::class,
+			DevicesDocuments\Connectors\Properties\Variable::class,
 		);
 
-		if ($property?->getValue() === null || !Types\BaudRate::isValidValue($property->getValue())) {
-			return Types\BaudRate::get(Types\BaudRate::RATE_9600);
+		if (
+			$property?->getValue() === null
+			|| !is_int($property->getValue())
+			|| Types\BaudRate::tryFrom($property->getValue()) === null
+		) {
+			return Types\BaudRate::RATE_9600;
 		}
 
-		$value = $property->getValue();
-		assert(is_string($value));
-
-		return Types\BaudRate::get($value);
+		return Types\BaudRate::from($property->getValue());
 	}
 
 	/**
 	 * @throws DevicesExceptions\InvalidState
+	 * @throws Exceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
-	public function getParity(MetadataDocuments\DevicesModule\Connector $connector): Types\Parity
+	public function getParity(Documents\Connectors\Connector $connector): Types\Parity
 	{
-		$findPropertyQuery = new DevicesQueries\Configuration\FindConnectorVariableProperties();
+		$findPropertyQuery = new Queries\Configuration\FindConnectorVariableProperties();
 		$findPropertyQuery->forConnector($connector);
 		$findPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::RTU_PARITY);
 
 		$property = $this->connectorsPropertiesConfigurationRepository->findOneBy(
 			$findPropertyQuery,
-			MetadataDocuments\DevicesModule\ConnectorVariableProperty::class,
+			DevicesDocuments\Connectors\Properties\Variable::class,
 		);
 
-		if ($property?->getValue() === null || !Types\Parity::isValidValue($property->getValue())) {
-			return Types\Parity::get(Types\Parity::NONE);
+		if (
+			$property?->getValue() === null
+			|| !is_int($property->getValue())
+			|| Types\Parity::tryFrom($property->getValue()) === null
+		) {
+			return Types\Parity::NONE;
 		}
 
-		$value = $property->getValue();
-		assert(is_string($value));
-
-		return Types\Parity::get($value);
+		return Types\Parity::from($property->getValue());
 	}
 
 	/**
 	 * @throws DevicesExceptions\InvalidState
+	 * @throws Exceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
-	public function getStopBits(MetadataDocuments\DevicesModule\Connector $connector): Types\StopBits
+	public function getStopBits(Documents\Connectors\Connector $connector): Types\StopBits
 	{
-		$findPropertyQuery = new DevicesQueries\Configuration\FindConnectorVariableProperties();
+		$findPropertyQuery = new Queries\Configuration\FindConnectorVariableProperties();
 		$findPropertyQuery->forConnector($connector);
 		$findPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::RTU_STOP_BITS);
 
 		$property = $this->connectorsPropertiesConfigurationRepository->findOneBy(
 			$findPropertyQuery,
-			MetadataDocuments\DevicesModule\ConnectorVariableProperty::class,
+			DevicesDocuments\Connectors\Properties\Variable::class,
 		);
 
-		if ($property?->getValue() === null || !Types\StopBits::isValidValue($property->getValue())) {
-			return Types\StopBits::get(Types\StopBits::ONE);
+		if (
+			$property?->getValue() === null
+			|| !is_int($property->getValue())
+			|| Types\BaudRate::tryFrom($property->getValue()) === null
+		) {
+			return Types\StopBits::ONE;
 		}
 
-		$value = $property->getValue();
-		assert(is_string($value));
-
-		return Types\StopBits::get($value);
+		return Types\StopBits::from($property->getValue());
 	}
 
 	/**
 	 * @throws DevicesExceptions\InvalidState
+	 * @throws Exceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
-	public function getRtuInterface(MetadataDocuments\DevicesModule\Connector $connector): string
+	public function getRtuInterface(Documents\Connectors\Connector $connector): string
 	{
-		$findPropertyQuery = new DevicesQueries\Configuration\FindConnectorVariableProperties();
+		$findPropertyQuery = new Queries\Configuration\FindConnectorVariableProperties();
 		$findPropertyQuery->forConnector($connector);
 		$findPropertyQuery->byIdentifier(Types\ConnectorPropertyIdentifier::RTU_INTERFACE);
 
 		$property = $this->connectorsPropertiesConfigurationRepository->findOneBy(
 			$findPropertyQuery,
-			MetadataDocuments\DevicesModule\ConnectorVariableProperty::class,
+			DevicesDocuments\Connectors\Properties\Variable::class,
 		);
 
 		if ($property?->getValue() === null) {

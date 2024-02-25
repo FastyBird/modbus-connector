@@ -15,8 +15,6 @@
 
 namespace FastyBird\Connector\Modbus\Queue;
 
-use FastyBird\Connector\Modbus\Entities;
-
 /**
  * Clients messages consumer interface
  *
@@ -28,6 +26,6 @@ use FastyBird\Connector\Modbus\Entities;
 interface Consumer
 {
 
-	public function consume(Entities\Messages\Entity $entity): bool;
+	public function consume(Messages\Message $message): bool;
 
 }

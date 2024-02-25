@@ -40,11 +40,11 @@ final class Devices extends DataFixtures\AbstractFixture implements DataFixtures
 	{
 		$connector = $this->getReference('modbus-rtu-connector');
 
-		if (!$connector instanceof Entities\ModbusConnector) {
+		if (!$connector instanceof Entities\Connectors\Connector) {
 			throw new Exceptions\InvalidState('Connector reference could not be loaded');
 		}
 
-		$device = new Entities\ModbusDevice(
+		$device = new Entities\Devices\Device(
 			'fixture-device',
 			$connector,
 			'Fixture device',
