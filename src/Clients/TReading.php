@@ -61,7 +61,7 @@ trait TReading
 		// Sort by address to help chunking
 		usort(
 			$addresses,
-			static fn (Messages\Pointer\ReadAddress $a, Messages\Pointer\ReadAddress $b) => $a->getAddress() <=> $b->getAddress()
+			static fn (Messages\Pointer\ReadAddress $a, Messages\Pointer\ReadAddress $b) => $a->getAddress() <=> $b->getAddress(),
 		);
 
 		$startAddress = null;
