@@ -16,7 +16,6 @@
 namespace FastyBird\Connector\Modbus\Queue\Consumers;
 
 use DateTimeInterface;
-use Exception;
 use FastyBird\Connector\Modbus;
 use FastyBird\Connector\Modbus\API;
 use FastyBird\Connector\Modbus\Documents;
@@ -30,6 +29,7 @@ use FastyBird\Library\Application\Helpers as ApplicationHelpers;
 use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
 use FastyBird\Library\Metadata\Utilities as MetadataUtilities;
+use FastyBird\Library\Tools\Exceptions as ToolsExceptions;
 use FastyBird\Module\Devices\Documents as DevicesDocuments;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
 use FastyBird\Module\Devices\Models as DevicesModels;
@@ -40,6 +40,8 @@ use Nette;
 use Nette\Utils;
 use RuntimeException;
 use Throwable;
+use TypeError;
+use ValueError;
 use function floatval;
 use function in_array;
 use function intval;
@@ -84,7 +86,6 @@ final class WriteChannelPropertyState implements Queue\Consumer
 
 	/**
 	 * @throws DevicesExceptions\InvalidState
-	 * @throws Exception
 	 * @throws Exceptions\InvalidArgument
 	 * @throws Exceptions\InvalidState
 	 * @throws Exceptions\Runtime
@@ -1034,6 +1035,11 @@ final class WriteChannelPropertyState implements Queue\Consumer
 
 	/**
 	 * @throws DevicesExceptions\InvalidState
+	 * @throws MetadataExceptions\InvalidArgument
+	 * @throws MetadataExceptions\InvalidState
+	 * @throws ToolsExceptions\InvalidArgument
+	 * @throws TypeError
+	 * @throws ValueError
 	 */
 	private function resetExpected(DevicesDocuments\Channels\Properties\Dynamic $property): void
 	{

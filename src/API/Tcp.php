@@ -15,7 +15,6 @@
 
 namespace FastyBird\Connector\Modbus\API;
 
-use Exception;
 use FastyBird\Connector\Modbus\API\Messages\Response\ReadAnalogInputs;
 use FastyBird\Connector\Modbus\API\Messages\Response\ReadDigitalInputs;
 use FastyBird\Connector\Modbus\API\Messages\Response\WriteCoil;
@@ -24,6 +23,7 @@ use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Types;
 use InvalidArgumentException;
 use Nette;
+use Random\RandomException;
 use React\EventLoop;
 use React\Promise;
 use React\Socket;
@@ -81,9 +81,8 @@ class Tcp
 	 *
 	 * @return Promise\PromiseInterface<ReadDigitalInputs>
 	 *
-	 * @throws Exception
-	 * @throws Exceptions\InvalidState
 	 * @throws InvalidArgumentException
+	 * @throws RandomException
 	 */
 	public function readCoils(
 		string $uri,
@@ -110,9 +109,8 @@ class Tcp
 	 *
 	 * @return Promise\PromiseInterface<ReadDigitalInputs>
 	 *
-	 * @throws Exception
-	 * @throws Exceptions\InvalidState
 	 * @throws InvalidArgumentException
+	 * @throws RandomException
 	 */
 	public function readDiscreteInputs(
 		string $uri,
@@ -139,9 +137,8 @@ class Tcp
 	 *
 	 * @return Promise\PromiseInterface<ReadAnalogInputs>
 	 *
-	 * @throws Exception
-	 * @throws Exceptions\InvalidState
 	 * @throws InvalidArgumentException
+	 * @throws RandomException
 	 */
 	public function readHoldingRegisters(
 		string $uri,
@@ -168,9 +165,8 @@ class Tcp
 	 *
 	 * @return Promise\PromiseInterface<ReadAnalogInputs>
 	 *
-	 * @throws Exception
-	 * @throws Exceptions\InvalidState
 	 * @throws InvalidArgumentException
+	 * @throws RandomException
 	 */
 	public function readInputRegisters(
 		string $uri,
@@ -197,9 +193,8 @@ class Tcp
 	 *
 	 * @return Promise\PromiseInterface<WriteCoil>
 	 *
-	 * @throws Exception
-	 * @throws Exceptions\InvalidState
 	 * @throws InvalidArgumentException
+	 * @throws RandomException
 	 */
 	public function writeSingleCoil(
 		string $uri,
@@ -279,8 +274,6 @@ class Tcp
 	 *
 	 * @return Promise\PromiseInterface<WriteHoldingRegister>
 	 *
-	 * @throws Exception
-	 * @throws Exceptions\InvalidState
 	 * @throws InvalidArgumentException
 	 */
 	public function writeSingleHolding(
@@ -361,9 +354,8 @@ class Tcp
 	/**
 	 * @return Promise\PromiseInterface<ReadDigitalInputs>
 	 *
-	 * @throws Exception
-	 * @throws Exceptions\InvalidState
 	 * @throws InvalidArgumentException
+	 * @throws RandomException
 	 */
 	private function readDigitalRegisters(
 		string $uri,
@@ -448,9 +440,8 @@ class Tcp
 	/**
 	 * @return Promise\PromiseInterface<ReadAnalogInputs>
 	 *
-	 * @throws Exception
-	 * @throws Exceptions\InvalidState
 	 * @throws InvalidArgumentException
+	 * @throws RandomException
 	 */
 	private function readAnalogRegisters(
 		string $uri,

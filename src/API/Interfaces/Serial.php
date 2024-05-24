@@ -37,6 +37,9 @@ abstract class Serial
 
 	protected mixed $resource = null;
 
+	/**
+	 * @throws Exceptions\InvalidState
+	 */
 	public function __construct(protected string $port, protected Configuration $configuration)
 	{
 		register_shutdown_function([$this, 'close']);
