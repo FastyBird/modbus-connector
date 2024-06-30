@@ -35,6 +35,7 @@ use function current;
 use function decbin;
 use function get_loaded_extensions;
 use function pack;
+use function str_contains;
 use function str_repeat;
 use function str_split;
 use function strlen;
@@ -86,7 +87,7 @@ class Rtu
 		$useDio = false;
 
 		foreach (get_loaded_extensions() as $extension) {
-			if (Utils\Strings::contains('dio', Utils\Strings::lower($extension))) {
+			if (str_contains('dio', Utils\Strings::lower($extension))) {
 				$useDio = true;
 
 				break;

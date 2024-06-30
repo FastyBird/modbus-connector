@@ -23,7 +23,6 @@ use FastyBird\Connector\Modbus\Clients;
 use FastyBird\Connector\Modbus\Commands;
 use FastyBird\Connector\Modbus\Connector;
 use FastyBird\Connector\Modbus\Entities;
-use FastyBird\Connector\Modbus\Fixtures;
 use FastyBird\Connector\Modbus\Helpers;
 use FastyBird\Connector\Modbus\Hydrators;
 use FastyBird\Connector\Modbus\Queue;
@@ -343,12 +342,12 @@ class ModbusExtension extends DI\CompilerExtension implements Translation\DI\Tra
 		$fixturesLoaderService = $builder->getDefinitionByType(NettrineFixtures\Loader\FixturesLoader::class);
 
 		if ($fixturesLoaderService instanceof DI\Definitions\ServiceDefinition) {
-			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\Connector()]);
-			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\ConnectorProperties()]);
-			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\Devices()]);
-			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\DevicesProperties()]);
-			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\Channels()]);
-			$fixturesLoaderService->addSetup('addFixture', [new Fixtures\ChannelsProperties()]);
+			//$fixturesLoaderService->addSetup('addFixture', [new Fixtures\Connector()]);
+			//$fixturesLoaderService->addSetup('addFixture', [new Fixtures\ConnectorProperties()]);
+			//$fixturesLoaderService->addSetup('addFixture', [new Fixtures\Devices()]);
+			//$fixturesLoaderService->addSetup('addFixture', [new Fixtures\DevicesProperties()]);
+			//$fixturesLoaderService->addSetup('addFixture', [new Fixtures\Channels()]);
+			//$fixturesLoaderService->addSetup('addFixture', [new Fixtures\ChannelsProperties()]);
 		}
 	}
 

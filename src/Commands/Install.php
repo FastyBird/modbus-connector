@@ -120,9 +120,9 @@ class Install extends Console\Command\Command
 	{
 		$io = new Style\SymfonyStyle($input, $output);
 
-		$io->title($this->translator->translate('//modbus-connector.cmd.install.title'));
+		$io->title((string) $this->translator->translate('//modbus-connector.cmd.install.title'));
 
-		$io->note($this->translator->translate('//modbus-connector.cmd.install.subtitle'));
+		$io->note((string) $this->translator->translate('//modbus-connector.cmd.install.subtitle'));
 
 		$this->askInstallAction($io);
 
@@ -146,7 +146,9 @@ class Install extends Console\Command\Command
 		$mode = $this->askConnectorMode($io);
 
 		$question = new Console\Question\Question(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.provide.connector.identifier'),
+			(string) $this->translator->translate(
+				'//modbus-connector.cmd.install.questions.provide.connector.identifier',
+			),
 		);
 
 		$question->setValidator(function ($answer) {
@@ -161,7 +163,7 @@ class Install extends Console\Command\Command
 
 				if ($connector !== null) {
 					throw new Exceptions\Runtime(
-						$this->translator->translate(
+						(string) $this->translator->translate(
 							'//modbus-connector.cmd.install.messages.identifier.connector.used',
 						),
 					);
@@ -195,7 +197,9 @@ class Install extends Console\Command\Command
 
 		if ($identifier === '') {
 			$io->error(
-				$this->translator->translate('//modbus-connector.cmd.install.messages.identifier.connector.missing'),
+				(string) $this->translator->translate(
+					'//modbus-connector.cmd.install.messages.identifier.connector.missing',
+				),
 			);
 
 			return;
@@ -278,7 +282,7 @@ class Install extends Console\Command\Command
 			$this->databaseHelper->commitTransaction();
 
 			$io->success(
-				$this->translator->translate(
+				(string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.create.connector.success',
 					['name' => $connector->getName() ?? $connector->getIdentifier()],
 				),
@@ -294,7 +298,9 @@ class Install extends Console\Command\Command
 				],
 			);
 
-			$io->error($this->translator->translate('//modbus-connector.cmd.install.messages.create.connector.error'));
+			$io->error(
+				(string) $this->translator->translate('//modbus-connector.cmd.install.messages.create.connector.error'),
+			);
 
 			return;
 		} finally {
@@ -302,7 +308,7 @@ class Install extends Console\Command\Command
 		}
 
 		$question = new Console\Question\ConfirmationQuestion(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.create.devices'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.questions.create.devices'),
 			true,
 		);
 
@@ -333,10 +339,10 @@ class Install extends Console\Command\Command
 		$connector = $this->askWhichConnector($io);
 
 		if ($connector === null) {
-			$io->info($this->translator->translate('//modbus-connector.cmd.base.messages.noConnectors'));
+			$io->info((string) $this->translator->translate('//modbus-connector.cmd.base.messages.noConnectors'));
 
 			$question = new Console\Question\ConfirmationQuestion(
-				$this->translator->translate('//modbus-connector.cmd.install.questions.create.connector'),
+				(string) $this->translator->translate('//modbus-connector.cmd.install.questions.create.connector'),
 				false,
 			);
 
@@ -360,7 +366,7 @@ class Install extends Console\Command\Command
 
 		} else {
 			$question = new Console\Question\ConfirmationQuestion(
-				$this->translator->translate('//modbus-connector.cmd.install.questions.change.mode'),
+				(string) $this->translator->translate('//modbus-connector.cmd.install.questions.change.mode'),
 				false,
 			);
 
@@ -379,7 +385,7 @@ class Install extends Console\Command\Command
 
 		if ($connector->isEnabled()) {
 			$question = new Console\Question\ConfirmationQuestion(
-				$this->translator->translate('//modbus-connector.cmd.install.questions.disable.connector'),
+				(string) $this->translator->translate('//modbus-connector.cmd.install.questions.disable.connector'),
 				false,
 			);
 
@@ -388,7 +394,7 @@ class Install extends Console\Command\Command
 			}
 		} else {
 			$question = new Console\Question\ConfirmationQuestion(
-				$this->translator->translate('//modbus-connector.cmd.install.questions.enable.connector'),
+				(string) $this->translator->translate('//modbus-connector.cmd.install.questions.enable.connector'),
 				false,
 			);
 
@@ -571,7 +577,7 @@ class Install extends Console\Command\Command
 			$this->databaseHelper->commitTransaction();
 
 			$io->success(
-				$this->translator->translate(
+				(string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.update.connector.success',
 					['name' => $connector->getName() ?? $connector->getIdentifier()],
 				),
@@ -587,7 +593,9 @@ class Install extends Console\Command\Command
 				],
 			);
 
-			$io->error($this->translator->translate('//modbus-connector.cmd.install.messages.update.connector.error'));
+			$io->error(
+				(string) $this->translator->translate('//modbus-connector.cmd.install.messages.update.connector.error'),
+			);
 
 			return;
 		} finally {
@@ -595,7 +603,7 @@ class Install extends Console\Command\Command
 		}
 
 		$question = new Console\Question\ConfirmationQuestion(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.manage.devices'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.questions.manage.devices'),
 			false,
 		);
 
@@ -620,20 +628,20 @@ class Install extends Console\Command\Command
 		$connector = $this->askWhichConnector($io);
 
 		if ($connector === null) {
-			$io->info($this->translator->translate('//modbus-connector.cmd.base.messages.noConnectors'));
+			$io->info((string) $this->translator->translate('//modbus-connector.cmd.base.messages.noConnectors'));
 
 			return;
 		}
 
 		$io->warning(
-			$this->translator->translate(
+			(string) $this->translator->translate(
 				'//modbus-connector.cmd.install.messages.remove.connector.confirm',
 				['name' => $connector->getName() ?? $connector->getIdentifier()],
 			),
 		);
 
 		$question = new Console\Question\ConfirmationQuestion(
-			$this->translator->translate('//modbus-connector.cmd.base.questions.continue'),
+			(string) $this->translator->translate('//modbus-connector.cmd.base.questions.continue'),
 			false,
 		);
 
@@ -653,7 +661,7 @@ class Install extends Console\Command\Command
 			$this->databaseHelper->commitTransaction();
 
 			$io->success(
-				$this->translator->translate(
+				(string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.remove.connector.success',
 					['name' => $connector->getName() ?? $connector->getIdentifier()],
 				),
@@ -669,7 +677,9 @@ class Install extends Console\Command\Command
 				],
 			);
 
-			$io->error($this->translator->translate('//modbus-connector.cmd.install.messages.remove.connector.error'));
+			$io->error(
+				(string) $this->translator->translate('//modbus-connector.cmd.install.messages.remove.connector.error'),
+			);
 		} finally {
 			$this->databaseHelper->clear();
 		}
@@ -690,7 +700,7 @@ class Install extends Console\Command\Command
 		$connector = $this->askWhichConnector($io);
 
 		if ($connector === null) {
-			$io->info($this->translator->translate('//modbus-connector.cmd.base.messages.noConnectors'));
+			$io->info((string) $this->translator->translate('//modbus-connector.cmd.base.messages.noConnectors'));
 
 			return;
 		}
@@ -724,9 +734,9 @@ class Install extends Console\Command\Command
 		$table = new Console\Helper\Table($io);
 		$table->setHeaders([
 			'#',
-			$this->translator->translate('//modbus-connector.cmd.install.data.name'),
-			$this->translator->translate('//modbus-connector.cmd.install.data.mode'),
-			$this->translator->translate('//modbus-connector.cmd.install.data.devicesCnt'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.data.name'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.data.mode'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.data.devicesCnt'),
 		]);
 
 		foreach ($connectors as $index => $connector) {
@@ -738,7 +748,7 @@ class Install extends Console\Command\Command
 			$table->addRow([
 				$index + 1,
 				$connector->getName() ?? $connector->getIdentifier(),
-				$this->translator->translate(
+				(string) $this->translator->translate(
 					'//modbus-connector.cmd.base.mode.' . $connector->getClientMode()->value,
 				),
 				count($devices),
@@ -763,7 +773,7 @@ class Install extends Console\Command\Command
 	private function createDevice(Style\SymfonyStyle $io, Entities\Connectors\Connector $connector): void
 	{
 		$question = new Console\Question\Question(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.provide.device.identifier'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.questions.provide.device.identifier'),
 		);
 
 		$question->setValidator(function (string|null $answer) {
@@ -775,7 +785,7 @@ class Install extends Console\Command\Command
 
 				if ($device !== null) {
 					throw new Exceptions\Runtime(
-						$this->translator->translate(
+						(string) $this->translator->translate(
 							'//modbus-connector.cmd.install.messages.identifier.device.used',
 						),
 					);
@@ -806,7 +816,9 @@ class Install extends Console\Command\Command
 
 		if ($identifier === '') {
 			$io->error(
-				$this->translator->translate('//modbus-connector.cmd.install.messages.identifier.device.missing'),
+				(string) $this->translator->translate(
+					'//modbus-connector.cmd.install.messages.identifier.device.missing',
+				),
 			);
 
 			return;
@@ -899,7 +911,7 @@ class Install extends Console\Command\Command
 			$this->databaseHelper->commitTransaction();
 
 			$io->success(
-				$this->translator->translate(
+				(string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.create.device.success',
 					['name' => $device->getName() ?? $device->getIdentifier()],
 				),
@@ -916,7 +928,7 @@ class Install extends Console\Command\Command
 			);
 
 			$io->error(
-				$this->translator->translate('//modbus-connector.cmd.install.messages.create.device.error'),
+				(string) $this->translator->translate('//modbus-connector.cmd.install.messages.create.device.error'),
 			);
 
 			return;
@@ -925,7 +937,7 @@ class Install extends Console\Command\Command
 		}
 
 		$question = new Console\Question\ConfirmationQuestion(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.create.registers'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.questions.create.registers'),
 			true,
 		);
 
@@ -954,10 +966,10 @@ class Install extends Console\Command\Command
 		$device = $this->askWhichDevice($io, $connector);
 
 		if ($device === null) {
-			$io->info($this->translator->translate('//modbus-connector.cmd.install.messages.noDevices'));
+			$io->info((string) $this->translator->translate('//modbus-connector.cmd.install.messages.noDevices'));
 
 			$question = new Console\Question\ConfirmationQuestion(
-				$this->translator->translate('//modbus-connector.cmd.install.questions.create.device'),
+				(string) $this->translator->translate('//modbus-connector.cmd.install.questions.create.device'),
 				false,
 			);
 
@@ -1128,7 +1140,7 @@ class Install extends Console\Command\Command
 			$this->databaseHelper->commitTransaction();
 
 			$io->success(
-				$this->translator->translate(
+				(string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.update.device.success',
 					['name' => $device->getName() ?? $device->getIdentifier()],
 				),
@@ -1144,7 +1156,9 @@ class Install extends Console\Command\Command
 				],
 			);
 
-			$io->error($this->translator->translate('//modbus-connector.cmd.install.messages.update.device.error'));
+			$io->error(
+				(string) $this->translator->translate('//modbus-connector.cmd.install.messages.update.device.error'),
+			);
 
 			return;
 		} finally {
@@ -1152,7 +1166,7 @@ class Install extends Console\Command\Command
 		}
 
 		$question = new Console\Question\ConfirmationQuestion(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.manage.registers'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.questions.manage.registers'),
 			false,
 		);
 
@@ -1177,20 +1191,20 @@ class Install extends Console\Command\Command
 		$device = $this->askWhichDevice($io, $connector);
 
 		if ($device === null) {
-			$io->info($this->translator->translate('//modbus-connector.cmd.install.messages.noDevices'));
+			$io->info((string) $this->translator->translate('//modbus-connector.cmd.install.messages.noDevices'));
 
 			return;
 		}
 
 		$io->warning(
-			$this->translator->translate(
+			(string) $this->translator->translate(
 				'//modbus-connector.cmd.install.messages.remove.device.confirm',
 				['name' => $device->getName() ?? $device->getIdentifier()],
 			),
 		);
 
 		$question = new Console\Question\ConfirmationQuestion(
-			$this->translator->translate('//modbus-connector.cmd.base.questions.continue'),
+			(string) $this->translator->translate('//modbus-connector.cmd.base.questions.continue'),
 			false,
 		);
 
@@ -1210,7 +1224,7 @@ class Install extends Console\Command\Command
 			$this->databaseHelper->commitTransaction();
 
 			$io->success(
-				$this->translator->translate(
+				(string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.remove.device.success',
 					['name' => $device->getName() ?? $device->getIdentifier()],
 				),
@@ -1226,7 +1240,9 @@ class Install extends Console\Command\Command
 				],
 			);
 
-			$io->error($this->translator->translate('//modbus-connector.cmd.install.messages.remove.device.error'));
+			$io->error(
+				(string) $this->translator->translate('//modbus-connector.cmd.install.messages.remove.device.error'),
+			);
 		} finally {
 			$this->databaseHelper->clear();
 		}
@@ -1249,7 +1265,7 @@ class Install extends Console\Command\Command
 		$device = $this->askWhichDevice($io, $connector);
 
 		if ($device === null) {
-			$io->info($this->translator->translate('//modbus-connector.cmd.install.messages.noDevices'));
+			$io->info((string) $this->translator->translate('//modbus-connector.cmd.install.messages.noDevices'));
 
 			return;
 		}
@@ -1281,12 +1297,12 @@ class Install extends Console\Command\Command
 		$table = new Console\Helper\Table($io);
 		$table->setHeaders([
 			'#',
-			$this->translator->translate('//modbus-connector.cmd.install.data.name'),
-			$this->translator->translate('//modbus-connector.cmd.install.data.address'),
-			$this->translator->translate('//modbus-connector.cmd.install.data.discreteInputRegistersCnt'),
-			$this->translator->translate('//modbus-connector.cmd.install.data.coilRegistersCnt'),
-			$this->translator->translate('//modbus-connector.cmd.install.data.inputRegistersCnt'),
-			$this->translator->translate('//modbus-connector.cmd.install.data.holdingRegistersCnt'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.data.name'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.data.address'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.data.discreteInputRegistersCnt'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.data.coilRegistersCnt'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.data.inputRegistersCnt'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.data.holdingRegistersCnt'),
 		]);
 
 		foreach ($devices as $index => $device) {
@@ -1425,14 +1441,14 @@ class Install extends Console\Command\Command
 
 			if ($addresses[0] === $addresses[1]) {
 				$io->success(
-					$this->translator->translate(
+					(string) $this->translator->translate(
 						'//modbus-connector.cmd.install.messages.create.register.success',
 						['name' => $device->getName() ?? $device->getIdentifier()],
 					),
 				);
 			} else {
 				$io->success(
-					$this->translator->translate(
+					(string) $this->translator->translate(
 						'//modbus-connector.cmd.install.messages.create.registers.success',
 						['name' => $device->getName() ?? $device->getIdentifier()],
 					),
@@ -1450,7 +1466,7 @@ class Install extends Console\Command\Command
 			);
 
 			$io->error(
-				$this->translator->translate('//modbus-connector.cmd.install.messages.create.register.error'),
+				(string) $this->translator->translate('//modbus-connector.cmd.install.messages.create.register.error'),
 			);
 
 			return;
@@ -1463,7 +1479,7 @@ class Install extends Console\Command\Command
 		}
 
 		$question = new Console\Question\ConfirmationQuestion(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.create.register'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.questions.create.register'),
 			false,
 		);
 
@@ -1491,10 +1507,10 @@ class Install extends Console\Command\Command
 		$channel = $this->askWhichRegister($io, $device);
 
 		if ($channel === null) {
-			$io->info($this->translator->translate('//modbus-connector.cmd.install.messages.noRegisters'));
+			$io->info((string) $this->translator->translate('//modbus-connector.cmd.install.messages.noRegisters'));
 
 			$question = new Console\Question\ConfirmationQuestion(
-				$this->translator->translate('//modbus-connector.cmd.install.questions.create.registers'),
+				(string) $this->translator->translate('//modbus-connector.cmd.install.questions.create.registers'),
 				false,
 			);
 
@@ -1632,7 +1648,7 @@ class Install extends Console\Command\Command
 			$this->databaseHelper->commitTransaction();
 
 			$io->success(
-				$this->translator->translate(
+				(string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.update.register.success',
 					['name' => $channel->getName() ?? $channel->getIdentifier()],
 				),
@@ -1649,7 +1665,7 @@ class Install extends Console\Command\Command
 			);
 
 			$io->error(
-				$this->translator->translate('//modbus-connector.cmd.install.messages.update.register.error'),
+				(string) $this->translator->translate('//modbus-connector.cmd.install.messages.update.register.error'),
 			);
 		} finally {
 			$this->databaseHelper->clear();
@@ -1669,20 +1685,20 @@ class Install extends Console\Command\Command
 		$channel = $this->askWhichRegister($io, $device);
 
 		if ($channel === null) {
-			$io->info($this->translator->translate('//modbus-connector.cmd.install.messages.noRegisters'));
+			$io->info((string) $this->translator->translate('//modbus-connector.cmd.install.messages.noRegisters'));
 
 			return;
 		}
 
 		$io->warning(
-			$this->translator->translate(
+			(string) $this->translator->translate(
 				'//modbus-connector.cmd.install.messages.remove.register.confirm',
 				['name' => $channel->getName() ?? $channel->getIdentifier()],
 			),
 		);
 
 		$question = new Console\Question\ConfirmationQuestion(
-			$this->translator->translate('//modbus-connector.cmd.base.questions.continue'),
+			(string) $this->translator->translate('//modbus-connector.cmd.base.questions.continue'),
 			false,
 		);
 
@@ -1702,7 +1718,7 @@ class Install extends Console\Command\Command
 			$this->databaseHelper->commitTransaction();
 
 			$io->success(
-				$this->translator->translate(
+				(string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.remove.register.success',
 					['name' => $channel->getName() ?? $channel->getIdentifier()],
 				),
@@ -1719,7 +1735,7 @@ class Install extends Console\Command\Command
 			);
 
 			$io->error(
-				$this->translator->translate('//modbus-connector.cmd.install.messages.remove.register.error'),
+				(string) $this->translator->translate('//modbus-connector.cmd.install.messages.remove.register.error'),
 			);
 		} finally {
 			$this->databaseHelper->clear();
@@ -1751,11 +1767,11 @@ class Install extends Console\Command\Command
 		$table = new Console\Helper\Table($io);
 		$table->setHeaders([
 			'#',
-			$this->translator->translate('//modbus-connector.cmd.install.data.name'),
-			$this->translator->translate('//modbus-connector.cmd.install.data.type'),
-			$this->translator->translate('//modbus-connector.cmd.install.data.address'),
-			$this->translator->translate('//modbus-connector.cmd.install.data.dataType'),
-			$this->translator->translate('//modbus-connector.cmd.install.data.readingDelay'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.data.name'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.data.type'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.data.address'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.data.dataType'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.data.readingDelay'),
 		]);
 
 		foreach ($deviceChannels as $index => $channel) {
@@ -1772,7 +1788,7 @@ class Install extends Console\Command\Command
 				$index + 1,
 				$channel->getName() ?? $channel->getIdentifier(),
 				$channel->getRegisterType() !== null
-					? $this->translator->translate(
+					? (string) $this->translator->translate(
 						'//modbus-connector.cmd.base.registerType.' . $channel->getRegisterType()->value,
 					)
 					: 'N/A',
@@ -1802,26 +1818,26 @@ class Install extends Console\Command\Command
 	private function askInstallAction(Style\SymfonyStyle $io): void
 	{
 		$question = new Console\Question\ChoiceQuestion(
-			$this->translator->translate('//modbus-connector.cmd.base.questions.whatToDo'),
+			(string) $this->translator->translate('//modbus-connector.cmd.base.questions.whatToDo'),
 			[
-				0 => $this->translator->translate('//modbus-connector.cmd.install.actions.create.connector'),
-				1 => $this->translator->translate('//modbus-connector.cmd.install.actions.update.connector'),
-				2 => $this->translator->translate('//modbus-connector.cmd.install.actions.remove.connector'),
-				3 => $this->translator->translate('//modbus-connector.cmd.install.actions.manage.connector'),
-				4 => $this->translator->translate('//modbus-connector.cmd.install.actions.list.connectors'),
-				5 => $this->translator->translate('//modbus-connector.cmd.install.actions.nothing'),
+				0 => (string) $this->translator->translate('//modbus-connector.cmd.install.actions.create.connector'),
+				1 => (string) $this->translator->translate('//modbus-connector.cmd.install.actions.update.connector'),
+				2 => (string) $this->translator->translate('//modbus-connector.cmd.install.actions.remove.connector'),
+				3 => (string) $this->translator->translate('//modbus-connector.cmd.install.actions.manage.connector'),
+				4 => (string) $this->translator->translate('//modbus-connector.cmd.install.actions.list.connectors'),
+				5 => (string) $this->translator->translate('//modbus-connector.cmd.install.actions.nothing'),
 			],
 			5,
 		);
 
 		$question->setErrorMessage(
-			$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+			(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 		);
 
 		$whatToDo = $io->askQuestion($question);
 
 		if (
-			$whatToDo === $this->translator->translate(
+			$whatToDo === (string) $this->translator->translate(
 				'//modbus-connector.cmd.install.actions.create.connector',
 			)
 			|| $whatToDo === '0'
@@ -1831,7 +1847,7 @@ class Install extends Console\Command\Command
 			$this->askInstallAction($io);
 
 		} elseif (
-			$whatToDo === $this->translator->translate(
+			$whatToDo === (string) $this->translator->translate(
 				'//modbus-connector.cmd.install.actions.update.connector',
 			)
 			|| $whatToDo === '1'
@@ -1841,7 +1857,7 @@ class Install extends Console\Command\Command
 			$this->askInstallAction($io);
 
 		} elseif (
-			$whatToDo === $this->translator->translate(
+			$whatToDo === (string) $this->translator->translate(
 				'//modbus-connector.cmd.install.actions.remove.connector',
 			)
 			|| $whatToDo === '2'
@@ -1851,7 +1867,7 @@ class Install extends Console\Command\Command
 			$this->askInstallAction($io);
 
 		} elseif (
-			$whatToDo === $this->translator->translate(
+			$whatToDo === (string) $this->translator->translate(
 				'//modbus-connector.cmd.install.actions.manage.connector',
 			)
 			|| $whatToDo === '3'
@@ -1861,7 +1877,7 @@ class Install extends Console\Command\Command
 			$this->askInstallAction($io);
 
 		} elseif (
-			$whatToDo === $this->translator->translate(
+			$whatToDo === (string) $this->translator->translate(
 				'//modbus-connector.cmd.install.actions.list.connectors',
 			)
 			|| $whatToDo === '4'
@@ -1888,26 +1904,26 @@ class Install extends Console\Command\Command
 	): void
 	{
 		$question = new Console\Question\ChoiceQuestion(
-			$this->translator->translate('//modbus-connector.cmd.base.questions.whatToDo'),
+			(string) $this->translator->translate('//modbus-connector.cmd.base.questions.whatToDo'),
 			[
-				0 => $this->translator->translate('//modbus-connector.cmd.install.actions.create.device'),
-				1 => $this->translator->translate('//modbus-connector.cmd.install.actions.update.device'),
-				2 => $this->translator->translate('//modbus-connector.cmd.install.actions.remove.device'),
-				3 => $this->translator->translate('//modbus-connector.cmd.install.actions.manage.device'),
-				4 => $this->translator->translate('//modbus-connector.cmd.install.actions.list.devices'),
-				5 => $this->translator->translate('//modbus-connector.cmd.install.actions.nothing'),
+				0 => (string) $this->translator->translate('//modbus-connector.cmd.install.actions.create.device'),
+				1 => (string) $this->translator->translate('//modbus-connector.cmd.install.actions.update.device'),
+				2 => (string) $this->translator->translate('//modbus-connector.cmd.install.actions.remove.device'),
+				3 => (string) $this->translator->translate('//modbus-connector.cmd.install.actions.manage.device'),
+				4 => (string) $this->translator->translate('//modbus-connector.cmd.install.actions.list.devices'),
+				5 => (string) $this->translator->translate('//modbus-connector.cmd.install.actions.nothing'),
 			],
 			5,
 		);
 
 		$question->setErrorMessage(
-			$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+			(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 		);
 
 		$whatToDo = $io->askQuestion($question);
 
 		if (
-			$whatToDo === $this->translator->translate(
+			$whatToDo === (string) $this->translator->translate(
 				'//modbus-connector.cmd.install.actions.create.device',
 			)
 			|| $whatToDo === '0'
@@ -1917,7 +1933,7 @@ class Install extends Console\Command\Command
 			$this->askManageConnectorAction($io, $connector);
 
 		} elseif (
-			$whatToDo === $this->translator->translate(
+			$whatToDo === (string) $this->translator->translate(
 				'//modbus-connector.cmd.install.actions.update.device',
 			)
 			|| $whatToDo === '1'
@@ -1927,7 +1943,7 @@ class Install extends Console\Command\Command
 			$this->askManageConnectorAction($io, $connector);
 
 		} elseif (
-			$whatToDo === $this->translator->translate(
+			$whatToDo === (string) $this->translator->translate(
 				'//modbus-connector.cmd.install.actions.remove.device',
 			)
 			|| $whatToDo === '2'
@@ -1937,7 +1953,7 @@ class Install extends Console\Command\Command
 			$this->askManageConnectorAction($io, $connector);
 
 		} elseif (
-			$whatToDo === $this->translator->translate(
+			$whatToDo === (string) $this->translator->translate(
 				'//modbus-connector.cmd.install.actions.manage.device',
 			)
 			|| $whatToDo === '3'
@@ -1947,7 +1963,7 @@ class Install extends Console\Command\Command
 			$this->askManageConnectorAction($io, $connector);
 
 		} elseif (
-			$whatToDo === $this->translator->translate(
+			$whatToDo === (string) $this->translator->translate(
 				'//modbus-connector.cmd.install.actions.list.devices',
 			)
 			|| $whatToDo === '4'
@@ -1976,25 +1992,25 @@ class Install extends Console\Command\Command
 	): void
 	{
 		$question = new Console\Question\ChoiceQuestion(
-			$this->translator->translate('//modbus-connector.cmd.base.questions.whatToDo'),
+			(string) $this->translator->translate('//modbus-connector.cmd.base.questions.whatToDo'),
 			[
-				0 => $this->translator->translate('//modbus-connector.cmd.install.actions.create.register'),
-				1 => $this->translator->translate('//modbus-connector.cmd.install.actions.update.register'),
-				2 => $this->translator->translate('//modbus-connector.cmd.install.actions.remove.register'),
-				3 => $this->translator->translate('//modbus-connector.cmd.install.actions.list.registers'),
-				4 => $this->translator->translate('//modbus-connector.cmd.install.actions.nothing'),
+				0 => (string) $this->translator->translate('//modbus-connector.cmd.install.actions.create.register'),
+				1 => (string) $this->translator->translate('//modbus-connector.cmd.install.actions.update.register'),
+				2 => (string) $this->translator->translate('//modbus-connector.cmd.install.actions.remove.register'),
+				3 => (string) $this->translator->translate('//modbus-connector.cmd.install.actions.list.registers'),
+				4 => (string) $this->translator->translate('//modbus-connector.cmd.install.actions.nothing'),
 			],
 			4,
 		);
 
 		$question->setErrorMessage(
-			$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+			(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 		);
 
 		$whatToDo = $io->askQuestion($question);
 
 		if (
-			$whatToDo === $this->translator->translate(
+			$whatToDo === (string) $this->translator->translate(
 				'//modbus-connector.cmd.install.actions.create.register',
 			)
 			|| $whatToDo === '0'
@@ -2004,7 +2020,7 @@ class Install extends Console\Command\Command
 			$this->askManageDeviceAction($io, $device);
 
 		} elseif (
-			$whatToDo === $this->translator->translate(
+			$whatToDo === (string) $this->translator->translate(
 				'//modbus-connector.cmd.install.actions.update.register',
 			)
 			|| $whatToDo === '1'
@@ -2014,7 +2030,7 @@ class Install extends Console\Command\Command
 			$this->askManageDeviceAction($io, $device);
 
 		} elseif (
-			$whatToDo === $this->translator->translate(
+			$whatToDo === (string) $this->translator->translate(
 				'//modbus-connector.cmd.install.actions.remove.register',
 			)
 			|| $whatToDo === '2'
@@ -2024,7 +2040,7 @@ class Install extends Console\Command\Command
 			$this->askManageDeviceAction($io, $device);
 
 		} elseif (
-			$whatToDo === $this->translator->translate(
+			$whatToDo === (string) $this->translator->translate(
 				'//modbus-connector.cmd.install.actions.list.registers',
 			)
 			|| $whatToDo === '3'
@@ -2058,29 +2074,29 @@ class Install extends Console\Command\Command
 		}
 
 		$question = new Console\Question\ChoiceQuestion(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.select.connector.mode'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.questions.select.connector.mode'),
 			[
-				0 => $this->translator->translate('//modbus-connector.cmd.install.answers.mode.rtu'),
-				1 => $this->translator->translate('//modbus-connector.cmd.install.answers.mode.tcp'),
+				0 => (string) $this->translator->translate('//modbus-connector.cmd.install.answers.mode.rtu'),
+				1 => (string) $this->translator->translate('//modbus-connector.cmd.install.answers.mode.tcp'),
 			],
 			$default ?? 0,
 		);
 
 		$question->setErrorMessage(
-			$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+			(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 		);
 		$question->setValidator(function (string|null $answer): Types\ClientMode {
 			if ($answer === null) {
 				throw new Exceptions\Runtime(
 					sprintf(
-						$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+						(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 						$answer,
 					),
 				);
 			}
 
 			if (
-				$answer === $this->translator->translate(
+				$answer === (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.answers.mode.rtu',
 				)
 				|| $answer === '0'
@@ -2089,7 +2105,7 @@ class Install extends Console\Command\Command
 			}
 
 			if (
-				$answer === $this->translator->translate(
+				$answer === (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.answers.mode.tcp',
 				)
 				|| $answer === '1'
@@ -2098,7 +2114,10 @@ class Install extends Console\Command\Command
 			}
 
 			throw new Exceptions\Runtime(
-				sprintf($this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'), $answer),
+				sprintf(
+					(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+					$answer,
+				),
 			);
 		});
 
@@ -2114,7 +2133,7 @@ class Install extends Console\Command\Command
 	): string|null
 	{
 		$question = new Console\Question\Question(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.provide.connector.name'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.questions.provide.connector.name'),
 			$connector?->getName(),
 		);
 
@@ -2135,14 +2154,16 @@ class Install extends Console\Command\Command
 	): string
 	{
 		$question = new Console\Question\Question(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.provide.connector.rtuInterface'),
+			(string) $this->translator->translate(
+				'//modbus-connector.cmd.install.questions.provide.connector.rtuInterface',
+			),
 			$connector?->getRtuInterface(),
 		);
 		$question->setValidator(function (string|null $answer): string {
 			if ($answer === '' || $answer === null) {
 				throw new Exceptions\Runtime(
 					sprintf(
-						$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+						(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 						$answer,
 					),
 				);
@@ -2176,19 +2197,19 @@ class Install extends Console\Command\Command
 		);
 
 		$question = new Console\Question\ChoiceQuestion(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.select.connector.baudRate'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.questions.select.connector.baudRate'),
 			array_values($baudRates),
 			$default,
 		);
 
 		$question->setErrorMessage(
-			$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+			(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 		);
 		$question->setValidator(function (string|null $answer) use ($baudRates): Types\BaudRate {
 			if ($answer === null) {
 				throw new Exceptions\Runtime(
 					sprintf(
-						$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+						(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 						$answer,
 					),
 				);
@@ -2205,7 +2226,10 @@ class Install extends Console\Command\Command
 			}
 
 			throw new Exceptions\Runtime(
-				sprintf($this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'), $answer),
+				sprintf(
+					(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+					$answer,
+				),
 			);
 		});
 
@@ -2237,19 +2261,19 @@ class Install extends Console\Command\Command
 		);
 
 		$question = new Console\Question\ChoiceQuestion(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.select.connector.byteSize'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.questions.select.connector.byteSize'),
 			array_values($byteSizes),
 			$default,
 		);
 
 		$question->setErrorMessage(
-			$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+			(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 		);
 		$question->setValidator(function (string|null $answer) use ($byteSizes): Types\ByteSize {
 			if ($answer === null) {
 				throw new Exceptions\Runtime(
 					sprintf(
-						$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+						(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 						$answer,
 					),
 				);
@@ -2266,7 +2290,10 @@ class Install extends Console\Command\Command
 			}
 
 			throw new Exceptions\Runtime(
-				sprintf($this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'), $answer),
+				sprintf(
+					(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+					$answer,
+				),
 			);
 		});
 
@@ -2301,30 +2328,32 @@ class Install extends Console\Command\Command
 		}
 
 		$question = new Console\Question\ChoiceQuestion(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.select.connector.dataParity'),
+			(string) $this->translator->translate(
+				'//modbus-connector.cmd.install.questions.select.connector.dataParity',
+			),
 			[
-				0 => $this->translator->translate('//modbus-connector.cmd.install.answers.parity.none'),
-				1 => $this->translator->translate('//modbus-connector.cmd.install.answers.parity.odd'),
-				2 => $this->translator->translate('//modbus-connector.cmd.install.answers.parity.even'),
+				0 => (string) $this->translator->translate('//modbus-connector.cmd.install.answers.parity.none'),
+				1 => (string) $this->translator->translate('//modbus-connector.cmd.install.answers.parity.odd'),
+				2 => (string) $this->translator->translate('//modbus-connector.cmd.install.answers.parity.even'),
 			],
 			$default,
 		);
 
 		$question->setErrorMessage(
-			$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+			(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 		);
 		$question->setValidator(function (string|null $answer): Types\Parity {
 			if ($answer === null) {
 				throw new Exceptions\Runtime(
 					sprintf(
-						$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+						(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 						$answer,
 					),
 				);
 			}
 
 			if (
-				$answer === $this->translator->translate(
+				$answer === (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.answers.parity.none',
 				)
 				|| $answer === '0'
@@ -2333,7 +2362,7 @@ class Install extends Console\Command\Command
 			}
 
 			if (
-				$answer === $this->translator->translate(
+				$answer === (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.answers.parity.odd',
 				)
 				|| $answer === '1'
@@ -2342,7 +2371,7 @@ class Install extends Console\Command\Command
 			}
 
 			if (
-				$answer === $this->translator->translate(
+				$answer === (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.answers.parity.even',
 				)
 				|| $answer === '2'
@@ -2351,7 +2380,10 @@ class Install extends Console\Command\Command
 			}
 
 			throw new Exceptions\Runtime(
-				sprintf($this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'), $answer),
+				sprintf(
+					(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+					$answer,
+				),
 			);
 		});
 
@@ -2383,19 +2415,19 @@ class Install extends Console\Command\Command
 		);
 
 		$question = new Console\Question\ChoiceQuestion(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.select.connector.stopBits'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.questions.select.connector.stopBits'),
 			array_values($stopBits),
 			$default,
 		);
 
 		$question->setErrorMessage(
-			$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+			(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 		);
 		$question->setValidator(function (string|null $answer) use ($stopBits): Types\StopBits {
 			if ($answer === null) {
 				throw new Exceptions\Runtime(
 					sprintf(
-						$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+						(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 						$answer,
 					),
 				);
@@ -2412,7 +2444,10 @@ class Install extends Console\Command\Command
 			}
 
 			throw new Exceptions\Runtime(
-				sprintf($this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'), $answer),
+				sprintf(
+					(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+					$answer,
+				),
 			);
 		});
 
@@ -2425,7 +2460,7 @@ class Install extends Console\Command\Command
 	private function askDeviceName(Style\SymfonyStyle $io, Entities\Devices\Device|null $device = null): string|null
 	{
 		$question = new Console\Question\Question(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.provide.device.name'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.questions.provide.device.name'),
 			$device?->getName(),
 		);
 
@@ -2447,14 +2482,16 @@ class Install extends Console\Command\Command
 	): int
 	{
 		$question = new Console\Question\Question(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.provide.device.stationAddress'),
+			(string) $this->translator->translate(
+				'//modbus-connector.cmd.install.questions.provide.device.stationAddress',
+			),
 			$device?->getAddress(),
 		);
 		$question->setValidator(function (string|null $answer) use ($connector, $device) {
 			if (strval(intval($answer)) !== strval($answer)) {
 				throw new Exceptions\Runtime(
 					sprintf(
-						$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+						(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 						$answer,
 					),
 				);
@@ -2474,7 +2511,7 @@ class Install extends Console\Command\Command
 					&& ($device === null || !$device->getId()->equals($connectorDevice->getId()))
 				) {
 					throw new Exceptions\Runtime(
-						$this->translator->translate(
+						(string) $this->translator->translate(
 							'//modbus-connector.cmd.install.messages.deviceStationAddressTaken',
 						),
 					);
@@ -2499,7 +2536,7 @@ class Install extends Console\Command\Command
 	): string
 	{
 		$question = new Console\Question\Question(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.provide.device.ipAddress'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.questions.provide.device.ipAddress'),
 			$device?->getIpAddress(),
 		);
 		$question->setValidator(function (string|null $answer) {
@@ -2516,7 +2553,7 @@ class Install extends Console\Command\Command
 
 			throw new Exceptions\Runtime(
 				sprintf(
-					$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+					(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 					$answer,
 				),
 			);
@@ -2537,14 +2574,14 @@ class Install extends Console\Command\Command
 	): int
 	{
 		$question = new Console\Question\Question(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.provide.device.port'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.questions.provide.device.port'),
 			$device?->getPort(),
 		);
 		$question->setValidator(function (string|null $answer) {
 			if (strval(intval($answer)) !== strval($answer)) {
 				throw new Exceptions\Runtime(
 					sprintf(
-						$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+						(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 						$answer,
 					),
 				);
@@ -2569,14 +2606,16 @@ class Install extends Console\Command\Command
 	): int
 	{
 		$question = new Console\Question\Question(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.provide.device.unitIdentifier'),
+			(string) $this->translator->translate(
+				'//modbus-connector.cmd.install.questions.provide.device.unitIdentifier',
+			),
 			$device?->getUnitId(),
 		);
 		$question->setValidator(function (string|null $answer) use ($connector, $device) {
 			if (strval(intval($answer)) !== strval($answer)) {
 				throw new Exceptions\Runtime(
 					sprintf(
-						$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+						(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 						$answer,
 					),
 				);
@@ -2596,7 +2635,9 @@ class Install extends Console\Command\Command
 					&& ($device === null || !$device->getId()->equals($connectorDevice->getId()))
 				) {
 					throw new Exceptions\Runtime(
-						$this->translator->translate('//modbus-connector.cmd.install.messages.unitIdentifierTaken'),
+						(string) $this->translator->translate(
+							'//modbus-connector.cmd.install.messages.unitIdentifierTaken',
+						),
 					);
 				}
 			}
@@ -2631,52 +2672,58 @@ class Install extends Console\Command\Command
 		}
 
 		$question = new Console\Question\ChoiceQuestion(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.select.device.byteOrder'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.questions.select.device.byteOrder'),
 			[
-				0 => $this->translator->translate('//modbus-connector.cmd.install.answers.endian.big'),
-				1 => $this->translator->translate('//modbus-connector.cmd.install.answers.endian.bigSwap'),
-				2 => $this->translator->translate('//modbus-connector.cmd.install.answers.endian.little'),
-				3 => $this->translator->translate('//modbus-connector.cmd.install.answers.endian.littleSwap'),
+				0 => (string) $this->translator->translate('//modbus-connector.cmd.install.answers.endian.big'),
+				1 => (string) $this->translator->translate('//modbus-connector.cmd.install.answers.endian.bigSwap'),
+				2 => (string) $this->translator->translate('//modbus-connector.cmd.install.answers.endian.little'),
+				3 => (string) $this->translator->translate('//modbus-connector.cmd.install.answers.endian.littleSwap'),
 			],
 			$default,
 		);
 
 		$question->setErrorMessage(
-			$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+			(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 		);
 		$question->setValidator(function (string|null $answer): Types\ByteOrder {
 			if ($answer === null) {
 				throw new Exceptions\Runtime(
 					sprintf(
-						$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+						(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 						$answer,
 					),
 				);
 			}
 
 			if (
-				$answer === $this->translator->translate('//modbus-connector.cmd.install.answers.endian.big')
+				$answer === (string) $this->translator->translate('//modbus-connector.cmd.install.answers.endian.big')
 				|| $answer === '0'
 			) {
 				return Types\ByteOrder::BIG;
 			}
 
 			if (
-				$answer === $this->translator->translate('//modbus-connector.cmd.install.answers.endian.bigSwap')
+				$answer === (string) $this->translator->translate(
+					'//modbus-connector.cmd.install.answers.endian.bigSwap',
+				)
 				|| $answer === '1'
 			) {
 				return Types\ByteOrder::BIG_SWAP;
 			}
 
 			if (
-				$answer === $this->translator->translate('//modbus-connector.cmd.install.answers.endian.little')
+				$answer === (string) $this->translator->translate(
+					'//modbus-connector.cmd.install.answers.endian.little',
+				)
 				|| $answer === '2'
 			) {
 				return Types\ByteOrder::LITTLE;
 			}
 
 			if (
-				$answer === $this->translator->translate('//modbus-connector.cmd.install.answers.endian.littleSwap')
+				$answer === (string) $this->translator->translate(
+					'//modbus-connector.cmd.install.answers.endian.littleSwap',
+				)
 				|| $answer === '3'
 			) {
 				return Types\ByteOrder::LITTLE_SWAP;
@@ -2684,7 +2731,7 @@ class Install extends Console\Command\Command
 
 			throw new Exceptions\Runtime(
 				sprintf(
-					$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+					(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 					$answer,
 				),
 			);
@@ -2721,43 +2768,59 @@ class Install extends Console\Command\Command
 			}
 
 			$question = new Console\Question\ChoiceQuestion(
-				$this->translator->translate('//modbus-connector.cmd.install.questions.select.register.updateType'),
+				(string) $this->translator->translate(
+					'//modbus-connector.cmd.install.questions.select.register.updateType',
+				),
 				[
-					$this->translator->translate('//modbus-connector.cmd.install.answers.registerType.discreteInput'),
-					$this->translator->translate('//modbus-connector.cmd.install.answers.registerType.coil'),
-					$this->translator->translate('//modbus-connector.cmd.install.answers.registerType.inputRegister'),
-					$this->translator->translate('//modbus-connector.cmd.install.answers.registerType.holdingRegister'),
+					(string) $this->translator->translate(
+						'//modbus-connector.cmd.install.answers.registerType.discreteInput',
+					),
+					(string) $this->translator->translate('//modbus-connector.cmd.install.answers.registerType.coil'),
+					(string) $this->translator->translate(
+						'//modbus-connector.cmd.install.answers.registerType.inputRegister',
+					),
+					(string) $this->translator->translate(
+						'//modbus-connector.cmd.install.answers.registerType.holdingRegister',
+					),
 				],
 				$default,
 			);
 		} else {
 			$question = new Console\Question\ChoiceQuestion(
-				$this->translator->translate('//modbus-connector.cmd.install.questions.select.register.createType'),
+				(string) $this->translator->translate(
+					'//modbus-connector.cmd.install.questions.select.register.createType',
+				),
 				[
-					$this->translator->translate('//modbus-connector.cmd.install.answers.registerType.discreteInput'),
-					$this->translator->translate('//modbus-connector.cmd.install.answers.registerType.coil'),
-					$this->translator->translate('//modbus-connector.cmd.install.answers.registerType.inputRegister'),
-					$this->translator->translate('//modbus-connector.cmd.install.answers.registerType.holdingRegister'),
+					(string) $this->translator->translate(
+						'//modbus-connector.cmd.install.answers.registerType.discreteInput',
+					),
+					(string) $this->translator->translate('//modbus-connector.cmd.install.answers.registerType.coil'),
+					(string) $this->translator->translate(
+						'//modbus-connector.cmd.install.answers.registerType.inputRegister',
+					),
+					(string) $this->translator->translate(
+						'//modbus-connector.cmd.install.answers.registerType.holdingRegister',
+					),
 				],
 				0,
 			);
 		}
 
 		$question->setErrorMessage(
-			$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+			(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 		);
 		$question->setValidator(function (string|null $answer): Types\ChannelType {
 			if ($answer === null) {
 				throw new Exceptions\Runtime(
 					sprintf(
-						$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+						(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 						$answer,
 					),
 				);
 			}
 
 			if (
-				$answer === $this->translator->translate(
+				$answer === (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.answers.registerType.discreteInput',
 				)
 				|| $answer === '0'
@@ -2766,14 +2829,16 @@ class Install extends Console\Command\Command
 			}
 
 			if (
-				$answer === $this->translator->translate('//modbus-connector.cmd.install.answers.registerType.coil')
+				$answer === (string) $this->translator->translate(
+					'//modbus-connector.cmd.install.answers.registerType.coil',
+				)
 				|| $answer === '1'
 			) {
 				return Types\ChannelType::COIL;
 			}
 
 			if (
-				$answer === $this->translator->translate(
+				$answer === (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.answers.registerType.inputRegister',
 				)
 				|| $answer === '2'
@@ -2782,7 +2847,7 @@ class Install extends Console\Command\Command
 			}
 
 			if (
-				$answer === $this->translator->translate(
+				$answer === (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.answers.registerType.holdingRegister',
 				)
 				|| $answer === '3'
@@ -2792,7 +2857,7 @@ class Install extends Console\Command\Command
 
 			throw new Exceptions\Runtime(
 				sprintf(
-					$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+					(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 					$answer,
 				),
 			);
@@ -2823,8 +2888,10 @@ class Install extends Console\Command\Command
 		$question = new Console\Question\Question(
 			(
 			$channel !== null
-				? $this->translator->translate('//modbus-connector.cmd.install.questions.provide.register.address')
-				: $this->translator->translate(
+				? (string) $this->translator->translate(
+					'//modbus-connector.cmd.install.questions.provide.register.address',
+				)
+				: (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.register.addresses',
 				)
 			),
@@ -2848,7 +2915,7 @@ class Install extends Console\Command\Command
 						)
 					) {
 						throw new Exceptions\Runtime(
-							$this->translator->translate(
+							(string) $this->translator->translate(
 								'//modbus-connector.cmd.install.messages.registerAddressTaken',
 								['address' => intval($address)],
 							),
@@ -2881,7 +2948,7 @@ class Install extends Console\Command\Command
 
 							if (intval($address) >= $start && intval($address) <= $end) {
 								throw new Exceptions\Runtime(
-									$this->translator->translate(
+									(string) $this->translator->translate(
 										'//modbus-connector.cmd.install.messages.registerAddressTaken',
 										['address' => intval($address)],
 									),
@@ -2896,7 +2963,7 @@ class Install extends Console\Command\Command
 
 			throw new Exceptions\Runtime(
 				sprintf(
-					$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+					(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 					$answer,
 				),
 			);
@@ -2914,7 +2981,7 @@ class Install extends Console\Command\Command
 	): string|null
 	{
 		$question = new Console\Question\Question(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.provide.register.name'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.questions.provide.register.name'),
 			$channel?->getName(),
 		);
 
@@ -2935,7 +3002,9 @@ class Install extends Console\Command\Command
 	): string|null
 	{
 		$question = new Console\Question\Question(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.provide.register.readingDelay'),
+			(string) $this->translator->translate(
+				'//modbus-connector.cmd.install.questions.provide.register.readingDelay',
+			),
 			$channel?->getReadingDelay() ?? Modbus\Constants::READING_DELAY,
 		);
 
@@ -3049,19 +3118,19 @@ class Install extends Console\Command\Command
 		}
 
 		$question = new Console\Question\ChoiceQuestion(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.provide.register.dataType'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.questions.provide.register.dataType'),
 			$dataTypes,
 			$default ?? $dataTypes[0],
 		);
 
 		$question->setErrorMessage(
-			$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+			(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 		);
 		$question->setValidator(function (string|null $answer) use ($dataTypes): MetadataTypes\DataType {
 			if ($answer === null) {
 				throw new Exceptions\Runtime(
 					sprintf(
-						$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+						(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 						$answer,
 					),
 				);
@@ -3077,7 +3146,7 @@ class Install extends Console\Command\Command
 
 			throw new Exceptions\Runtime(
 				sprintf(
-					$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+					(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 					$answer,
 				),
 			);
@@ -3196,11 +3265,17 @@ class Install extends Console\Command\Command
 		}
 
 		if ($payload === MetadataTypes\Payloads\Switcher::ON) {
-			$questionText = $this->translator->translate('//modbus-connector.cmd.install.questions.switch.hasOn');
+			$questionText = (string) $this->translator->translate(
+				'//modbus-connector.cmd.install.questions.switch.hasOn',
+			);
 		} elseif ($payload === MetadataTypes\Payloads\Switcher::OFF) {
-			$questionText = $this->translator->translate('//modbus-connector.cmd.install.questions.switch.hasOff');
+			$questionText = (string) $this->translator->translate(
+				'//modbus-connector.cmd.install.questions.switch.hasOff',
+			);
 		} elseif ($payload === MetadataTypes\Payloads\Switcher::TOGGLE) {
-			$questionText = $this->translator->translate('//modbus-connector.cmd.install.questions.switch.hasToggle');
+			$questionText = (string) $this->translator->translate(
+				'//modbus-connector.cmd.install.questions.switch.hasToggle',
+			);
 		} else {
 			throw new Exceptions\InvalidArgument('Provided payload type is not valid');
 		}
@@ -3239,24 +3314,24 @@ class Install extends Console\Command\Command
 
 		if ($reading) {
 			if ($payload === MetadataTypes\Payloads\Switcher::ON) {
-				$questionText = $this->translator->translate(
+				$questionText = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.switch.readOnValue',
 				);
-				$questionError = $this->translator->translate(
+				$questionError = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.switch.readOnValueError',
 				);
 			} elseif ($payload === MetadataTypes\Payloads\Switcher::OFF) {
-				$questionText = $this->translator->translate(
+				$questionText = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.switch.readOffValue',
 				);
-				$questionError = $this->translator->translate(
+				$questionError = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.switch.readOffValueError',
 				);
 			} elseif ($payload === MetadataTypes\Payloads\Switcher::TOGGLE) {
-				$questionText = $this->translator->translate(
+				$questionText = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.switch.readToggleValue',
 				);
-				$questionError = $this->translator->translate(
+				$questionError = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.switch.readToggleValueError',
 				);
 			} else {
@@ -3264,24 +3339,24 @@ class Install extends Console\Command\Command
 			}
 		} else {
 			if ($payload === MetadataTypes\Payloads\Switcher::ON) {
-				$questionText = $this->translator->translate(
+				$questionText = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.switch.writeOnValue',
 				);
-				$questionError = $this->translator->translate(
+				$questionError = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.switch.writeOnValueError',
 				);
 			} elseif ($payload === MetadataTypes\Payloads\Switcher::OFF) {
-				$questionText = $this->translator->translate(
+				$questionText = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.switch.writeOffValue',
 				);
-				$questionError = $this->translator->translate(
+				$questionError = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.switch.writeOffValueError',
 				);
 			} elseif ($payload === MetadataTypes\Payloads\Switcher::TOGGLE) {
-				$questionText = $this->translator->translate(
+				$questionText = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.switch.writeToggleValue',
 				);
-				$questionError = $this->translator->translate(
+				$questionError = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.switch.writeToggleValueError',
 				);
 			} else {
@@ -3293,7 +3368,7 @@ class Install extends Console\Command\Command
 		$question->setValidator(function (string|null $answer) use ($io, $questionError): string|null {
 			if (trim(strval($answer)) === '') {
 				$question = new Console\Question\ConfirmationQuestion(
-					$this->translator->translate('//modbus-connector.cmd.install.questions.skipValue'),
+					(string) $this->translator->translate('//modbus-connector.cmd.install.questions.skipValue'),
 					true,
 				);
 
@@ -3351,19 +3426,23 @@ class Install extends Console\Command\Command
 			}
 
 			$question = new Console\Question\ChoiceQuestion(
-				$this->translator->translate('//modbus-connector.cmd.install.questions.select.register.valueDataType'),
+				(string) $this->translator->translate(
+					'//modbus-connector.cmd.install.questions.select.register.valueDataType',
+				),
 				$dataTypes,
 				$selected,
 			);
 
 			$question->setErrorMessage(
-				$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+				(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 			);
 			$question->setValidator(function (string|null $answer) use ($dataTypes): string {
 				if ($answer === null) {
 					throw new Exceptions\Runtime(
 						sprintf(
-							$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+							(string) $this->translator->translate(
+								'//modbus-connector.cmd.base.messages.answerNotValid',
+							),
 							$answer,
 						),
 					);
@@ -3379,7 +3458,7 @@ class Install extends Console\Command\Command
 
 				throw new Exceptions\Runtime(
 					sprintf(
-						$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+						(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 						$answer,
 					),
 				);
@@ -3451,25 +3530,31 @@ class Install extends Console\Command\Command
 		}
 
 		if ($payload === MetadataTypes\Payloads\Button::PRESSED) {
-			$questionText = $this->translator->translate('//modbus-connector.cmd.install.questions.button.hasPress');
+			$questionText = (string) $this->translator->translate(
+				'//modbus-connector.cmd.install.questions.button.hasPress',
+			);
 		} elseif ($payload === MetadataTypes\Payloads\Button::RELEASED) {
-			$questionText = $this->translator->translate('//modbus-connector.cmd.install.questions.button.hasRelease');
+			$questionText = (string) $this->translator->translate(
+				'//modbus-connector.cmd.install.questions.button.hasRelease',
+			);
 		} elseif ($payload === MetadataTypes\Payloads\Button::CLICKED) {
-			$questionText = $this->translator->translate('//modbus-connector.cmd.install.questions.button.hasClick');
+			$questionText = (string) $this->translator->translate(
+				'//modbus-connector.cmd.install.questions.button.hasClick',
+			);
 		} elseif ($payload === MetadataTypes\Payloads\Button::DOUBLE_CLICKED) {
-			$questionText = $this->translator->translate(
+			$questionText = (string) $this->translator->translate(
 				'//modbus-connector.cmd.install.questions.button.hasDoubleClick',
 			);
 		} elseif ($payload === MetadataTypes\Payloads\Button::TRIPLE_CLICKED) {
-			$questionText = $this->translator->translate(
+			$questionText = (string) $this->translator->translate(
 				'//modbus-connector.cmd.install.questions.button.hasTripleClick',
 			);
 		} elseif ($payload === MetadataTypes\Payloads\Button::LONG_CLICKED) {
-			$questionText = $this->translator->translate(
+			$questionText = (string) $this->translator->translate(
 				'//modbus-connector.cmd.install.questions.button.hasLongClick',
 			);
 		} elseif ($payload === MetadataTypes\Payloads\Button::EXTRA_LONG_CLICKED) {
-			$questionText = $this->translator->translate(
+			$questionText = (string) $this->translator->translate(
 				'//modbus-connector.cmd.install.questions.button.hasExtraLongClick',
 			);
 		} else {
@@ -3510,52 +3595,52 @@ class Install extends Console\Command\Command
 
 		if ($reading) {
 			if ($payload === MetadataTypes\Payloads\Button::PRESSED) {
-				$questionText = $this->translator->translate(
+				$questionText = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.readPressValue',
 				);
-				$questionError = $this->translator->translate(
+				$questionError = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.readPressValueError',
 				);
 			} elseif ($payload === MetadataTypes\Payloads\Button::RELEASED) {
-				$questionText = $this->translator->translate(
+				$questionText = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.readReleaseValue',
 				);
-				$questionError = $this->translator->translate(
+				$questionError = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.readReleaseValueError',
 				);
 			} elseif ($payload === MetadataTypes\Payloads\Button::CLICKED) {
-				$questionText = $this->translator->translate(
+				$questionText = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.readClickValue',
 				);
-				$questionError = $this->translator->translate(
+				$questionError = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.readClickValueError',
 				);
 			} elseif ($payload === MetadataTypes\Payloads\Button::DOUBLE_CLICKED) {
-				$questionText = $this->translator->translate(
+				$questionText = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.readDoubleClickValue',
 				);
-				$questionError = $this->translator->translate(
+				$questionError = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.readDoubleClickValueError',
 				);
 			} elseif ($payload === MetadataTypes\Payloads\Button::TRIPLE_CLICKED) {
-				$questionText = $this->translator->translate(
+				$questionText = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.readTripleClickValue',
 				);
-				$questionError = $this->translator->translate(
+				$questionError = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.readTripleClickValueError',
 				);
 			} elseif ($payload === MetadataTypes\Payloads\Button::LONG_CLICKED) {
-				$questionText = $this->translator->translate(
+				$questionText = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.readLongClickValue',
 				);
-				$questionError = $this->translator->translate(
+				$questionError = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.readLongClickValueError',
 				);
 			} elseif ($payload === MetadataTypes\Payloads\Button::EXTRA_LONG_CLICKED) {
-				$questionText = $this->translator->translate(
+				$questionText = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.readExtraLongClickValue',
 				);
-				$questionError = $this->translator->translate(
+				$questionError = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.readExtraLongClickValueError',
 				);
 			} else {
@@ -3563,52 +3648,52 @@ class Install extends Console\Command\Command
 			}
 		} else {
 			if ($payload === MetadataTypes\Payloads\Button::PRESSED) {
-				$questionText = $this->translator->translate(
+				$questionText = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.writePressValue',
 				);
-				$questionError = $this->translator->translate(
+				$questionError = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.writePressValueError',
 				);
 			} elseif ($payload === MetadataTypes\Payloads\Button::RELEASED) {
-				$questionText = $this->translator->translate(
+				$questionText = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.writeReleaseValue',
 				);
-				$questionError = $this->translator->translate(
+				$questionError = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.writeReleaseValueError',
 				);
 			} elseif ($payload === MetadataTypes\Payloads\Button::CLICKED) {
-				$questionText = $this->translator->translate(
+				$questionText = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.writeClickValue',
 				);
-				$questionError = $this->translator->translate(
+				$questionError = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.writeClickValueError',
 				);
 			} elseif ($payload === MetadataTypes\Payloads\Button::DOUBLE_CLICKED) {
-				$questionText = $this->translator->translate(
+				$questionText = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.writeDoubleClickValue',
 				);
-				$questionError = $this->translator->translate(
+				$questionError = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.writeDoubleClickValueError',
 				);
 			} elseif ($payload === MetadataTypes\Payloads\Button::TRIPLE_CLICKED) {
-				$questionText = $this->translator->translate(
+				$questionText = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.writeTripleClickValue',
 				);
-				$questionError = $this->translator->translate(
+				$questionError = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.writeTripleClickValueError',
 				);
 			} elseif ($payload === MetadataTypes\Payloads\Button::LONG_CLICKED) {
-				$questionText = $this->translator->translate(
+				$questionText = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.writeLongClickValue',
 				);
-				$questionError = $this->translator->translate(
+				$questionError = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.writeLongClickValueError',
 				);
 			} elseif ($payload === MetadataTypes\Payloads\Button::EXTRA_LONG_CLICKED) {
-				$questionText = $this->translator->translate(
+				$questionText = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.questions.provide.button.writeExtraLongClickValue',
 				);
-				$questionError = $this->translator->translate(
+				$questionError = (string) $this->translator->translate(
 					'//modbus-connector.cmd.install.messages.provide.button.writeExtraLongClickValueError',
 				);
 			} else {
@@ -3620,7 +3705,7 @@ class Install extends Console\Command\Command
 		$question->setValidator(function (string|null $answer) use ($io, $questionError): string|null {
 			if (trim(strval($answer)) === '') {
 				$question = new Console\Question\ConfirmationQuestion(
-					$this->translator->translate('//modbus-connector.cmd.install.questions.skipValue'),
+					(string) $this->translator->translate('//modbus-connector.cmd.install.questions.skipValue'),
 					false,
 				);
 
@@ -3675,19 +3760,23 @@ class Install extends Console\Command\Command
 			}
 
 			$question = new Console\Question\ChoiceQuestion(
-				$this->translator->translate('//modbus-connector.cmd.install.questions.select.register.valueDataType'),
+				(string) $this->translator->translate(
+					'//modbus-connector.cmd.install.questions.select.register.valueDataType',
+				),
 				$dataTypes,
 				$selected,
 			);
 
 			$question->setErrorMessage(
-				$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+				(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 			);
 			$question->setValidator(function (string|null $answer) use ($dataTypes): string {
 				if ($answer === null) {
 					throw new Exceptions\Runtime(
 						sprintf(
-							$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+							(string) $this->translator->translate(
+								'//modbus-connector.cmd.base.messages.answerNotValid',
+							),
 							$answer,
 						),
 					);
@@ -3703,7 +3792,7 @@ class Install extends Console\Command\Command
 
 				throw new Exceptions\Runtime(
 					sprintf(
-						$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+						(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 						$answer,
 					),
 				);
@@ -3752,19 +3841,19 @@ class Install extends Console\Command\Command
 		}
 
 		$question = new Console\Question\ChoiceQuestion(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.select.item.connector'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.questions.select.item.connector'),
 			array_values($connectors),
 			count($connectors) === 1 ? 0 : null,
 		);
 
 		$question->setErrorMessage(
-			$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+			(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 		);
 		$question->setValidator(function (string|int|null $answer) use ($connectors): Entities\Connectors\Connector {
 			if ($answer === null) {
 				throw new Exceptions\Runtime(
 					sprintf(
-						$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+						(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 						$answer,
 					),
 				);
@@ -3792,7 +3881,7 @@ class Install extends Console\Command\Command
 
 			throw new Exceptions\Runtime(
 				sprintf(
-					$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+					(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 					$answer,
 				),
 			);
@@ -3837,20 +3926,22 @@ class Install extends Console\Command\Command
 		}
 
 		$question = new Console\Question\ChoiceQuestion(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.select.item.device'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.questions.select.item.device'),
 			array_values($devices),
 			count($devices) === 1 ? 0 : null,
 		);
 
 		$question->setErrorMessage(
-			$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+			(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 		);
 		$question->setValidator(
 			function (string|int|null $answer) use ($connector, $devices): Entities\Devices\Device {
 				if ($answer === null) {
 					throw new Exceptions\Runtime(
 						sprintf(
-							$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+							(string) $this->translator->translate(
+								'//modbus-connector.cmd.base.messages.answerNotValid',
+							),
 							$answer,
 						),
 					);
@@ -3879,7 +3970,7 @@ class Install extends Console\Command\Command
 
 				throw new Exceptions\Runtime(
 					sprintf(
-						$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+						(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 						$answer,
 					),
 				);
@@ -3934,20 +4025,22 @@ class Install extends Console\Command\Command
 		}
 
 		$question = new Console\Question\ChoiceQuestion(
-			$this->translator->translate('//modbus-connector.cmd.install.questions.select.item.register'),
+			(string) $this->translator->translate('//modbus-connector.cmd.install.questions.select.item.register'),
 			array_values($channels),
 			count($channels) === 1 ? 0 : null,
 		);
 
 		$question->setErrorMessage(
-			$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+			(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 		);
 		$question->setValidator(
 			function (string|int|null $answer) use ($device, $channels): Entities\Channels\Channel {
 				if ($answer === null) {
 					throw new Exceptions\Runtime(
 						sprintf(
-							$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+							(string) $this->translator->translate(
+								'//modbus-connector.cmd.base.messages.answerNotValid',
+							),
 							$answer,
 						),
 					);
@@ -3976,7 +4069,7 @@ class Install extends Console\Command\Command
 
 				throw new Exceptions\Runtime(
 					sprintf(
-						$this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
+						(string) $this->translator->translate('//modbus-connector.cmd.base.messages.answerNotValid'),
 						$answer,
 					),
 				);
