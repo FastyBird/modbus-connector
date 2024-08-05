@@ -16,6 +16,7 @@
 namespace FastyBird\Connector\Modbus\Subscribers;
 
 use Doctrine\Common;
+use Doctrine\DBAL;
 use Doctrine\ORM;
 use Doctrine\Persistence;
 use FastyBird\Connector\Modbus\Entities;
@@ -30,7 +31,7 @@ use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
 use FastyBird\Module\Devices\Models as DevicesModels;
 use FastyBird\Module\Devices\Types as DevicesTypes;
-use IPub\DoctrineCrud;
+use IPub\DoctrineCrud\Exceptions as DoctrineCrudExceptions;
 use Nette;
 use Nette\Utils;
 use TypeError;
@@ -71,7 +72,10 @@ final class Properties implements Common\EventSubscriber
 	 * @throws ApplicationExceptions\InvalidState
 	 * @throws Exceptions\InvalidArgument
 	 * @throws DevicesExceptions\InvalidArgument
-	 * @throws DoctrineCrud\Exceptions\InvalidArgumentException
+	 * @throws DBAL\Exception\UniqueConstraintViolationException
+	 * @throws DoctrineCrudExceptions\EntityCreation
+	 * @throws DoctrineCrudExceptions\InvalidArgument
+	 * @throws DoctrineCrudExceptions\InvalidState
 	 * @throws MetadataExceptions\InvalidArgument
 	 * @throws MetadataExceptions\InvalidState
 	 * @throws TypeError
