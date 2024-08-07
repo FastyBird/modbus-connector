@@ -34,6 +34,7 @@ use FastyBird\Library\Exchange\DI as ExchangeDI;
 use FastyBird\Library\Metadata;
 use FastyBird\Library\Metadata\Documents as MetadataDocuments;
 use FastyBird\Module\Devices\DI as DevicesDI;
+use Nette\Bootstrap;
 use Nette\DI;
 use Nettrine\Fixtures as NettrineFixtures;
 use Nettrine\ORM as NettrineORM;
@@ -60,7 +61,7 @@ class ModbusExtension extends DI\CompilerExtension implements Translation\DI\Tra
 	): void
 	{
 		$config->onCompile[] = static function (
-			ApplicationBoot\Configurator $config,
+			Bootstrap\Configurator $config,
 			DI\Compiler $compiler,
 		) use ($extensionName): void {
 			$compiler->addExtension($extensionName, new self());
