@@ -837,7 +837,6 @@ class Install extends Console\Command\Command
 
 			if (
 				preg_match(self::MATCH_IP_ADDRESS_PORT, $ipAddress, $matches) === 1
-				&& array_key_exists('address', $matches)
 				&& array_key_exists('port', $matches)
 			) {
 				$ipAddress = $matches['address'];
@@ -1025,7 +1024,6 @@ class Install extends Console\Command\Command
 
 			if (
 				preg_match(self::MATCH_IP_ADDRESS_PORT, $ipAddress, $matches) === 1
-				&& array_key_exists('address', $matches)
 				&& array_key_exists('port', $matches)
 			) {
 				$ipAddress = $matches['address'];
@@ -2540,10 +2538,7 @@ class Install extends Console\Command\Command
 			$device?->getIpAddress(),
 		);
 		$question->setValidator(function (string|null $answer) {
-			if (
-				preg_match(self::MATCH_IP_ADDRESS_PORT, strval($answer), $matches) === 1
-				&& array_key_exists('address', $matches)
-			) {
+			if (preg_match(self::MATCH_IP_ADDRESS_PORT, strval($answer), $matches) === 1) {
 				if (array_key_exists('port', $matches)) {
 					return $matches['address'] . ':' . $matches['port'];
 				}
@@ -2927,10 +2922,7 @@ class Install extends Console\Command\Command
 			}
 
 			if ($channel === null) {
-				if (
-					preg_match('/^([0-9]+)-([0-9]+)$/', strval($answer), $matches) === 1
-					&& count($matches) === 3
-				) {
+				if (preg_match('/^([0-9]+)-([0-9]+)$/', strval($answer), $matches) === 1) {
 					$start = intval($matches[1]);
 					$end = intval($matches[2]);
 
