@@ -44,7 +44,7 @@
     "fastybird/tools-library": "dev-main",
     "nette/di": "^3.0",
     "nettrine/fixtures": "^0.6",
-    "orisai/nette-object-mapper": "^0.1",
+    "orisai/object-mapper": "^0.2",
     "psr/log": "^3.0",
     "react/async": "^4.0",
     "react/event-loop": "^1.3",

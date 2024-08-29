@@ -99,7 +99,7 @@ class Tcp implements Client
 		private readonly DevicesModels\Configuration\Channels\Repository $channelsConfigurationRepository,
 		private readonly DevicesModels\States\Async\ChannelPropertiesManager $channelPropertiesStatesManager,
 		private readonly DevicesUtilities\DeviceConnection $deviceConnectionManager,
-		private readonly DateTimeFactory\Factory $dateTimeFactory,
+		private readonly DateTimeFactory\Clock $clock,
 		private readonly EventLoop\LoopInterface $eventLoop,
 	)
 	{
@@ -214,7 +214,7 @@ class Tcp implements Client
 						continue;
 					} else {
 						if (
-							$this->dateTimeFactory->getNow()->getTimestamp()
+							$this->clock->getNow()->getTimestamp()
 							- $this->lostDevices[$device->getId()->toString()]->getTimestamp() < self::LOST_DELAY
 						) {
 							continue;
@@ -381,7 +381,7 @@ class Tcp implements Client
 			return false;
 		}
 
-		$now = $this->dateTimeFactory->getNow();
+		$now = $this->clock->getNow();
 
 		$promises = [];
 
@@ -462,7 +462,7 @@ class Tcp implements Client
 
 			$promise->then(
 				function (API\Messages\Response\ReadAnalogInputs|API\Messages\Response\ReadDigitalInputs $response) use ($request, $device): void {
-					$now = $this->dateTimeFactory->getNow();
+					$now = $this->clock->getNow();
 
 					if ($response instanceof API\Messages\Response\ReadDigitalInputs) {
 						$this->processDigitalRegistersResponse($request, $response, $device);
@@ -495,7 +495,7 @@ class Tcp implements Client
 					}
 				},
 				function (Throwable $ex) use ($request, $device): void {
-					$now = $this->dateTimeFactory->getNow();
+					$now = $this->clock->getNow();
 
 					if ($ex instanceof Exceptions\ModbusTcp) {
 						foreach ($request->getAddresses() as $requestAddress) {
@@ -635,7 +635,7 @@ class Tcp implements Client
 		Documents\Channels\Channel $channel,
 	): Messages\Pointer\ReadAddress|null
 	{
-		$now = $this->dateTimeFactory->getNow();
+		$now = $this->clock->getNow();
 
 		$findChannelPropertyQuery = new Queries\Configuration\FindChannelDynamicProperties();
 		$findChannelPropertyQuery->forChannel($channel);

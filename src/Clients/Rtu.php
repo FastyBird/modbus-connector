@@ -99,7 +99,7 @@ class Rtu implements Client
 		private readonly DevicesModels\Configuration\Channels\Repository $channelsConfigurationRepository,
 		private readonly DevicesModels\States\Async\ChannelPropertiesManager $channelPropertiesStatesManager,
 		private readonly DevicesUtilities\DeviceConnection $deviceConnectionManager,
-		private readonly DateTimeFactory\Factory $dateTimeFactory,
+		private readonly DateTimeFactory\Clock $clock,
 		private readonly EventLoop\LoopInterface $eventLoop,
 	)
 	{
@@ -227,7 +227,7 @@ class Rtu implements Client
 						continue;
 					} else {
 						if (
-							$this->dateTimeFactory->getNow()->getTimestamp()
+							$this->clock->getNow()->getTimestamp()
 								- $this->lostDevices[$device->getId()->toString()]->getTimestamp() < self::LOST_DELAY
 						) {
 							continue;
@@ -426,7 +426,7 @@ class Rtu implements Client
 					continue;
 				}
 
-				$now = $this->dateTimeFactory->getNow();
+				$now = $this->clock->getNow();
 
 				if ($response instanceof API\Messages\Response\ReadDigitalInputs) {
 					$this->processDigitalRegistersResponse($request, $response, $device);
@@ -573,7 +573,7 @@ class Rtu implements Client
 		Documents\Channels\Channel $channel,
 	): Messages\Pointer\ReadAddress|null
 	{
-		$now = $this->dateTimeFactory->getNow();
+		$now = $this->clock->getNow();
 
 		$findChannelPropertyQuery = new Queries\Configuration\FindChannelDynamicProperties();
 		$findChannelPropertyQuery->forChannel($channel);
