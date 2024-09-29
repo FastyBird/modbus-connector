@@ -38,7 +38,7 @@ final class Constants
 
 	public const WRITE_DEBOUNCE_DELAY = 2_000.0;
 
-	public const READING_DELAY = 120.0;
+	public const READING_DELAY = 150.0;
 
 	public const DEFAULT_TCP_PORT = 502;
 
