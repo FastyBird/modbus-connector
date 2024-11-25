@@ -7,7 +7,7 @@ use FastyBird\Connector\Modbus\API;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Tests;
 use FastyBird\Connector\Modbus\Types;
-use FastyBird\Library\Application\Exceptions as ApplicationExceptions;
+use FastyBird\Core\Application\Exceptions as ApplicationExceptions;
 use Nette;
 use function floatval;
 use function pack;

@@ -19,10 +19,10 @@ use Doctrine\ORM\Mapping as ORM;
 use FastyBird\Connector\Modbus;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Types;
-use FastyBird\Library\Application\Entities\Mapping as ApplicationMapping;
-use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
+use FastyBird\Core\Application\Entities\Mapping as ApplicationMapping;
+use FastyBird\Core\Tools\Exceptions as ToolsExceptions;
+use FastyBird\Core\Tools\Utilities as ToolsUtilities;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
-use FastyBird\Library\Metadata\Utilities as MetadataUtilities;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
 use Ramsey\Uuid;
 use TypeError;
@@ -67,8 +67,8 @@ class Channel extends DevicesEntities\Channels\Channel
 	}
 
 	/**
-	 * @throws MetadataExceptions\InvalidArgument
-	 * @throws MetadataExceptions\InvalidState
+	 * @throws ToolsExceptions\InvalidArgument
+	 * @throws ToolsExceptions\InvalidState
 	 * @throws TypeError
 	 * @throws ValueError
 	 */
@@ -92,8 +92,8 @@ class Channel extends DevicesEntities\Channels\Channel
 	}
 
 	/**
-	 * @throws MetadataExceptions\InvalidArgument
-	 * @throws MetadataExceptions\InvalidState
+	 * @throws ToolsExceptions\InvalidArgument
+	 * @throws ToolsExceptions\InvalidState
 	 * @throws TypeError
 	 * @throws ValueError
 	 */
@@ -109,17 +109,17 @@ class Channel extends DevicesEntities\Channels\Channel
 		if (
 			$property instanceof DevicesEntities\Channels\Properties\Variable
 			&& is_string($property->getValue())
-			&& Types\ChannelType::tryFrom(MetadataUtilities\Value::toString($property->getValue(), true)) !== null
+			&& Types\ChannelType::tryFrom(ToolsUtilities\Value::toString($property->getValue(), true)) !== null
 		) {
-			return Types\ChannelType::from(MetadataUtilities\Value::toString($property->getValue(), true));
+			return Types\ChannelType::from(ToolsUtilities\Value::toString($property->getValue(), true));
 		}
 
 		return null;
 	}
 
 	/**
-	 * @throws MetadataExceptions\InvalidArgument
-	 * @throws MetadataExceptions\InvalidState
+	 * @throws ToolsExceptions\InvalidArgument
+	 * @throws ToolsExceptions\InvalidState
 	 * @throws TypeError
 	 * @throws ValueError
 	 */

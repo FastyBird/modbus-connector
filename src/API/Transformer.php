@@ -19,10 +19,10 @@ use DateTimeInterface;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Types;
 use FastyBird\Connector\Modbus\ValueObjects;
-use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
-use FastyBird\Library\Metadata\Formats as MetadataFormats;
+use FastyBird\Core\Tools\Exceptions as ToolsExceptions;
+use FastyBird\Core\Tools\Formats as ToolsFormats;
+use FastyBird\Core\Tools\Utilities as ToolsUtilities;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
-use FastyBird\Library\Metadata\Utilities as MetadataUtilities;
 use Nette;
 use Nette\Utils;
 use TypeError;
@@ -59,14 +59,14 @@ final class Transformer
 	private bool|null $machineUsingLittleEndian = null;
 
 	/**
-	 * @throws MetadataExceptions\InvalidArgument
-	 * @throws MetadataExceptions\InvalidState
+	 * @throws ToolsExceptions\InvalidArgument
+	 * @throws ToolsExceptions\InvalidState
 	 * @throws TypeError
 	 * @throws ValueError
 	 */
 	public function transformValueToDevice(
 		MetadataTypes\DataType $dataType,
-		MetadataFormats\StringEnum|MetadataFormats\NumberRange|MetadataFormats\CombinedEnum|null $format,
+		ToolsFormats\StringEnum|ToolsFormats\NumberRange|ToolsFormats\CombinedEnum|null $format,
 		bool|float|int|string|DateTimeInterface|MetadataTypes\Payloads\Payload|null $value,
 	): ValueObjects\DeviceData|null
 	{
@@ -116,7 +116,7 @@ final class Transformer
 			return new ValueObjects\DeviceData(
 				$value instanceof DateTimeInterface
 					? $value->format(DateTimeInterface::ATOM)
-					: MetadataUtilities\Value::toString($value),
+					: ToolsUtilities\Value::toString($value),
 				$dataType,
 			);
 		}
@@ -126,40 +126,40 @@ final class Transformer
 			|| $dataType === MetadataTypes\DataType::SWITCH
 			|| $dataType === MetadataTypes\DataType::BUTTON
 		) {
-			if ($format instanceof MetadataFormats\StringEnum) {
+			if ($format instanceof ToolsFormats\StringEnum) {
 				$filtered = array_values(array_filter(
 					$format->getItems(),
 					static fn (string $item): bool => Utils\Strings::lower(
-						MetadataUtilities\Value::toString($value, true),
+						ToolsUtilities\Value::toString($value, true),
 					) === $item,
 				));
 
 				if (count($filtered) === 1) {
 					return new ValueObjects\DeviceData(
-						MetadataUtilities\Value::flattenValue($value),
+						ToolsUtilities\Value::flattenValue($value),
 						MetadataTypes\DataType::STRING,
 					);
 				}
 
 				return null;
-			} elseif ($format instanceof MetadataFormats\CombinedEnum) {
+			} elseif ($format instanceof ToolsFormats\CombinedEnum) {
 				$filtered = array_values(array_filter(
 					$format->getItems(),
 					static fn (array $item): bool => $item[0] !== null
 							&& Utils\Strings::lower(
-								MetadataUtilities\Value::toString($item[0]->getValue(), true),
+								ToolsUtilities\Value::toString($item[0]->getValue(), true),
 							) === Utils\Strings::lower(
-								MetadataUtilities\Value::toString($value, true),
+								ToolsUtilities\Value::toString($value, true),
 							),
 				));
 
 				if (
 					count($filtered) === 1
-					&& $filtered[0][2] instanceof MetadataFormats\CombinedEnumItem
+					&& $filtered[0][2] instanceof ToolsFormats\CombinedEnumItem
 				) {
 					return new ValueObjects\DeviceData(
 						is_scalar($filtered[0][2]->getValue()) ? $filtered[0][2]->getValue() : strval(
-							MetadataUtilities\Value::flattenValue($filtered[0][2]->getValue()),
+							ToolsUtilities\Value::flattenValue($filtered[0][2]->getValue()),
 						),
 						$this->shortDataTypeToLong($filtered[0][2]->getDataType()),
 					);
@@ -191,18 +191,18 @@ final class Transformer
 
 	public function determineDeviceReadDataType(
 		MetadataTypes\DataType $dataType,
-		MetadataFormats\StringEnum|MetadataFormats\NumberRange|MetadataFormats\CombinedEnum|null $format,
+		ToolsFormats\StringEnum|ToolsFormats\NumberRange|ToolsFormats\CombinedEnum|null $format,
 	): MetadataTypes\DataType
 	{
 		$deviceExpectedDataType = $dataType;
 
-		if ($format instanceof MetadataFormats\CombinedEnum) {
+		if ($format instanceof ToolsFormats\CombinedEnum) {
 			$enumDataTypes = [];
 
 			foreach ($format->getItems() as $enumItem) {
 				if (
 					count($enumItem) === 3
-					&& $enumItem[1] instanceof MetadataFormats\CombinedEnumItem
+					&& $enumItem[1] instanceof ToolsFormats\CombinedEnumItem
 					&& $enumItem[1]->getDataType() !== null
 				) {
 					$enumDataTypes[] = $enumItem[1]->getDataType();
@@ -225,18 +225,18 @@ final class Transformer
 
 	public function determineDeviceWriteDataType(
 		MetadataTypes\DataType $dataType,
-		MetadataFormats\StringEnum|MetadataFormats\NumberRange|MetadataFormats\CombinedEnum|null $format,
+		ToolsFormats\StringEnum|ToolsFormats\NumberRange|ToolsFormats\CombinedEnum|null $format,
 	): MetadataTypes\DataType
 	{
 		$deviceExpectedDataType = $dataType;
 
-		if ($format instanceof MetadataFormats\CombinedEnum) {
+		if ($format instanceof ToolsFormats\CombinedEnum) {
 			$enumDataTypes = [];
 
 			foreach ($format->getItems() as $enumItem) {
 				if (
 					count($enumItem) === 3
-					&& $enumItem[2] instanceof MetadataFormats\CombinedEnumItem
+					&& $enumItem[2] instanceof ToolsFormats\CombinedEnumItem
 					&& $enumItem[2]->getDataType() !== null
 				) {
 					$enumDataTypes[] = $enumItem[2]->getDataType();

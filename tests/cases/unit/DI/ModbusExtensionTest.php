@@ -14,7 +14,7 @@ use FastyBird\Connector\Modbus\Schemas;
 use FastyBird\Connector\Modbus\Subscribers;
 use FastyBird\Connector\Modbus\Tests;
 use FastyBird\Connector\Modbus\Writers;
-use FastyBird\Library\Application\Exceptions as ApplicationExceptions;
+use FastyBird\Core\Application\Exceptions as ApplicationExceptions;
 use Nette;
 
 final class ModbusExtensionTest extends Tests\Cases\Unit\BaseTestCase

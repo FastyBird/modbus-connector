@@ -23,10 +23,9 @@ use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Queries;
 use FastyBird\Connector\Modbus\Types;
-use FastyBird\Library\Application\Exceptions as ApplicationExceptions;
-use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
+use FastyBird\Core\Tools\Exceptions as ToolsExceptions;
+use FastyBird\Core\Tools\Utilities as ToolsUtilities;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
-use FastyBird\Library\Metadata\Utilities as MetadataUtilities;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
 use FastyBird\Module\Devices\Exceptions as DevicesExceptions;
 use FastyBird\Module\Devices\Models as DevicesModels;
@@ -69,15 +68,14 @@ final class Properties implements Common\EventSubscriber
 	/**
 	 * @param Persistence\Event\LifecycleEventArgs<ORM\EntityManagerInterface> $eventArgs
 	 *
-	 * @throws ApplicationExceptions\InvalidState
 	 * @throws Exceptions\InvalidArgument
 	 * @throws DevicesExceptions\InvalidArgument
 	 * @throws DBAL\Exception\UniqueConstraintViolationException
 	 * @throws DoctrineCrudExceptions\EntityCreation
 	 * @throws DoctrineCrudExceptions\InvalidArgument
 	 * @throws DoctrineCrudExceptions\InvalidState
-	 * @throws MetadataExceptions\InvalidArgument
-	 * @throws MetadataExceptions\InvalidState
+	 * @throws ToolsExceptions\InvalidArgument
+	 * @throws ToolsExceptions\InvalidState
 	 * @throws TypeError
 	 * @throws ValueError
 	 */
@@ -139,26 +137,26 @@ final class Properties implements Common\EventSubscriber
 			if (
 				(
 					$entity->getIdentifier() === Types\ConnectorPropertyIdentifier::CLIENT_MODE->value
-					&& Types\ClientMode::tryFrom(MetadataUtilities\Value::toString($entity->getValue(), true)) === null
+					&& Types\ClientMode::tryFrom(ToolsUtilities\Value::toString($entity->getValue(), true)) === null
 				) || (
 					$entity->getIdentifier() === Types\ConnectorPropertyIdentifier::RTU_BYTE_SIZE->value
 					&& Types\ByteSize::tryFrom(
-						intval(MetadataUtilities\Value::flattenValue($entity->getValue())),
+						intval(ToolsUtilities\Value::flattenValue($entity->getValue())),
 					) === null
 				) || (
 					$entity->getIdentifier() === Types\ConnectorPropertyIdentifier::RTU_BAUD_RATE->value
 					&& Types\BaudRate::tryFrom(
-						intval(MetadataUtilities\Value::flattenValue($entity->getValue())),
+						intval(ToolsUtilities\Value::flattenValue($entity->getValue())),
 					) === null
 				) || (
 					$entity->getIdentifier() === Types\ConnectorPropertyIdentifier::RTU_PARITY->value
 					&& Types\Parity::tryFrom(
-						intval(MetadataUtilities\Value::flattenValue($entity->getValue())),
+						intval(ToolsUtilities\Value::flattenValue($entity->getValue())),
 					) === null
 				) || (
 					$entity->getIdentifier() === Types\ConnectorPropertyIdentifier::RTU_STOP_BITS->value
 					&& Types\StopBits::tryFrom(
-						intval(MetadataUtilities\Value::flattenValue($entity->getValue())),
+						intval(ToolsUtilities\Value::flattenValue($entity->getValue())),
 					) === null
 				)
 			) {
@@ -174,7 +172,7 @@ final class Properties implements Common\EventSubscriber
 			if (
 				(
 					$entity->getIdentifier() === Types\DevicePropertyIdentifier::BYTE_ORDER->value
-					&& Types\ByteOrder::tryFrom(MetadataUtilities\Value::toString($entity->getValue(), true)) === null
+					&& Types\ByteOrder::tryFrom(ToolsUtilities\Value::toString($entity->getValue(), true)) === null
 				)
 			) {
 				throw new DevicesExceptions\InvalidArgument(sprintf(

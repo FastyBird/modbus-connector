@@ -20,10 +20,10 @@ use FastyBird\Connector\Modbus;
 use FastyBird\Connector\Modbus\Entities;
 use FastyBird\Connector\Modbus\Exceptions;
 use FastyBird\Connector\Modbus\Types;
-use FastyBird\Library\Application\Entities\Mapping as ApplicationMapping;
-use FastyBird\Library\Metadata\Exceptions as MetadataExceptions;
+use FastyBird\Core\Application\Entities\Mapping as ApplicationMapping;
+use FastyBird\Core\Tools\Exceptions as ToolsExceptions;
+use FastyBird\Core\Tools\Utilities as ToolsUtilities;
 use FastyBird\Library\Metadata\Types as MetadataTypes;
-use FastyBird\Library\Metadata\Utilities as MetadataUtilities;
 use FastyBird\Module\Devices\Entities as DevicesEntities;
 use TypeError;
 use ValueError;
@@ -77,9 +77,9 @@ class Connector extends DevicesEntities\Connectors\Connector
 	}
 
 	/**
+	 * @throws ToolsExceptions\InvalidArgument
+	 * @throws ToolsExceptions\InvalidState
 	 * @throws Exceptions\InvalidState
-	 * @throws MetadataExceptions\InvalidArgument
-	 * @throws MetadataExceptions\InvalidState
 	 * @throws TypeError
 	 * @throws ValueError
 	 */
@@ -95,17 +95,17 @@ class Connector extends DevicesEntities\Connectors\Connector
 		if (
 			$property instanceof DevicesEntities\Connectors\Properties\Variable
 			&& is_string($property->getValue())
-			&& Types\ClientMode::tryFrom(MetadataUtilities\Value::toString($property->getValue(), true)) !== null
+			&& Types\ClientMode::tryFrom(ToolsUtilities\Value::toString($property->getValue(), true)) !== null
 		) {
-			return Types\ClientMode::from(MetadataUtilities\Value::toString($property->getValue(), true));
+			return Types\ClientMode::from(ToolsUtilities\Value::toString($property->getValue(), true));
 		}
 
 		throw new Exceptions\InvalidState('Connector mode is not configured');
 	}
 
 	/**
-	 * @throws MetadataExceptions\InvalidArgument
-	 * @throws MetadataExceptions\InvalidState
+	 * @throws ToolsExceptions\InvalidArgument
+	 * @throws ToolsExceptions\InvalidState
 	 * @throws TypeError
 	 * @throws ValueError
 	 */
@@ -121,17 +121,17 @@ class Connector extends DevicesEntities\Connectors\Connector
 		if (
 			$property instanceof DevicesEntities\Connectors\Properties\Variable
 			&& is_numeric($property->getValue())
-			&& Types\ByteSize::tryFrom(intval(MetadataUtilities\Value::flattenValue($property->getValue()))) !== null
+			&& Types\ByteSize::tryFrom(intval(ToolsUtilities\Value::flattenValue($property->getValue()))) !== null
 		) {
-			return Types\ByteSize::from(intval(MetadataUtilities\Value::flattenValue($property->getValue())));
+			return Types\ByteSize::from(intval(ToolsUtilities\Value::flattenValue($property->getValue())));
 		}
 
 		return Types\ByteSize::SIZE_8;
 	}
 
 	/**
-	 * @throws MetadataExceptions\InvalidArgument
-	 * @throws MetadataExceptions\InvalidState
+	 * @throws ToolsExceptions\InvalidArgument
+	 * @throws ToolsExceptions\InvalidState
 	 * @throws TypeError
 	 * @throws ValueError
 	 */
@@ -147,17 +147,17 @@ class Connector extends DevicesEntities\Connectors\Connector
 		if (
 			$property instanceof DevicesEntities\Connectors\Properties\Variable
 			&& !is_numeric($property->getValue())
-			&& Types\BaudRate::tryFrom(intval(MetadataUtilities\Value::flattenValue($property->getValue()))) !== null
+			&& Types\BaudRate::tryFrom(intval(ToolsUtilities\Value::flattenValue($property->getValue()))) !== null
 		) {
-			return Types\BaudRate::from(intval(MetadataUtilities\Value::flattenValue($property->getValue())));
+			return Types\BaudRate::from(intval(ToolsUtilities\Value::flattenValue($property->getValue())));
 		}
 
 		return Types\BaudRate::RATE_9600;
 	}
 
 	/**
-	 * @throws MetadataExceptions\InvalidArgument
-	 * @throws MetadataExceptions\InvalidState
+	 * @throws ToolsExceptions\InvalidArgument
+	 * @throws ToolsExceptions\InvalidState
 	 * @throws TypeError
 	 * @throws ValueError
 	 */
@@ -173,17 +173,17 @@ class Connector extends DevicesEntities\Connectors\Connector
 		if (
 			$property instanceof DevicesEntities\Connectors\Properties\Variable
 			&& is_numeric($property->getValue())
-			&& Types\Parity::tryFrom(intval(MetadataUtilities\Value::flattenValue($property->getValue()))) !== null
+			&& Types\Parity::tryFrom(intval(ToolsUtilities\Value::flattenValue($property->getValue()))) !== null
 		) {
-			return Types\Parity::from(intval(MetadataUtilities\Value::flattenValue($property->getValue())));
+			return Types\Parity::from(intval(ToolsUtilities\Value::flattenValue($property->getValue())));
 		}
 
 		return Types\Parity::NONE;
 	}
 
 	/**
-	 * @throws MetadataExceptions\InvalidArgument
-	 * @throws MetadataExceptions\InvalidState
+	 * @throws ToolsExceptions\InvalidArgument
+	 * @throws ToolsExceptions\InvalidState
 	 * @throws TypeError
 	 * @throws ValueError
 	 */
@@ -199,17 +199,17 @@ class Connector extends DevicesEntities\Connectors\Connector
 		if (
 			$property instanceof DevicesEntities\Connectors\Properties\Variable
 			&& !is_numeric($property->getValue())
-			&& Types\StopBits::tryFrom(intval(MetadataUtilities\Value::flattenValue($property->getValue()))) !== null
+			&& Types\StopBits::tryFrom(intval(ToolsUtilities\Value::flattenValue($property->getValue()))) !== null
 		) {
-			return Types\StopBits::from(intval(MetadataUtilities\Value::flattenValue($property->getValue())));
+			return Types\StopBits::from(intval(ToolsUtilities\Value::flattenValue($property->getValue())));
 		}
 
 		return Types\StopBits::ONE;
 	}
 
 	/**
-	 * @throws MetadataExceptions\InvalidArgument
-	 * @throws MetadataExceptions\InvalidState
+	 * @throws ToolsExceptions\InvalidArgument
+	 * @throws ToolsExceptions\InvalidState
 	 * @throws TypeError
 	 * @throws ValueError
 	 */
